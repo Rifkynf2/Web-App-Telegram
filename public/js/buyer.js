@@ -34,6 +34,8 @@ const elVariantDesc = document.getElementById('variant-desc');
 const checkoutModal = document.getElementById('checkout-modal');
 const btnCloseModal = document.getElementById('btn-close-modal');
 const btnBackToBot = document.getElementById('btn-back-to-bot');
+const checkoutModalTitle = checkoutModal?.querySelector('h3');
+const checkoutModalDesc = checkoutModal?.querySelector('p');
 
 // Nav Elements
 const navHome = document.getElementById('nav-btn-home');
@@ -46,6 +48,7 @@ const telegramFallback = document.getElementById('telegram-fallback');
 let activeProduct = null;
 let activeVariant = null;
 let currentQty = 0;
+let isCheckoutSubmitting = false;
 
 export async function initBuyerApp() {
     console.log("[App] Version: 1.1.0-tenant-resolver");
@@ -337,12 +340,76 @@ function updateQtyDisplay() {
     }
 }
 
-function handleCheckout() {
-    closeDetailModal();
-    setTimeout(() => {
-        checkoutModal.classList.remove('hidden');
-        checkoutModal.classList.add('flex');
-    }, 300);
+function showCheckoutModal(title, description) {
+    if (checkoutModalTitle) checkoutModalTitle.textContent = title;
+    if (checkoutModalDesc) checkoutModalDesc.textContent = description;
+    checkoutModal.classList.remove('hidden');
+    checkoutModal.classList.add('flex');
+    if (bottomNav) bottomNav.classList.add('hidden');
+}
+
+function setCheckoutLoading(isLoading) {
+    isCheckoutSubmitting = isLoading;
+    if (!btnCheckout) return;
+
+    btnCheckout.disabled = isLoading || currentQty === 0;
+    if (isLoading) {
+        checkoutText.textContent = 'Membuat QRIS di Telegram...';
+        btnCheckout.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        updateQtyDisplay();
+    }
+}
+
+async function handleCheckout() {
+    if (!activeVariant || currentQty < 1 || isCheckoutSubmitting) return;
+
+    setCheckoutLoading(true);
+
+    try {
+        const response = await fetch('/api/webapp/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Telegram-Init-Data': tg?.initData || ''
+            },
+            body: JSON.stringify({
+                bot_id: currentBotId,
+                variant_id: activeVariant.id,
+                qty: currentQty
+            })
+        });
+
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(result.error || 'Checkout gagal diproses');
+        }
+
+        closeDetailModal();
+        setTimeout(() => {
+            showCheckoutModal(
+                'QRIS Terkirim ke Telegram',
+                'Pesanan Anda sudah diteruskan ke bot. Silakan cek chat Telegram untuk melihat QRIS dan menyelesaikan pembayaran.'
+            );
+        }, 300);
+    } catch (err) {
+        console.error('[Buyer] Checkout failed:', err.message);
+
+        if (tg?.showAlert) {
+            tg.showAlert(err.message || 'Checkout gagal diproses');
+            return;
+        }
+
+        closeDetailModal();
+        setTimeout(() => {
+            showCheckoutModal(
+                'Checkout Gagal',
+                err.message || 'Terjadi kesalahan saat membuat QRIS. Silakan coba lagi dari Mini App.'
+            );
+        }, 300);
+    } finally {
+        setCheckoutLoading(false);
+    }
 }
 
 function switchTab(tab) {

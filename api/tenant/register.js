@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
     }
 
     const botId = parseInt(auth.botId);
-    const { username, shop_name, owner_chat_id, db_url, db_anon_key, bot_token } = req.body;
+    const { username, shop_name, owner_chat_id, db_url, db_anon_key, bot_token, metadata } = req.body;
 
     if (!shop_name || !owner_chat_id) {
         return error(res, 'shop_name and owner_chat_id are required');
@@ -34,6 +34,11 @@ module.exports = async function handler(req, res) {
 
     try {
         const masterDb = getMasterSupabase();
+        const { data: existingTenant } = await masterDb
+            .from('tenants')
+            .select('metadata')
+            .eq('bot_id', botId)
+            .maybeSingle();
 
         // 2. Upsert tenant info
         const tenantData = {
@@ -45,6 +50,13 @@ module.exports = async function handler(req, res) {
             db_url: db_url || null,
             db_anon_key: db_anon_key || null,
         };
+
+        if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+            tenantData.metadata = {
+                ...(existingTenant?.metadata || {}),
+                ...metadata
+            };
+        }
 
         // Include bot_token if provided (needed for Telegram initData validation)
         if (bot_token) {
