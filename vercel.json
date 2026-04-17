@@ -1,5 +1,9 @@
 {
   "cleanUrls": true,
+  "redirects": [
+    { "source": "/public/master-dashboard.html", "destination": "/master", "permanent": true },
+    { "source": "/master-dashboard.html", "destination": "/master", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/master", "destination": "/public/master-dashboard.html" },
