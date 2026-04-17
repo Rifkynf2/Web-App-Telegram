@@ -113,11 +113,25 @@ export async function initBuyerApp() {
         });
     }
 
-    const botUsername = getBotUsername();
+    const botUsername = getBotUsername() || currentBotId;
     if (btnBackToBot && botUsername) {
-        btnBackToBot.href = `tg://resolve?domain=${botUsername}`;
-    } else if (btnBackToBot && currentBotId) {
-        btnBackToBot.href = `tg://resolve?domain=${currentBotId}`;
+        const telegramBotUrl = `https://t.me/${botUsername}`;
+        btnBackToBot.href = telegramBotUrl;
+        btnBackToBot.addEventListener('click', (event) => {
+            event.preventDefault();
+
+            try {
+                if (tg?.openTelegramLink) {
+                    tg.openTelegramLink(telegramBotUrl);
+                } else {
+                    window.location.href = telegramBotUrl;
+                }
+            } finally {
+                if (tg?.close) {
+                    setTimeout(() => tg.close(), 150);
+                }
+            }
+        });
     }
 
     // Bind Navigation
