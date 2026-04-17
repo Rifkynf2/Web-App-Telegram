@@ -84,11 +84,15 @@ export async function initAdminApp() {
 
     // 4. Identity Check (Admin Role)
     const isAdmin = await checkIsAdmin(tgUser?.id);
-    if (!isAdmin) {
+    
+    // Keamanan Cerdas:
+    // Jika di Telegram: Wajib terdaftar ID-nya.
+    // Jika di Browser: Asalkan Token valid, boleh masuk (karena link token itu rahasia).
+    if (!isAdmin && tgUser?.id) {
         hideLoading();
         Swal.fire({
             title: 'Akses Ditolak',
-            text: 'ID Telegram Anda tidak terdaftar sebagai Admin di database.',
+            text: 'ID Telegram Anda (' + tgUser.id + ') tidak terdaftar sebagai Admin.',
             icon: 'error',
             confirmButtonText: 'Tutup',
             background: '#1e293b',
@@ -97,6 +101,12 @@ export async function initAdminApp() {
             tg.close();
         });
         return;
+    }
+
+    if (!isAdmin && !tgUser?.id && !urlAuthToken) {
+        // Jika tidak ada ID dan tidak ada token (akses ilegal langsung ke URL)
+        hideLoading();
+        return; 
     }
 
     // 5. Fetch Live Data in Parallel (Super Irit & Cepat)
