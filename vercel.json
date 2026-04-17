@@ -6,7 +6,7 @@
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/master", "destination": "/public/master-dashboard.html" },
+    { "source": "/master", "destination": "/master-dashboard.html" },
     { "source": "/admin", "destination": "/public/admin.html" },
     { "source": "/(.*)", "destination": "/public/$1" }
   ],
