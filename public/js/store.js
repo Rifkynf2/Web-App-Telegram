@@ -14,15 +14,15 @@ export const userName = urlParams.get('name') || 'Guest User';
 export const userUsername = urlParams.get('username') || '';
 export const userPhoto = urlParams.get('photo') || '';
 
-// Derive Shop Name from Bot ID (e.g. rnf_shopp -> RNF SHOPP)
+// Derive Shop Name from Bot ID (e.g. rnf_bot - -> RNF BOT)
 export const getShopName = () => {
-    if (!currentBotId) return 'RNF SHOP SYSTEM';
+    if (!currentBotId) return 'RNF BOT SYSTEM';
     return currentBotId.replace(/_/g, ' ').toUpperCase();
 };
 
 // Shop Branding Settings
 export let shopSettings = {
-    name: 'RNF SHOP SYSTEM',
+    name: 'RNF BOT SYSTEM',
     description: 'Toko Digital Otomatis'
 };
 
