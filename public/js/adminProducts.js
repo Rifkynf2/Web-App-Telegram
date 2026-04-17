@@ -52,6 +52,7 @@ export async function initAdminApp() {
 
     // 3. Security Gate (Token Verification - now reads from TENANT DB)
     let dbAuthToken = null;
+    console.log("[Security] Validating token for URL:", urlAuthToken ? urlAuthToken.substring(0, 15) + "..." : "MISSING");
 
     try {
         const { data, error } = await supabase
@@ -61,12 +62,14 @@ export async function initAdminApp() {
             .maybeSingle();
         
         if (data) dbAuthToken = data.value;
+        console.log("[Security] Database token found:", dbAuthToken ? dbAuthToken.substring(0, 15) + "..." : "NOT FOUND");
     } catch (e) {
-        console.error("Security fetch failed", e);
+        console.error("[Security] Database fetch failed", e);
     }
 
     // Validate Token
     if (!urlAuthToken || urlAuthToken !== dbAuthToken) {
+        console.error("[Security] ❌ TOKEN MISMATCH!");
         hideLoading();
         Swal.fire({
             title: '🔐 Keamanan: Akses Ditolak',

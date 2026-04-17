@@ -43,6 +43,7 @@ export async function resolveTenant(botId) {
         }
 
         // Buat koneksi dinamis ke database penyewa
+        console.log('[Tenant] 🔗 Connecting to:', data.supabase_url);
         supabase = window.supabase.createClient(data.supabase_url, data.supabase_anon_key);
         console.log('[Tenant] ✅ Connected to tenant DB for bot:', botId);
         return true;
