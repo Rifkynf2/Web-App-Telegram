@@ -21,6 +21,9 @@ const btnTutorialCdn = document.getElementById('btn-tutorial-cdn');
 const adminVariantsContainer = document.getElementById('admin-variants-container');
 
 export async function initAdminApp() {
+    console.log("[App] Version: 1.1.0-tenant-resolver");
+    const telegramFallback = document.getElementById('telegram-fallback');
+
     // 1. Technical & Environment Check
     const urlAuthToken = urlParams.get('auth');
     
@@ -37,16 +40,13 @@ export async function initAdminApp() {
         return;
     }
 
-    // 2. Resolve Tenant (CRITICAL - connects to the correct tenant database)
+    // 2. Resolve Tenant (CRITICAL)
     const tenantResolved = await initTenant();
     if (!tenantResolved) {
         hideLoading();
+        if (telegramFallback) telegramFallback.classList.add('hidden');
         const errorState = document.getElementById('error-state');
-        const errorTitle = document.getElementById('error-title');
-        const errorMessage = document.getElementById('error-message');
         if (errorState) errorState.classList.replace('hidden', 'flex');
-        if (errorTitle) errorTitle.textContent = 'Toko Tidak Ditemukan';
-        if (errorMessage) errorMessage.textContent = 'Bot ini belum terdaftar di sistem pusat. Hubungi developer untuk aktivasi.';
         return;
     }
 

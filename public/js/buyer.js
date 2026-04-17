@@ -48,6 +48,9 @@ let activeVariant = null;
 let currentQty = 0;
 
 export async function initBuyerApp() {
+    console.log("[App] Version: 1.1.0-tenant-resolver");
+    const telegramFallback = document.getElementById('telegram-fallback');
+
     // 1. Check Technical Environment
     if (tg && tg.initData) {
         if (telegramFallback) telegramFallback.classList.add('hidden');
@@ -63,12 +66,9 @@ export async function initBuyerApp() {
     const tenantResolved = await initTenant();
     if (!tenantResolved) {
         hideLoading();
+        if (telegramFallback) telegramFallback.classList.add('hidden');
         const errorState = document.getElementById('error-state');
-        const errorTitle = document.getElementById('error-title');
-        const errorMessage = document.getElementById('error-message');
         if (errorState) errorState.classList.replace('hidden', 'flex');
-        if (errorTitle) errorTitle.textContent = 'Toko Tidak Ditemukan';
-        if (errorMessage) errorMessage.textContent = 'Bot ini belum terdaftar di sistem pusat.';
         return;
     }
 
