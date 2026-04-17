@@ -256,9 +256,17 @@ async function saveStockAction(product) {
         return Swal.fire({ icon: 'error', title: 'Pilih Varian', text: 'Anda harus memilih varian produk sebelum memasukkan stok!', background: '#1e293b', color: '#fff' });
     }
 
-    const selectedVariantId = parseInt(selectedVal);
-    const variant = product.variants.find(v => v.id === selectedVariantId);
-    if (!variant) return;
+    const selectedVariantId = String(selectedVal);
+    const variant = product.variants.find(v => String(v.id) === selectedVariantId);
+    if (!variant) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Varian Tidak Ditemukan',
+            text: 'Varian yang dipilih tidak cocok dengan data produk. Silakan tutup lalu buka ulang modal stok.',
+            background: '#1e293b',
+            color: '#fff'
+        });
+    }
 
     const fulfillment = variant.fulfillment;
     const rawLines = stockInputBulk.value.split('\n').map(l => l.trim()).filter(l => l);
