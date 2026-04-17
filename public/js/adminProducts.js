@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js';
-import { tg, tgUser, catalogData, fetchCatalog, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats } from './store.js';
+import { tg, tgUser, catalogData, fetchCatalog, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, urlParams } from './store.js';
 import { formatCurrency, hideLoading, getImageFallback } from './utils.js';
 import { openStockModal, initAdminStock } from './adminStock.js';
 
@@ -22,17 +22,22 @@ const adminVariantsContainer = document.getElementById('admin-variants-container
 
 export async function initAdminApp() {
     // 1. Technical & Environment Check
+    const urlAuthToken = urlParams.get('auth');
+    
     if (tg && tg.initData) {
         if (telegramFallback) telegramFallback.classList.add('hidden');
         tg.expand();
         tg.ready();
+    } else if (urlAuthToken) {
+        // Allow browser access if auth token is present
+        if (telegramFallback) telegramFallback.classList.add('hidden');
+        console.log("Accessing from browser with auth token.");
     } else {
-        console.log("Not in Telegram environment.");
+        console.log("Not in Telegram environment & no auth token.");
         return;
     }
 
     // 2. Security Gate (Token Verification)
-    const urlAuthToken = urlParams.get('auth');
     let dbAuthToken = null;
 
     try {
