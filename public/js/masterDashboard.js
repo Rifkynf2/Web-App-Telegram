@@ -14,8 +14,18 @@ const btnRefresh = document.getElementById('btnRefresh');
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
+    // Auto-login via URL parameter ?secret=...
+    const urlParams = new URLSearchParams(window.location.search);
+    const secretParam = urlParams.get('secret');
+    
+    if (secretParam) {
+        adminSecret = secretParam;
+        localStorage.setItem('master_secret', secretParam);
+        // Clean URL after capturing secret
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     if (adminSecret) {
-        // Test secret
         loadStats();
     }
 
