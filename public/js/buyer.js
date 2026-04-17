@@ -1,4 +1,4 @@
-import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, userName, userUsername, userPhoto, shopSettings, getShopName } from './store.js';
+import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, userName, userUsername, userPhoto, shopSettings, getShopName, initTenant } from './store.js';
 import { formatCurrency, hideLoading, getImageFallback } from './utils.js';
 
 // DOM Elements - Buyer
@@ -59,7 +59,20 @@ export async function initBuyerApp() {
         return;
     }
 
-    // 2. Fetch Live Data in Parallel (Super Irit & Cepat)
+    // 2. Resolve Tenant (connects to the correct tenant database)
+    const tenantResolved = await initTenant();
+    if (!tenantResolved) {
+        hideLoading();
+        const errorState = document.getElementById('error-state');
+        const errorTitle = document.getElementById('error-title');
+        const errorMessage = document.getElementById('error-message');
+        if (errorState) errorState.classList.replace('hidden', 'flex');
+        if (errorTitle) errorTitle.textContent = 'Toko Tidak Ditemukan';
+        if (errorMessage) errorMessage.textContent = 'Bot ini belum terdaftar di sistem pusat.';
+        return;
+    }
+
+    // 3. Fetch Live Data in Parallel (Super Irit & Cepat)
     await Promise.all([
         fetchShopSettings(),
         fetchCatalog()

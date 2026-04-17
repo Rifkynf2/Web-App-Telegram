@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient.js';
+import { supabase, resolveTenant } from './supabaseClient.js';
 
 export const urlParams = new URLSearchParams(window.location.search);
 export const currentBotId = urlParams.get('bot_id');
@@ -14,7 +14,7 @@ export const userName = urlParams.get('name') || 'Guest User';
 export const userUsername = urlParams.get('username') || '';
 export const userPhoto = urlParams.get('photo') || '';
 
-// Derive Shop Name from Bot ID (e.g. rnf_bot - -> RNF BOT)
+// Derive Shop Name from Bot ID (e.g. rnf_bot --> RNF BOT)
 export const getShopName = () => {
     if (!currentBotId) return 'RNF BOT SYSTEM';
     return currentBotId.replace(/_/g, ' ').toUpperCase();
@@ -25,6 +25,29 @@ export let shopSettings = {
     name: 'RNF BOT SYSTEM',
     description: 'Toko Digital Otomatis'
 };
+
+/**
+ * STEP 1: Resolve tenant connection.
+ * Harus dipanggil PERTAMA sebelum fungsi lain (fetchCatalog, fetchShopSettings, dll).
+ * Fungsi ini menghubungkan Web App ke database penyewa yang tepat.
+ * 
+ * @returns {Promise<boolean>} true jika koneksi berhasil
+ */
+export async function initTenant() {
+    if (!currentBotId) {
+        console.error('[Store] No bot_id in URL parameters.');
+        return false;
+    }
+    
+    const resolved = await resolveTenant(currentBotId);
+    if (!resolved) {
+        console.error('[Store] Failed to resolve tenant for bot_id:', currentBotId);
+        return false;
+    }
+    
+    console.log('[Store] ✅ Tenant initialized for bot_id:', currentBotId);
+    return true;
+}
 
 export async function fetchShopSettings() {
     if (!supabase) return shopSettings;

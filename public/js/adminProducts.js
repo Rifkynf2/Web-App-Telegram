@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js';
-import { tg, tgUser, catalogData, fetchCatalog, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, urlParams } from './store.js';
+import { tg, tgUser, catalogData, fetchCatalog, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, urlParams, initTenant } from './store.js';
 import { formatCurrency, hideLoading, getImageFallback } from './utils.js';
 import { openStockModal, initAdminStock } from './adminStock.js';
 
@@ -37,7 +37,20 @@ export async function initAdminApp() {
         return;
     }
 
-    // 2. Security Gate (Token Verification)
+    // 2. Resolve Tenant (CRITICAL - connects to the correct tenant database)
+    const tenantResolved = await initTenant();
+    if (!tenantResolved) {
+        hideLoading();
+        const errorState = document.getElementById('error-state');
+        const errorTitle = document.getElementById('error-title');
+        const errorMessage = document.getElementById('error-message');
+        if (errorState) errorState.classList.replace('hidden', 'flex');
+        if (errorTitle) errorTitle.textContent = 'Toko Tidak Ditemukan';
+        if (errorMessage) errorMessage.textContent = 'Bot ini belum terdaftar di sistem pusat. Hubungi developer untuk aktivasi.';
+        return;
+    }
+
+    // 3. Security Gate (Token Verification - now reads from TENANT DB)
     let dbAuthToken = null;
 
     try {
@@ -69,7 +82,7 @@ export async function initAdminApp() {
         return;
     }
 
-    // 3. Identity Check (Admin Role)
+    // 4. Identity Check (Admin Role)
     const isAdmin = await checkIsAdmin(tgUser?.id);
     if (!isAdmin) {
         hideLoading();
@@ -86,7 +99,7 @@ export async function initAdminApp() {
         return;
     }
 
-    // 4. Fetch Live Data in Parallel (Super Irit & Cepat)
+    // 5. Fetch Live Data in Parallel (Super Irit & Cepat)
     const [stats] = await Promise.all([
         fetchAdminStats(),
         fetchShopSettings(),
@@ -284,7 +297,7 @@ function addVariantBlock(variant = null) {
                 <i class="fa-solid fa-file-lines"></i>
                 <span class="btn-snk-label">${defaultData.snk ? 'Edit SNK (Sudah Terisi)' : 'Tambah SNK (Kosong)'}</span>
             </button>
-            <input type="hidden" class="var-snk" value="${defaultData.snk.replace(/"/g, '&quot;')}">
+            <input type="hidden" class="var-snk" value="${(defaultData.snk || '').replace(/"/g, '&quot;')}">
         </div>
 
         <div class="grid grid-cols-3 gap-2">
