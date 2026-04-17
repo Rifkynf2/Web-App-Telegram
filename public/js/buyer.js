@@ -59,9 +59,11 @@ export async function initBuyerApp() {
         return;
     }
 
-    // 2. Fetch Live Data
-    await fetchShopSettings();
-    await fetchCatalog();
+    // 2. Fetch Live Data in Parallel (Super Irit & Cepat)
+    await Promise.all([
+        fetchShopSettings(),
+        fetchCatalog()
+    ]);
     
     populateUserIdentity();
     renderBuyerProducts();

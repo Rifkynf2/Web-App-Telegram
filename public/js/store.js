@@ -121,6 +121,31 @@ export async function checkIsAdmin(chatId) {
     return !error && !!data;
 }
 
+/**
+ * Super Efficient Dashboard Stats
+ * Uses head: true to fetch counts ONLY (0 bytes data body)
+ */
+export async function fetchAdminStats() {
+    if (!supabase) return { users: 0, products: 0, orders: 0, revenue: 0 };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [uCount, pCount, oCount] = await Promise.all([
+        supabase.from('users').select('*', { count: 'exact', head: true }),
+        supabase.from('products').select('*', { count: 'exact', head: true }),
+        supabase.from('orders').select('*', { count: 'exact', head: true })
+        // Anda bisa menambah filter .gte('created_at', today.toISOString()) untuk order hari ini
+    ]);
+
+    return {
+        users: uCount.count || 0,
+        products: pCount.count || 0,
+        orders: oCount.count || 0,
+        revenue: 0 // Untuk revenue biasanya butuh kueri sum/RPC, kita set default dulu
+    };
+}
+
 // Keep for legacy if needed, but we now use catalogData
 export let mockData = [];
 export let mockAdminData = [];

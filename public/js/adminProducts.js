@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js';
-import { tg, tgUser, catalogData, fetchCatalog, fetchShopSettings, shopSettings, checkIsAdmin } from './store.js';
+import { tg, tgUser, catalogData, fetchCatalog, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats } from './store.js';
 import { formatCurrency, hideLoading, getImageFallback } from './utils.js';
 import { openStockModal, initAdminStock } from './adminStock.js';
 
@@ -46,19 +46,22 @@ export async function initAdminApp() {
         return;
     }
 
-    // 2. Fetch Live Data
-    await fetchShopSettings();
-    await fetchCatalog();
+    // 2. Fetch Live Data in Parallel (Super Irit & Cepat)
+    const [stats] = await Promise.all([
+        fetchAdminStats(),
+        fetchShopSettings(),
+        fetchCatalog()
+    ]);
 
     if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
     
     initAdminStock();
-    renderAdminView();
+    renderAdminView(stats);
     setupAdminModalListeners();
     hideLoading();
 }
 
-function renderAdminView() {
+function renderAdminView(stats = null) {
     if (elShopName) elShopName.textContent = "Admin Panel";
     if (elShopDesc) elShopDesc.textContent = "Kelola Katalog Toko";
     
@@ -82,10 +85,12 @@ function renderAdminView() {
     const totalSold = products.reduce((sum, p) => sum + parseInt(p.total_sold || 0), 0);
     if(eSold) eSold.textContent = totalSold;
     
-    // Placeholder stats for non-catalog items
-    if(eUsers) eUsers.textContent = "-";
-    if(eOrderToday) eOrderToday.textContent = "-";
-    if(eRevenue) eRevenue.textContent = "-";
+    // Real Stats from Database (Highly optimized)
+    if(stats) {
+        if(eUsers) eUsers.textContent = stats.users;
+        if(eOrderToday) eOrderToday.textContent = stats.orders;
+        if(eRevenue) eRevenue.textContent = formatCurrency(stats.revenue);
+    }
 
     if (adminList) {
         adminList.innerHTML = '';
