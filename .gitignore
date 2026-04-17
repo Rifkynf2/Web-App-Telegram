@@ -2,3 +2,8 @@ node_modules/
 .DS_Store
 dist/
 .env
+.env.local
+.vercel
+
+# Generated files (no longer needed)
+public/js/config.js

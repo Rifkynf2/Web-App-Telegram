@@ -1,10 +1,10 @@
 {
-  "name": "web-app",
-  "version": "1.0.0",
-  "description": "",
+  "name": "rnf-saas-webapp",
+  "version": "2.0.0",
+  "description": "RNF SaaS Multi-Tenant Web App + API Gateway",
   "main": "index.js",
   "scripts": {
-    "build": "node generate-config.js && tailwindcss -i ./public/index.css -o ./public/style/style.css",
+    "build": "tailwindcss -i ./public/index.css -o ./public/style/style.css",
     "dev": "tailwindcss -i ./public/index.css -o ./public/style/style.css --watch"
   },
   "keywords": [],

@@ -1,4 +1,4 @@
-import { supabase, resolveTenant } from './supabaseClient.js';
+import { supabase, resolveTenant, tenantInfo } from './supabaseClient.js';
 
 export const urlParams = new URLSearchParams(window.location.search);
 export const currentBotId = urlParams.get('bot_id');
@@ -14,8 +14,10 @@ export const userName = urlParams.get('name') || 'Guest User';
 export const userUsername = urlParams.get('username') || '';
 export const userPhoto = urlParams.get('photo') || '';
 
-// Derive Shop Name from Bot ID (e.g. rnf_bot --> RNF BOT)
+// Shop Name from API response (resolved from master DB)
 export const getShopName = () => {
+    // Use server-resolved name first, fallback to URL-based derivation
+    if (tenantInfo?.shopName) return tenantInfo.shopName;
     if (!currentBotId) return 'RNF BOT SYSTEM';
     return currentBotId.replace(/_/g, ' ').toUpperCase();
 };
@@ -39,14 +41,24 @@ export async function initTenant() {
         return false;
     }
     
-    const resolved = await resolveTenant(currentBotId);
-    if (!resolved) {
-        console.error('[Store] Failed to resolve tenant for bot_id:', currentBotId);
-        return false;
+    try {
+        const resolved = await resolveTenant(currentBotId);
+        if (!resolved) {
+            console.error('[Store] Failed to resolve tenant for bot_id:', currentBotId);
+            return false;
+        }
+        
+        // Update shop name from server response
+        if (tenantInfo?.shopName) {
+            shopSettings.name = tenantInfo.shopName;
+        }
+        
+        console.log('[Store] ✅ Tenant initialized for bot_id:', currentBotId);
+        return true;
+    } catch (err) {
+        console.error('[Store] Tenant init error:', err.message);
+        throw err; // Re-throw for UI error handling
     }
-    
-    console.log('[Store] ✅ Tenant initialized for bot_id:', currentBotId);
-    return true;
 }
 
 export async function fetchShopSettings() {
