@@ -28,8 +28,8 @@ async function getTenantBotApiBaseUrl(botId) {
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
-    const botId = req.method === 'DELETE' ? req.query.bot_id : req.body?.bot_id;
-    const auth = req.method === 'DELETE' ? req.query.auth : req.body?.auth;
+    const botId = req.method === 'GET' || req.method === 'DELETE' ? req.query.bot_id : req.body?.bot_id;
+    const auth = req.method === 'GET' || req.method === 'DELETE' ? req.query.auth : req.body?.auth;
 
     if (!botId || !auth) {
         return error(res, 'bot_id and auth are required');
@@ -60,6 +60,20 @@ module.exports = async function handler(req, res) {
             const relayData = await relayResponse.json().catch(() => ({}));
             if (!relayResponse.ok) {
                 return error(res, relayData.error || 'Gagal menyimpan stok', relayResponse.status);
+            }
+            return success(res, relayData);
+        }
+
+        if (req.method === 'GET') {
+            const variantId = req.query.variant_id;
+            const targetUrl = `${botApiBaseUrl}/api/internal/admin/stock?variant_id=${encodeURIComponent(variantId || '')}&auth=${encodeURIComponent(auth)}`;
+            const relayResponse = await fetch(targetUrl, {
+                method: 'GET',
+                headers: relayHeaders,
+            });
+            const relayData = await relayResponse.json().catch(() => ({}));
+            if (!relayResponse.ok) {
+                return error(res, relayData.error || 'Gagal memuat daftar stok', relayResponse.status);
             }
             return success(res, relayData);
         }

@@ -1,5 +1,4 @@
 // adminStock.js
-import { supabase } from './supabaseClient.js';
 import { fetchCatalog, currentBotId, urlParams } from './store.js';
 import { renderAdminView } from './adminProducts.js';
 
@@ -16,6 +15,17 @@ const btnToggleStockList = document.getElementById('btn-toggle-stock-list');
 const btnDeleteAllStock = document.getElementById('btn-delete-all-stock');
 const stockListContainer = document.getElementById('stock-list-container');
 const adminAuthToken = urlParams.get('auth') || '';
+
+async function fetchStockSnapshot(variantId) {
+    const response = await fetch(`/api/webapp/admin-stock?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&variant_id=${encodeURIComponent(variantId)}`);
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(result.error || 'Gagal memuat data stok');
+    }
+
+    return result.data || result;
+}
 
 export function initAdminStock() {
     if (btnTutorialFormat) {
@@ -92,8 +102,10 @@ export function initAdminStock() {
                     if (!response.ok) throw new Error(result.error || 'Gagal menghapus stok');
 
                     Swal.fire({ icon: 'success', title: 'Stok Dikosongkan', background: '#1e293b', color: '#fff', showConfirmButton: false, timer: 1500 });
-                    
-                    updateStockStats(); // Refresh stats
+
+                    await fetchCatalog();
+                    renderAdminView();
+                    updateStockStats();
                 } catch (e) {
                     Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, background: '#1e293b', color: '#fff' });
                 }
@@ -154,17 +166,8 @@ async function updateStockStats() {
     }
 
     try {
-        const { data: items, error } = await supabase
-            .from('inventory_items')
-            .select('status')
-            .eq('variant_id', selectedId);
-        
-        if (error) throw error;
-
-        const stats = { AVAILABLE: 0, RESERVED: 0, SOLD: 0 };
-        items.forEach(i => {
-            if (stats[i.status] !== undefined) stats[i.status]++;
-        });
+        const snapshot = await fetchStockSnapshot(selectedId);
+        const stats = snapshot.stats || { AVAILABLE: 0, RESERVED: 0, SOLD: 0 };
 
         document.getElementById('stock-stat-ready').textContent = stats.AVAILABLE;
         document.getElementById('stock-stat-reserved').textContent = stats.RESERVED;
@@ -187,15 +190,8 @@ async function renderStockItems() {
     stockListContainer.innerHTML = '<p class="text-[10px] text-gray-500 italic animate-pulse">Memuat data...</p>';
     
     try {
-        const { data: items, error } = await supabase
-            .from('inventory_items')
-            .select('id, payload')
-            .eq('variant_id', variantId)
-            .eq('status', 'AVAILABLE')
-            .order('created_at', { ascending: false })
-            .limit(50);
-
-        if (error) throw error;
+        const snapshot = await fetchStockSnapshot(variantId);
+        const items = Array.isArray(snapshot.items) ? snapshot.items : [];
 
         stockListContainer.innerHTML = '';
         if (items.length === 0) {
@@ -243,6 +239,8 @@ async function deleteStockItem(id) {
             if (!response.ok) throw new Error(result.error || 'Gagal menghapus item stok');
             
             Swal.fire({ icon: 'success', title: 'Terhapus', background: '#1e293b', color: '#fff', timer: 1000, showConfirmButton: false });
+            await fetchCatalog();
+            renderAdminView();
             updateStockStats();
         } catch (e) {
             Swal.fire({ icon: 'error', title: 'Gagal', text: e.message, background: '#1e293b', color: '#fff' });
