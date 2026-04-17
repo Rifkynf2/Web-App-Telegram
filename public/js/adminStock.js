@@ -1,6 +1,6 @@
 // adminStock.js
 import { supabase } from './supabaseClient.js';
-import { fetchCatalog } from './store.js';
+import { fetchCatalog, currentBotId, urlParams } from './store.js';
 import { renderAdminView } from './adminProducts.js';
 
 // Stock Management Modal Elements and Logic
@@ -15,6 +15,7 @@ const btnTutorialFormat = document.getElementById('btn-tutorial-format');
 const btnToggleStockList = document.getElementById('btn-toggle-stock-list');
 const btnDeleteAllStock = document.getElementById('btn-delete-all-stock');
 const stockListContainer = document.getElementById('stock-list-container');
+const adminAuthToken = urlParams.get('auth') || '';
 
 export function initAdminStock() {
     if (btnTutorialFormat) {
@@ -84,13 +85,11 @@ export function initAdminStock() {
 
             if (isConfirmed) {
                 try {
-                    const { error } = await supabase
-                        .from('inventory_items')
-                        .delete()
-                        .eq('variant_id', selectedVal)
-                        .eq('status', 'AVAILABLE');
-                    
-                    if (error) throw error;
+                    const response = await fetch(`/api/webapp/admin-stock?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&variant_id=${encodeURIComponent(selectedVal)}`, {
+                        method: 'DELETE'
+                    });
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(result.error || 'Gagal menghapus stok');
 
                     Swal.fire({ icon: 'success', title: 'Stok Dikosongkan', background: '#1e293b', color: '#fff', showConfirmButton: false, timer: 1500 });
                     
@@ -237,8 +236,11 @@ async function deleteStockItem(id) {
 
     if (isConfirmed) {
         try {
-            const { error } = await supabase.from('inventory_items').delete().eq('id', id);
-            if (error) throw error;
+            const response = await fetch(`/api/webapp/admin-stock?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&id=${encodeURIComponent(id)}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || 'Gagal menghapus item stok');
             
             Swal.fire({ icon: 'success', title: 'Terhapus', background: '#1e293b', color: '#fff', timer: 1000, showConfirmButton: false });
             updateStockStats();
@@ -348,14 +350,20 @@ async function finalizeStockSave(lines, variantId, skipped = 0) {
     Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
 
     try {
-        const itemsToInsert = lines.map(line => ({
-            variant_id: variantId,
-            payload: line,
-            status: 'AVAILABLE'
-        }));
-
-        const { error } = await supabase.from('inventory_items').insert(itemsToInsert);
-        if (error) throw error;
+        const response = await fetch('/api/webapp/admin-stock', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                bot_id: currentBotId,
+                auth: adminAuthToken,
+                variant_id: variantId,
+                lines
+            })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Gagal menyimpan stok');
 
         await fetchCatalog(); // Update memory
         renderAdminView();    // Update dashboard stats

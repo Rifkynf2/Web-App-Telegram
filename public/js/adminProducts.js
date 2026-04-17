@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js';
-import { tg, tgUser, catalogData, fetchCatalog, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, urlParams, initTenant } from './store.js';
+import { tg, tgUser, catalogData, fetchCatalog, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, urlParams, initTenant, currentBotId } from './store.js';
 import { formatCurrency, hideLoading, getImageFallback } from './utils.js';
 import { openStockModal, initAdminStock } from './adminStock.js';
 
@@ -19,6 +19,7 @@ const btnSaveProduct = document.getElementById('btn-save-product');
 const btnAddVariant = document.getElementById('btn-add-variant');
 const btnTutorialCdn = document.getElementById('btn-tutorial-cdn');
 const adminVariantsContainer = document.getElementById('admin-variants-container');
+const adminAuthToken = urlParams.get('auth') || '';
 
 export async function initAdminApp() {
     console.log("[App] Version: 1.1.0-tenant-resolver");
@@ -193,6 +194,7 @@ function createAdminProductRow(product) {
     div.className = 'glass-panel p-3 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors';
     
     const varCount = product.variants ? product.variants.length : 0;
+    const compactSubText = varCount > 0 ? `${varCount} Varian tersedia` : 'Belum ada varian';
     const subText = varCount > 1 ? `${varCount} Varian tersedia` : (product.variants[0]?.name + ' • ' + formatCurrency(product.variants[0]?.price));
 
     div.innerHTML = `
@@ -202,7 +204,7 @@ function createAdminProductRow(product) {
             </div>
             <div class="text-left w-full">
                 <h4 class="text-xs font-bold text-white line-clamp-1">${product.name}</h4>
-                <p class="text-[10px] text-gray-400 mt-1">${subText}</p>
+                <p class="text-[10px] text-gray-400 mt-1">${compactSubText}</p>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -525,17 +527,6 @@ async function saveProduct(pid, oldName) {
         };
         if (pid) productToSave.id = pid;
 
-        const { data: savedProduct, error: pError } = await supabase
-            .from('products')
-            .upsert(productToSave)
-            .select()
-            .single();
-
-        if (pError) throw pError;
-
-        const productId = savedProduct.id;
-
-        // 2. Prepare Variants
         const variantsToSave = [];
         variantBlocks.forEach((block) => {
             const vid = block.getAttribute('data-id');
@@ -544,7 +535,6 @@ async function saveProduct(pid, oldName) {
             const fulfillment = block.querySelector('.var-fulfillment').value;
             
             const variantData = {
-                product_id: productId,
                 name: vname,
                 price: price,
                 fulfillment: fulfillment,
@@ -558,9 +548,21 @@ async function saveProduct(pid, oldName) {
             variantsToSave.push(variantData);
         });
 
-        // 3. Upsert Variants
-        const { error: vError } = await supabase.from('variants').upsert(variantsToSave);
-        if (vError) throw vError;
+        const response = await fetch('/api/webapp/admin-products', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                bot_id: currentBotId,
+                auth: adminAuthToken,
+                product: productToSave,
+                variants: variantsToSave
+            })
+        });
+
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Gagal menyimpan produk');
 
         await fetchCatalog(); // Refresh memory
         
@@ -600,8 +602,11 @@ async function deleteProduct(id, name) {
         try {
             Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
             
-            const { error } = await supabase.from('products').delete().eq('id', id);
-            if (error) throw error;
+            const response = await fetch(`/api/webapp/admin-products?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&id=${encodeURIComponent(id)}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || 'Gagal menghapus produk');
 
             await fetchCatalog();
             

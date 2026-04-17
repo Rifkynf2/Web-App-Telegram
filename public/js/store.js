@@ -22,6 +22,10 @@ export const getShopName = () => {
     return currentBotId.replace(/_/g, ' ').toUpperCase();
 };
 
+export const getBotUsername = () => {
+    return tenantInfo?.botUsername || null;
+};
+
 // Shop Branding Settings
 export let shopSettings = {
     name: 'RNF BOT SYSTEM',

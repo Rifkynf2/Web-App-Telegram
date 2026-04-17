@@ -1,4 +1,4 @@
-import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, userName, userUsername, userPhoto, shopSettings, getShopName, initTenant } from './store.js';
+import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant } from './store.js';
 import { formatCurrency, hideLoading, getImageFallback } from './utils.js';
 
 // DOM Elements - Buyer
@@ -113,7 +113,10 @@ export async function initBuyerApp() {
         });
     }
 
-    if (btnBackToBot && currentBotId) {
+    const botUsername = getBotUsername();
+    if (btnBackToBot && botUsername) {
+        btnBackToBot.href = `tg://resolve?domain=${botUsername}`;
+    } else if (btnBackToBot && currentBotId) {
         btnBackToBot.href = `tg://resolve?domain=${currentBotId}`;
     }
 
