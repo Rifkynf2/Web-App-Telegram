@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tailwindcss -i ./public/index.css -o ./public/style/style.css",
+    "build": "node generate-config.js && tailwindcss -i ./public/index.css -o ./public/style/style.css",
     "dev": "tailwindcss -i ./public/index.css -o ./public/style/style.css --watch"
   },
   "keywords": [],
