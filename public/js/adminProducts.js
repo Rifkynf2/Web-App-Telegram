@@ -121,11 +121,13 @@ export async function initAdminApp() {
     }
 
     // 5. Fetch Live Data in Parallel (Super Irit & Cepat)
+    console.log("[Stats] Fetching data...");
     const [stats] = await Promise.all([
         fetchAdminStats(),
         fetchShopSettings(),
         fetchCatalog()
     ]);
+    console.log("[Stats] Received:", stats);
 
     if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
     
