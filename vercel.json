@@ -2,6 +2,8 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/master", "destination": "/public/master-dashboard.html" },
+    { "source": "/admin", "destination": "/public/admin.html" },
     { "source": "/(.*)", "destination": "/public/$1" }
   ],
   "headers": [
@@ -9,8 +11,14 @@
       "source": "/api/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,X-Bot-Id,X-Timestamp,X-Signature,X-Telegram-Init-Data,X-Admin-Secret" },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,PUT,DELETE,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type,X-Bot-Id,X-Timestamp,X-Signature,X-Telegram-Init-Data,X-Admin-Secret"
+        },
         { "key": "Cache-Control", "value": "no-store" }
       ]
     }
