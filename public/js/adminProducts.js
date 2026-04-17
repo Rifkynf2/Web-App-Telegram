@@ -21,7 +21,7 @@ const btnTutorialCdn = document.getElementById('btn-tutorial-cdn');
 const adminVariantsContainer = document.getElementById('admin-variants-container');
 
 export async function initAdminApp() {
-    // 1. Technical & Security Check
+    // 1. Technical & Environment Check
     if (tg && tg.initData) {
         if (telegramFallback) telegramFallback.classList.add('hidden');
         tg.expand();
@@ -31,22 +31,57 @@ export async function initAdminApp() {
         return;
     }
 
-    const isAdmin = await checkIsAdmin(tgUser?.id);
-    if (!isAdmin) {
+    // 2. Security Gate (Token Verification)
+    const urlAuthToken = urlParams.get('auth');
+    let dbAuthToken = null;
+
+    try {
+        const { data, error } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('key', 'ADMIN_AUTH_TOKEN')
+            .maybeSingle();
+        
+        if (data) dbAuthToken = data.value;
+    } catch (e) {
+        console.error("Security fetch failed", e);
+    }
+
+    // Validate Token
+    if (!urlAuthToken || urlAuthToken !== dbAuthToken) {
+        hideLoading();
         Swal.fire({
-            title: 'Akses Ditolak',
-            text: 'ID Telegram Anda tidak terdaftar sebagai Admin.',
-            icon: 'error',
+            title: '🔐 Keamanan: Akses Ditolak',
+            text: 'Token keamanan tidak valid atau sudah kedaluwarsa. Silakan ambil link baru dari bot.',
+            icon: 'warning',
             confirmButtonText: 'Kembali Ke Bot',
             background: '#1e293b',
-            color: '#fff'
+            color: '#fff',
+            allowOutsideClick: false
         }).then(() => {
             window.location.href = `https://t.me/rnf_shopp`;
         });
         return;
     }
 
-    // 2. Fetch Live Data in Parallel (Super Irit & Cepat)
+    // 3. Identity Check (Admin Role)
+    const isAdmin = await checkIsAdmin(tgUser?.id);
+    if (!isAdmin) {
+        hideLoading();
+        Swal.fire({
+            title: 'Akses Ditolak',
+            text: 'ID Telegram Anda tidak terdaftar sebagai Admin di database.',
+            icon: 'error',
+            confirmButtonText: 'Tutup',
+            background: '#1e293b',
+            color: '#fff'
+        }).then(() => {
+            tg.close();
+        });
+        return;
+    }
+
+    // 4. Fetch Live Data in Parallel (Super Irit & Cepat)
     const [stats] = await Promise.all([
         fetchAdminStats(),
         fetchShopSettings(),
