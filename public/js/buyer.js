@@ -68,7 +68,15 @@ export async function initBuyerApp() {
         hideLoading();
         if (telegramFallback) telegramFallback.classList.add('hidden');
         const errorState = document.getElementById('error-state');
+        const errorTitle = document.getElementById('error-title');
+        const errorMessage = document.getElementById('error-message');
+        
         if (errorState) errorState.classList.replace('hidden', 'flex');
+        if (errorTitle) errorTitle.textContent = 'Konfigurasi Belum Lengkap';
+        if (errorMessage) {
+            const bId = urlParams.get('bot_id') || 'KOSONG';
+            errorMessage.innerHTML = `Bot ID: <b>${bId}</b> belum terdaftar atau link tidak lengkap.<br><br>Pastikan URL di BotFather sudah menyertakan <b>?bot_id=...</b>`;
+        }
         return;
     }
 

@@ -46,7 +46,15 @@ export async function initAdminApp() {
         hideLoading();
         if (telegramFallback) telegramFallback.classList.add('hidden');
         const errorState = document.getElementById('error-state');
+        const errorTitle = document.getElementById('error-title');
+        const errorMessage = document.getElementById('error-message');
+
         if (errorState) errorState.classList.replace('hidden', 'flex');
+        if (errorTitle) errorTitle.textContent = 'Konfigurasi Tenant Gagal';
+        if (errorMessage) {
+            const bId = urlParams.get('bot_id') || 'KOSONG';
+            errorMessage.innerHTML = `Bot ID: <b>${bId}</b>. Link Admin tidak lengkap atau bot belum terdaftar di Master DB.<br><br>Gunakan link /admin yang diberikan oleh bot.`;
+        }
         return;
     }
 
