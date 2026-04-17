@@ -335,6 +335,23 @@ BEGIN
 END $$;
 
 -- =========================================================
+-- RPC: Cleanup old audit logs (>24 hours)
+-- =========================================================
+CREATE OR REPLACE FUNCTION public.cleanup_old_audit_logs()
+RETURNS INTEGER
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_deleted INTEGER;
+BEGIN
+  -- Hapus log yang umurnya lebih dari 24 jam (1 hari)
+  DELETE FROM public.audit_logs
+  WHERE created_at < (NOW() - INTERVAL '24 hours');
+  
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END $$;
+
+-- =========================================================
 -- RPC: Get dashboard stats for admin
 -- =========================================================
 CREATE OR REPLACE FUNCTION public.get_master_stats()

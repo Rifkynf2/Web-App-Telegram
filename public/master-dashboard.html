@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Master Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --border-color: #334155;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --border-radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        /* Login Overlay */
+        #loginOverlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .login-box {
+            background: var(--surface-color);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid var(--border-color);
+        }
+
+        .login-box h2 {
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn:hover { background: var(--primary-hover); }
+        .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        
+        .btn-danger { background: var(--danger-color); }
+        .btn-danger:hover { background: #b91c1c; }
+        
+        .btn-success { background: var(--success-color); }
+        .btn-success:hover { background: #047857; }
+        
+        .btn-warning { background: var(--warning-color); color: #fff;}
+        .btn-warning:hover { background: #b45309; }
+
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.875rem; width: auto; }
+
+        /* Main Layout */
+        .app-container {
+            display: none; /* Shown after login */
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        header h1 i { color: var(--primary-color); }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--card-shadow);
+        }
+
+        .stat-card h3 {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover { color: var(--text-color); }
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* Table */
+        .table-container {
+            background: var(--surface-color);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: rgba(15, 23, 42, 0.4);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+
+        td { font-size: 0.95rem; }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-active { background: rgba(16, 185, 129, 0.1); color: var(--success-color); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .badge-suspended { background: rgba(239, 68, 68, 0.1); color: var(--danger-color); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .badge-banned { background: rgba(0, 0, 0, 0.3); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .badge-trial { background: rgba(59, 130, 246, 0.1); color: var(--primary-color); border: 1px solid rgba(59, 130, 246, 0.2); }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title { font-size: 1.25rem; font-weight: 600; }
+        .close-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.25rem; }
+        .close-btn:hover { color: white; }
+
+        .modal-body { margin-bottom: 1.5rem; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 1rem; }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            background: var(--surface-color);
+            color: var(--text-color);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s forwards;
+        }
+
+        .toast.success { border-color: var(--success-color); }
+        .toast.error { border-color: var(--danger-color); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Utilities */
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        .refresh-btn:hover { background: rgba(255, 255, 255, 0.15); }
+        
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Overlay -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2><i class="fa-solid fa-shield-halved" style="color: var(--primary-color); margin-right: 10px;"></i>Master Access</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Authenticate to access the SaaS control panel.</p>
+            <form id="loginForm">
+                <div class="input-group">
+                    <input type="password" id="adminSecret" placeholder="Enter Admin Dashboard Secret" required>
+                </div>
+                <button type="submit" class="btn" id="loginBtn">
+                    <i class="fa-solid fa-lock"></i> Access Dashboard
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="app-container" id="mainApp">
+        <header>
+            <h1><i class="fa-solid fa-network-wired"></i> Master Dashboard</h1>
+            <div style="display: flex; gap: 1rem;">
+                <button class="refresh-btn" id="btnRefresh">
+                    <i class="fa-solid fa-rotate-right"></i> Refresh
+                </button>
+                <button class="refresh-btn" id="btnLogout" style="color: var(--danger-color); border-color: rgba(239, 68, 68, 0.3);">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Global Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Tenants</h3>
+                <div class="value" id="statTotalTenants">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Tenants</h3>
+                <div class="value" id="statActiveTenants">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Expiring Soon</h3>
+                <div class="value" id="statExpiring" style="color: var(--warning-color);">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Revenue</h3>
+                <div class="value" id="statRevenue" style="color: var(--success-color);">-</div>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="tenants">Manage Tenants</button>
+        </div>
+
+        <!-- TAB CONTENT: Tenants -->
+        <div id="tab-tenants" class="tab-pane active">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Bot ID</th>
+                            <th>Shop Name (@username)</th>
+                            <th>Status (Tenant)</th>
+                            <th>Rental Status</th>
+                            <th>Expiry</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tenantsTableBody">
+                        <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><br>Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Modal -->
+    <div class="modal" id="actionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Modal Title</h3>
+                <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content injected dynamically -->
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <!-- Buttons injected dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toasts container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/js/masterDashboard.js"></script>
+</body>
+</html>
