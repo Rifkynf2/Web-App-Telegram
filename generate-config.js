@@ -7,12 +7,13 @@ if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir, { recursive: true });
 }
 
-// Generate the config content from environment variables
-const content = `window.config = {
-  supabaseUrl: "${process.env.SUPABASE_URL || ''}",
-  supabaseAnonKey: "${process.env.SUPABASE_ANON_KEY || ''}"
-};`;
+// Generate ES Module config from environment variables (Master DB)
+const content = `export const CONFIG = {
+    SUPABASE_URL: "${process.env.SUPABASE_URL || ''}",
+    SUPABASE_ANON_KEY: "${process.env.SUPABASE_ANON_KEY || ''}"
+};
+`;
 
 // Write to public/js/config.js
 fs.writeFileSync(path.join(configDir, 'config.js'), content);
-console.log('✓ config.js has been generated from Environment Variables.');
+console.log('✓ config.js generated (ES Module format) from Environment Variables.');
