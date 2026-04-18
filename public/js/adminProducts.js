@@ -22,6 +22,22 @@ const adminVariantsContainer = document.getElementById('admin-variants-container
 const adminAuthToken = urlParams.get('auth') || '';
 let adminCatalogData = [];
 let latestAdminStats = null;
+let deletedVariantIds = [];
+
+function updateVariantStatusBadge(block) {
+    const select = block.querySelector('.var-status');
+    const badge = block.querySelector('.variant-status-badge');
+    const isActive = select?.value === 'true';
+
+    if (!badge) return;
+
+    badge.textContent = isActive ? 'Aktif' : 'Nonaktif';
+    badge.className = `variant-status-badge inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] ${
+        isActive
+            ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-300'
+            : 'border-amber-400/40 bg-amber-500/15 text-amber-200'
+    }`;
+}
 
 export async function initAdminApp() {
     console.log("[App] Version: 1.1.0-tenant-resolver");
@@ -319,6 +335,10 @@ function addVariantBlock(variant = null) {
         <button class="absolute top-3 right-3 text-red-400 hover:text-red-300 transition-colors btn-remove-variant" title="Hapus Varian">
             <i class="fa-solid fa-circle-minus"></i>
         </button>
+        <div class="mt-1 flex items-center justify-between gap-2 pr-8">
+            <div class="text-[10px] uppercase tracking-[0.25em] text-slate-400 font-bold">Varian</div>
+            <span class="variant-status-badge inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em]"></span>
+        </div>
         
         <div class="grid grid-cols-2 gap-3 mt-2">
             <div class="flex flex-col gap-1.5 col-span-2 sm:col-span-1">
@@ -386,6 +406,8 @@ function addVariantBlock(variant = null) {
             </div>
         </div>
     `;
+
+    updateVariantStatusBadge(div);
 
     div.querySelector('.btn-tutorial-fulfill').addEventListener('click', () => {
         Swal.fire({
@@ -486,6 +508,10 @@ function addVariantBlock(variant = null) {
         });
     });
 
+    div.querySelector('.var-status').addEventListener('change', () => {
+        updateVariantStatusBadge(div);
+    });
+
     div.querySelector('.btn-remove-variant').addEventListener('click', () => {
         if (adminVariantsContainer.children.length > 1) {
             Swal.fire({
@@ -501,6 +527,10 @@ function addVariantBlock(variant = null) {
                 color: '#fff'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    const variantId = div.getAttribute('data-id');
+                    if (variantId && !deletedVariantIds.includes(variantId)) {
+                        deletedVariantIds.push(variantId);
+                    }
                     div.remove();
                 }
             });
@@ -519,6 +549,7 @@ function openAdminModal(product = null) {
     const inputDesc = document.getElementById('admin-input-desc');
     
     adminVariantsContainer.innerHTML = '';
+    deletedVariantIds = [];
 
     if (product) {
         title.textContent = 'Edit Produk';
@@ -603,7 +634,8 @@ async function saveProduct(pid, oldName) {
                 bot_id: currentBotId,
                 auth: adminAuthToken,
                 product: productToSave,
-                variants: variantsToSave
+                variants: variantsToSave,
+                deleted_variant_ids: deletedVariantIds
             })
         });
 

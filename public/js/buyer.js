@@ -226,10 +226,11 @@ function openDetailModal(product) {
     const finalImageUrl = getImageFallback(product.image_url, product.name);
     detailImage.style.backgroundImage = `url('${finalImageUrl}')`;
     
-    // Set random-looking sold count for aesthetic
     if (detailSoldCount) {
-        const baseSold = 1000 + (product.id * 123);
-        detailSoldCount.textContent = `${baseSold.toLocaleString()} terjual`;
+        const soldCount = (product.variants || []).reduce((sum, variant) => {
+            return sum + (Number.parseInt(variant.total_sold ?? 0, 10) || 0);
+        }, 0);
+        detailSoldCount.textContent = `${soldCount.toLocaleString('id-ID')} terjual`;
     }
 
     // Render Variants as Cards

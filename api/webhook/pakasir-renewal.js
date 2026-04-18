@@ -242,13 +242,16 @@ module.exports = async function handler(req, res) {
 
         // ========== LAYER 5: Notify Bot Instance to Invalidate Cache ==========
         // Best-effort, only on first successful finalization
-        if (result.status === 'success' && bot_api_base_url) {
+        if (bot_api_base_url && (result.status === 'success' || needsQrisDeletion)) {
             try {
-                await axios.post(`${bot_api_base_url}/api/internal/renewal-callback`, {
+                const callbackResp = await axios.post(`${bot_api_base_url}/api/internal/renewal-callback`, {
                     action: 'invalidate_cache',
                     bot_id: bot_id,
                     invoice_id: orderId,
                     new_expiry: new_expiry,
+                    qris_chat_id: qris_chat_id,
+                    qris_message_id: qris_message_id,
+                    qris_deleted: result.qris_deleted || false,
                 }, {
                     headers: {
                         'X-Internal-Api-Secret': process.env.INTERNAL_API_SECRET || '',
@@ -257,6 +260,14 @@ module.exports = async function handler(req, res) {
                     timeout: 5000,
                 });
                 console.log(`[Renewal-Webhook] 🔄 Cache invalidation sent to ${bot_api_base_url}`);
+                const fallbackDeleted = callbackResp.data?.qris_deleted === true;
+
+                if (fallbackDeleted && !result.qris_deleted) {
+                    await masterDb.from('rental_invoices')
+                        .update({ qris_deleted: true })
+                        .eq('id', orderId)
+                        .catch(err => console.error('[Renewal-Webhook] Failed to persist fallback qris_deleted flag:', err.message));
+                }
             } catch (cacheErr) {
                 console.log(`[Renewal-Webhook] Cache invalidation to bot failed (non-fatal): ${cacheErr.message}`);
             }
