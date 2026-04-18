@@ -73,6 +73,7 @@ export async function resolveTenant(botId) {
         tenantInfo = {
             shopName: config.shop_name,
             botUsername: config.bot_username,
+            botPhotoUrl: config.bot_photo_url || null,
             telegramUser: config.telegram_user
         };
 
@@ -140,6 +141,7 @@ export async function initSession(botId) {
         tenantInfo = {
             shopName: data.tenant?.shop_name,
             botUsername: data.tenant?.username,
+            botPhotoUrl: data.tenant?.bot_photo_url || null,
             telegramUser: data.user
         };
 

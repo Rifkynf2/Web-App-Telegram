@@ -2,6 +2,32 @@ const { getMasterSupabase } = require('../_lib/masterSupabase');
 const { validateTelegramInitData } = require('../_lib/telegramAuth');
 const { success, error, notFound, forbidden, serverError, handleCors } = require('../_lib/response');
 
+async function getBotProfilePhotoUrl(botToken) {
+    if (!botToken) return null;
+
+    try {
+        const meRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+        const meJson = await meRes.json().catch(() => ({}));
+        const botId = meJson?.result?.id;
+        if (!meRes.ok || !botId) return null;
+
+        const photosRes = await fetch(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos?user_id=${botId}&limit=1`);
+        const photosJson = await photosRes.json().catch(() => ({}));
+        const fileId = photosJson?.result?.photos?.[0]?.[0]?.file_id;
+        if (!photosRes.ok || !fileId) return null;
+
+        const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
+        const fileJson = await fileRes.json().catch(() => ({}));
+        const filePath = fileJson?.result?.file_path;
+        if (!fileRes.ok || !filePath) return null;
+
+        return `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+    } catch (err) {
+        console.error('[API/webapp/tenant-config] Bot photo lookup error:', err.message);
+        return null;
+    }
+}
+
 /**
  * GET /api/webapp/tenant-config?bot_id=xxx
  * 
@@ -49,7 +75,7 @@ module.exports = async function handler(req, res) {
         // 2. Check tenant exists and is active
         const { data: tenant, error: tErr } = await masterDb
             .from('tenants')
-            .select('status, shop_name, username')
+            .select('status, shop_name, username, bot_token')
             .eq('bot_id', botId)
             .single();
 
@@ -90,12 +116,15 @@ module.exports = async function handler(req, res) {
             return notFound(res, 'Konfigurasi toko tidak ditemukan');
         }
 
+        const botPhotoUrl = await getBotProfilePhotoUrl(tenant.bot_token);
+
         // 5. Return safe credentials
         return success(res, {
             supabase_url: config.supabase_url,
             supabase_anon_key: config.supabase_anon_key,
             shop_name: tenant.shop_name,
             bot_username: tenant.username,
+            bot_photo_url: botPhotoUrl,
             telegram_user: telegramUser
         });
     } catch (err) {

@@ -28,8 +28,9 @@ async function getTenantBotApiBaseUrl(botId) {
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
-    const botId = req.method === 'DELETE' ? req.query.bot_id : req.body?.bot_id;
-    const auth = req.method === 'DELETE' ? req.query.auth : req.body?.auth;
+    const useQueryParams = req.method === 'GET' || req.method === 'DELETE';
+    const botId = useQueryParams ? req.query.bot_id : req.body?.bot_id;
+    const auth = useQueryParams ? req.query.auth : req.body?.auth;
 
     if (!botId || !auth) {
         return error(res, 'bot_id and auth are required');
@@ -60,6 +61,18 @@ module.exports = async function handler(req, res) {
             const relayData = await relayResponse.json().catch(() => ({}));
             if (!relayResponse.ok) {
                 return error(res, relayData.error || 'Gagal menyimpan produk', relayResponse.status);
+            }
+            return success(res, relayData);
+        }
+
+        if (req.method === 'GET') {
+            const relayResponse = await fetch(`${botApiBaseUrl}/api/internal/admin/products?auth=${encodeURIComponent(auth)}`, {
+                method: 'GET',
+                headers: relayHeaders,
+            });
+            const relayData = await relayResponse.json().catch(() => ({}));
+            if (!relayResponse.ok) {
+                return error(res, relayData.error || 'Gagal memuat produk admin', relayResponse.status);
             }
             return success(res, relayData);
         }

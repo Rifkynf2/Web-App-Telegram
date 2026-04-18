@@ -230,7 +230,7 @@ CREATE INDEX IF NOT EXISTS idx_sessions_hash ON public.miniapp_sessions(init_dat
 ALTER TABLE public.miniapp_sessions ENABLE ROW LEVEL SECURITY;
 
 -- =========================================================
--- 8) RENTAL_INVOICES — UPDATE dari v1 (tambah plan_id)
+-- 8) RENTAL_INVOICES — UPDATE dari v1 (tambah plan_id + QRIS tracking)
 -- =========================================================
 DO $$ BEGIN
   ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES public.plans(id);
@@ -238,6 +238,25 @@ EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DO $$ BEGIN
   ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- v3: QRIS message tracking for centralized webhook relay
+-- Stores Telegram chat/message IDs so Gateway can instruct tenant bot to delete QRIS after payment
+DO $$ BEGIN
+  ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS qris_chat_id BIGINT;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS qris_message_id BIGINT;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- v4: Notification delivery tracking for retriable webhook delivery
+DO $$ BEGIN
+  ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS notification_sent BOOLEAN NOT NULL DEFAULT FALSE;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS qris_deleted BOOLEAN NOT NULL DEFAULT FALSE;
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 DROP TRIGGER IF EXISTS rental_invoices_set_updated_at ON public.rental_invoices;
@@ -384,7 +403,135 @@ BEGIN
   RETURN result;
 END $$;
 
-COMMIT;
+-- =========================================================
+-- 13) RPC: process_renewal_payment — Atomic Payment Finalization
+-- =========================================================
+-- All renewal finalization steps in 1 transaction:
+--   invoice claim + subscription extend + tenant activate + audit log
+-- If ANY step fails → full rollback → invoice stays PENDING → retry works.
+-- On already_processed: returns full tenant data so webhook can retry notification.
+CREATE OR REPLACE FUNCTION public.process_renewal_payment(
+    p_invoice_id UUID,
+    p_amount INT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_inv RECORD;
+    v_existing_status TEXT;
+    v_current_expiry TIMESTAMPTZ;
+    v_duration_days INT := 31;
+    v_base_date TIMESTAMPTZ;
+    v_new_expiry TIMESTAMPTZ;
+    v_bot_id BIGINT;
+    v_tenant RECORD;
+    v_now TIMESTAMPTZ := NOW();
+BEGIN
+    -- Step 1: Atomic claim with row-level lock (PENDING → PAID)
+    UPDATE rental_invoices 
+    SET status = 'PAID', paid_at = v_now
+    WHERE id = p_invoice_id AND status = 'PENDING'
+    RETURNING * INTO v_inv;
+
+    IF NOT FOUND THEN
+        SELECT ri.status INTO v_existing_status
+        FROM rental_invoices ri WHERE ri.id = p_invoice_id;
+
+        IF v_existing_status = 'PAID' THEN
+            -- Return full data so webhook handler can retry notification/deletion
+            RETURN (
+                SELECT jsonb_build_object(
+                    'status',             'already_processed',
+                    'bot_id',             ri.bot_id,
+                    'new_expiry',         s.expiry_date,
+                    'duration_days',      COALESCE(pl.duration_days, 31),
+                    'notification_sent',  ri.notification_sent,
+                    'qris_deleted',       ri.qris_deleted,
+                    'qris_chat_id',       ri.qris_chat_id,
+                    'qris_message_id',    ri.qris_message_id,
+                    'bot_token',          t.bot_token,
+                    'owner_chat_id',      t.owner_chat_id,
+                    'bot_api_base_url',   t.metadata->>'bot_api_base_url'
+                )
+                FROM rental_invoices ri
+                LEFT JOIN tenants t ON t.bot_id = ri.bot_id
+                LEFT JOIN subscriptions s ON s.bot_id = ri.bot_id
+                LEFT JOIN plans pl ON pl.id = ri.plan_id
+                WHERE ri.id = p_invoice_id
+            );
+        ELSIF v_existing_status IS NOT NULL THEN
+            RETURN jsonb_build_object('status', 'invalid_status', 'current_status', v_existing_status);
+        ELSE
+            RETURN jsonb_build_object('status', 'not_found');
+        END IF;
+    END IF;
+
+    v_bot_id := v_inv.bot_id;
+
+    -- Step 2: Resolve plan duration
+    IF v_inv.plan_id IS NOT NULL THEN
+        SELECT p.duration_days INTO v_duration_days
+        FROM plans p WHERE p.id = v_inv.plan_id;
+        v_duration_days := COALESCE(v_duration_days, 31);
+    END IF;
+
+    -- Step 3: Calculate new expiry (extend from current if still active)
+    SELECT s.expiry_date INTO v_current_expiry
+    FROM subscriptions s WHERE s.bot_id = v_bot_id
+    ORDER BY s.expiry_date DESC LIMIT 1;
+
+    v_base_date := GREATEST(COALESCE(v_current_expiry, v_now), v_now);
+    v_new_expiry := v_base_date + make_interval(days => v_duration_days);
+
+    -- Step 4: Upsert subscription
+    INSERT INTO subscriptions (bot_id, plan_id, expiry_date, status, last_payment_at)
+    VALUES (v_bot_id, v_inv.plan_id, v_new_expiry, 'ACTIVE', v_now)
+    ON CONFLICT (bot_id) DO UPDATE SET
+        plan_id     = EXCLUDED.plan_id,
+        expiry_date = EXCLUDED.expiry_date,
+        status      = EXCLUDED.status,
+        last_payment_at = EXCLUDED.last_payment_at;
+
+    -- Step 5: Activate tenant
+    UPDATE tenants SET status = 'ACTIVE' WHERE bot_id = v_bot_id;
+
+    -- Step 6: Audit log
+    INSERT INTO audit_logs (bot_id, actor, action, entity, entity_id, detail)
+    VALUES (
+        v_bot_id, 'system', 'PAYMENT_CONFIRMED', 'rental_invoices',
+        p_invoice_id::TEXT,
+        jsonb_build_object(
+            'amount', p_amount,
+            'new_expiry', v_new_expiry,
+            'duration_days', v_duration_days,
+            'source', 'centralized_webhook'
+        )
+    );
+
+    -- Step 7: Fetch tenant info for notification
+    SELECT t.bot_token, t.owner_chat_id, t.metadata
+    INTO v_tenant
+    FROM tenants t WHERE t.bot_id = v_bot_id;
+
+    -- Return with notification_sent=false, qris_deleted=false (just finalized)
+    RETURN jsonb_build_object(
+        'status',             'success',
+        'bot_id',             v_bot_id,
+        'new_expiry',         v_new_expiry,
+        'duration_days',      v_duration_days,
+        'notification_sent',  FALSE,
+        'qris_deleted',       FALSE,
+        'qris_chat_id',       v_inv.qris_chat_id,
+        'qris_message_id',    v_inv.qris_message_id,
+        'bot_token',          v_tenant.bot_token,
+        'owner_chat_id',      v_tenant.owner_chat_id,
+        'bot_api_base_url',   v_tenant.metadata->>'bot_api_base_url'
+    );
+END;
+$$;
 
 -- =========================================================
 -- SELESAI! Jalankan SQL ini di Supabase SQL Editor

@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
-import { tg, tgUser, catalogData, fetchCatalog, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, urlParams, initTenant, currentBotId } from './store.js';
-import { formatCurrency, hideLoading, getImageFallback } from './utils.js';
+import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId } from './store.js';
+import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl } from './utils.js';
 import { openStockModal, initAdminStock } from './adminStock.js';
 
 const telegramFallback = document.getElementById('telegram-fallback');
@@ -20,6 +20,8 @@ const btnAddVariant = document.getElementById('btn-add-variant');
 const btnTutorialCdn = document.getElementById('btn-tutorial-cdn');
 const adminVariantsContainer = document.getElementById('admin-variants-container');
 const adminAuthToken = urlParams.get('auth') || '';
+let adminCatalogData = [];
+let latestAdminStats = null;
 
 export async function initAdminApp() {
     console.log("[App] Version: 1.1.0-tenant-resolver");
@@ -123,29 +125,40 @@ export async function initAdminApp() {
 
     // 5. Fetch Live Data in Parallel (Super Irit & Cepat)
     console.log("[Stats] Fetching data...");
-    const [stats] = await Promise.all([
-        fetchAdminStats(),
+    const [_, adminData] = await Promise.all([
         fetchShopSettings(),
-        fetchCatalog()
+        refreshAdminData()
     ]);
-    console.log("[Stats] Received:", stats);
+    console.log("[Stats] Received:", adminData?.stats);
 
     if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
     
     initAdminStock();
-    renderAdminView(stats);
     setupAdminModalListeners();
     hideLoading();
 }
 
+export async function refreshAdminData() {
+    const [stats, products] = await Promise.all([
+        fetchAdminStats(),
+        fetchAdminCatalog(adminAuthToken)
+    ]);
+
+    latestAdminStats = stats;
+    adminCatalogData = products;
+    renderAdminView(stats);
+    return { stats, products };
+}
+
 function renderAdminView(stats = null) {
+    stats = stats || latestAdminStats;
     if (elShopName) elShopName.textContent = "Admin Panel";
     if (elShopDesc) elShopDesc.textContent = "Kelola Katalog Toko";
     
     const adminView = document.getElementById('admin-view');
     if (adminView) adminView.classList.remove('hidden');
     
-    const products = catalogData;
+    const products = adminCatalogData;
 
     // Live Stats injection
     const eProd = document.getElementById('admin-stat-products');
@@ -155,18 +168,35 @@ function renderAdminView(stats = null) {
     const eOrderToday = document.getElementById('admin-stat-orders-today');
     const eRevenue = document.getElementById('admin-stat-revenue');
 
-    if(eProd) eProd.textContent = products.length;
-    if(eStock) eStock.textContent = products.reduce((sum, p) => sum + p.stock_count, 0);
+    if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
+    const logo = document.getElementById('shop-logo');
+    const logoFallback = document.getElementById('shop-initial');
+    const logoUrl = stats?.logo_url || shopSettings.logoUrl || '';
+    if (logo) {
+        if (logoUrl) {
+            logo.src = logoUrl;
+            logo.classList.remove('hidden');
+            if (logoFallback) logoFallback.classList.add('hidden');
+        } else {
+            logo.removeAttribute('src');
+            logo.classList.add('hidden');
+            if (logoFallback) logoFallback.classList.remove('hidden');
+        }
+    }
+
+    if(eProd) eProd.textContent = stats?.products ?? products.length;
+    if(eStock) eStock.textContent = stats?.stock_available ?? products.reduce((sum, p) => sum + p.stock_count, 0);
     
     // Revenue & Sold from product metrics (simplified)
-    const totalSold = products.reduce((sum, p) => sum + parseInt(p.total_sold || 0), 0);
+    const totalSold = products.reduce((sum, p) => sum + p.variants.reduce((variantSum, variant) => variantSum + parseInt(variant.total_sold || 0, 10), 0), 0);
     if(eSold) eSold.textContent = totalSold;
     
     // Real Stats from Database (Highly optimized)
     if(stats) {
         if(eUsers) eUsers.textContent = stats.users;
-        if(eOrderToday) eOrderToday.textContent = stats.orders;
-        if(eRevenue) eRevenue.textContent = formatCurrency(stats.revenue);
+        if(eOrderToday) eOrderToday.textContent = stats.orders_today;
+        if(eRevenue) eRevenue.textContent = formatCurrency(stats.revenue_lifetime);
+        if(eSold) eSold.textContent = stats.sold_lifetime ?? totalSold;
     }
 
     if (adminList) {
@@ -194,8 +224,10 @@ function createAdminProductRow(product) {
     div.className = 'glass-panel p-3 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors';
     
     const varCount = product.variants ? product.variants.length : 0;
-    const compactSubText = varCount > 0 ? `${varCount} Varian tersedia` : 'Belum ada varian';
-    const subText = varCount > 1 ? `${varCount} Varian tersedia` : (product.variants[0]?.name + ' • ' + formatCurrency(product.variants[0]?.price));
+    const activeVarCount = (product.variants || []).filter((variant) => variant.is_active !== false).length;
+    const compactSubText = varCount > 0 ? `${activeVarCount}/${varCount} varian aktif` : 'Belum ada varian';
+    const lowestPrice = getLowestVariantPrice((product.variants || []).filter((variant) => variant.is_active !== false));
+    const productStatus = product.is_active === false ? 'Nonaktif' : 'Aktif';
 
     div.innerHTML = `
         <div class="flex items-center gap-3">
@@ -204,7 +236,8 @@ function createAdminProductRow(product) {
             </div>
             <div class="text-left w-full">
                 <h4 class="text-xs font-bold text-white line-clamp-1">${product.name}</h4>
-                <p class="text-[10px] text-gray-400 mt-1">${compactSubText}</p>
+                <p class="text-[10px] text-gray-400 mt-1">${compactSubText} • ${formatCurrency(lowestPrice)}</p>
+                <p class="text-[9px] ${product.is_active === false ? 'text-red-400' : 'text-emerald-400'} mt-1 uppercase tracking-widest font-bold">${productStatus}</p>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -279,7 +312,7 @@ function addVariantBlock(variant = null) {
     div.className = 'glass-panel p-4 flex flex-col gap-3 relative overflow-hidden bg-black/20';
     if (variant && variant.id) div.setAttribute('data-id', variant.id);
     
-    const defaultData = variant || { name: '', price: '', fulfillment: '', description: '', min_qty: 1, max_qty: 999, qty_per_purchase: 1, snk: '' };
+    const defaultData = variant || { name: '', price: '', fulfillment: '', description: '', min_qty: 1, max_qty: 999, qty_per_purchase: 1, snk: '', is_active: true };
     
     div.innerHTML = `
         <div class="absolute top-0 right-0 left-0 h-1 bg-indigo-500/50"></div>
@@ -343,6 +376,13 @@ function addVariantBlock(variant = null) {
             <div class="flex flex-col gap-1.5">
                 <label class="text-[9px] text-gray-400">Bulk/Paket</label>
                 <input type="number" value="${defaultData.qty_per_purchase}" min="1" class="var-qpp bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
+            </div>
+            <div class="flex flex-col gap-1.5 col-span-3">
+                <label class="text-[9px] text-gray-400">Status Varian</label>
+                <select class="var-status bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-2 text-white text-xs">
+                    <option value="true" ${defaultData.is_active !== false ? 'selected' : ''} class="bg-slate-900">Aktif</option>
+                    <option value="false" ${defaultData.is_active === false ? 'selected' : ''} class="bg-slate-900">Nonaktif</option>
+                </select>
             </div>
         </div>
     `;
@@ -518,10 +558,15 @@ async function saveProduct(pid, oldName) {
     Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
 
     try {
+        const normalizedImage = image ? normalizeImageUrl(image) : '';
+        if (image && !normalizedImage) {
+            throw new Error('URL gambar tidak valid. Gunakan direct image URL. Link halaman seperti ibb.co/ImgBB preview tidak didukung.');
+        }
+
         // 1. Upsert Product
         const productToSave = { 
             name, 
-            image_url: image, 
+            image_url: normalizedImage || '', 
             description: desc,
             is_active: true
         };
@@ -542,7 +587,8 @@ async function saveProduct(pid, oldName) {
                 min_qty: parseInt(block.querySelector('.var-min').value),
                 max_qty: parseInt(block.querySelector('.var-max').value),
                 qty_per_purchase: parseInt(block.querySelector('.var-qpp').value),
-                is_active: true
+                is_active: block.querySelector('.var-status').value === 'true',
+                snk: block.querySelector('.var-snk').value.trim()
             };
             if (vid) variantData.id = vid;
             variantsToSave.push(variantData);
@@ -564,7 +610,7 @@ async function saveProduct(pid, oldName) {
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || 'Gagal menyimpan produk');
 
-        await fetchCatalog(); // Refresh memory
+        await refreshAdminData();
         
         Swal.fire({
             icon: 'success',
@@ -577,7 +623,6 @@ async function saveProduct(pid, oldName) {
         });
 
         adminModal.classList.replace('flex', 'hidden');
-        renderAdminView();
     } catch (e) {
         console.error(e);
         Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: e.message, background: '#1e293b', color: '#fff' });
@@ -608,7 +653,7 @@ async function deleteProduct(id, name) {
             const result = await response.json().catch(() => ({}));
             if (!response.ok) throw new Error(result.error || 'Gagal menghapus produk');
 
-            await fetchCatalog();
+            await refreshAdminData();
             
             Swal.fire({
                 title: 'Terhapus!',
@@ -619,7 +664,6 @@ async function deleteProduct(id, name) {
                 showConfirmButton: false,
                 timer: 1500
             });
-            renderAdminView();
         } catch (e) {
             Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, background: '#1e293b', color: '#fff' });
         }

@@ -29,7 +29,8 @@ export const getBotUsername = () => {
 // Shop Branding Settings
 export let shopSettings = {
     name: 'RNF BOT SYSTEM',
-    description: 'Toko Digital Otomatis'
+    description: 'Toko Digital Otomatis',
+    logoUrl: ''
 };
 
 /**
@@ -56,6 +57,9 @@ export async function initTenant() {
         if (tenantInfo?.shopName) {
             shopSettings.name = tenantInfo.shopName;
         }
+        if (tenantInfo?.botPhotoUrl) {
+            shopSettings.logoUrl = tenantInfo.botPhotoUrl;
+        }
         
         console.log('[Store] ✅ Tenant initialized for bot_id:', currentBotId);
         return true;
@@ -75,6 +79,11 @@ export async function fetchShopSettings() {
     
     if (settingsMap['SHOP_NAME']) shopSettings.name = settingsMap['SHOP_NAME'];
     if (settingsMap['SHOP_DESCRIPTION']) shopSettings.description = settingsMap['SHOP_DESCRIPTION'];
+    if (settingsMap['SHOP_LOGO_URL']) {
+        shopSettings.logoUrl = settingsMap['SHOP_LOGO_URL'];
+    } else if (tenantInfo?.botPhotoUrl) {
+        shopSettings.logoUrl = tenantInfo.botPhotoUrl;
+    }
     
     return shopSettings;
 }
@@ -137,6 +146,18 @@ export async function fetchCatalog() {
     return catalogData;
 }
 
+export async function fetchAdminCatalog(authToken) {
+    if (!currentBotId || !authToken) return [];
+
+    const response = await fetch(`/api/webapp/admin-products?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(authToken)}`);
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(result.error || 'Gagal memuat katalog admin');
+    }
+
+    return result.products || result.data?.products || [];
+}
+
 export async function fetchUserBalance(chatId) {
     if (!supabase || !chatId) return 0;
     const { data, error } = await supabase
@@ -165,23 +186,29 @@ export async function checkIsAdmin(chatId) {
  * Uses head: true to fetch counts ONLY (0 bytes data body)
  */
 export async function fetchAdminStats() {
-    if (!supabase) return { users: 0, products: 0, orders: 0, revenue: 0 };
+    const authToken = urlParams.get('auth') || '';
+    if (!currentBotId || !authToken) {
+        return { users: 0, products: 0, orders_today: 0, revenue_lifetime: 0, sold_lifetime: 0, stock_available: 0, logo_url: shopSettings.logoUrl || '' };
+    }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const response = await fetch(`/api/webapp/admin-dashboard?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(authToken)}`);
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(result.error || 'Gagal memuat statistik admin');
+    }
 
-    const [uCount, pCount, oCount] = await Promise.all([
-        supabase.from('users').select('*', { count: 'exact', head: true }),
-        supabase.from('products').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('*', { count: 'exact', head: true })
-        // Anda bisa menambah filter .gte('created_at', today.toISOString()) untuk order hari ini
-    ]);
+    if (result.branding?.logo_url) {
+        shopSettings.logoUrl = result.branding.logo_url;
+    }
 
     return {
-        users: uCount.count || 0,
-        products: pCount.count || 0,
-        orders: oCount.count || 0,
-        revenue: 0 // Untuk revenue biasanya butuh kueri sum/RPC, kita set default dulu
+        users: result.stats?.users || 0,
+        products: result.stats?.products || 0,
+        orders_today: result.stats?.orders_today || 0,
+        revenue_lifetime: result.stats?.revenue_lifetime || 0,
+        sold_lifetime: result.stats?.sold_lifetime || 0,
+        stock_available: result.stats?.stock_available || 0,
+        logo_url: result.branding?.logo_url || shopSettings.logoUrl || ''
     };
 }
 

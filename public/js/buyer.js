@@ -1,5 +1,5 @@
 import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant } from './store.js';
-import { formatCurrency, hideLoading, getImageFallback } from './utils.js';
+import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice } from './utils.js';
 
 // DOM Elements - Buyer
 const elGrid = document.getElementById('product-grid');
@@ -191,7 +191,7 @@ function renderBuyerProducts() {
         
         const totalStock = product.stock_count;
         const badgeColor = totalStock > 0 ? 'bg-green-500' : 'bg-red-500';
-        const priceDisplay = formatCurrency(product.variants[0]?.price || 0);
+        const priceDisplay = formatCurrency(getLowestVariantPrice(product.variants));
 
         div.innerHTML = `
             <!-- Inner Logo Box -->

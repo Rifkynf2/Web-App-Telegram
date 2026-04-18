@@ -1,6 +1,6 @@
 // adminStock.js
-import { fetchCatalog, currentBotId, urlParams } from './store.js';
-import { renderAdminView } from './adminProducts.js';
+import { currentBotId, urlParams } from './store.js';
+import { refreshAdminData } from './adminProducts.js';
 
 // Stock Management Modal Elements and Logic
 
@@ -15,6 +15,11 @@ const btnToggleStockList = document.getElementById('btn-toggle-stock-list');
 const btnDeleteAllStock = document.getElementById('btn-delete-all-stock');
 const stockListContainer = document.getElementById('stock-list-container');
 const adminAuthToken = urlParams.get('auth') || '';
+let currentSnapshot = null;
+
+function normalizeStockLine(line) {
+    return String(line || '').trim();
+}
 
 async function fetchStockSnapshot(variantId) {
     const response = await fetch(`/api/webapp/admin-stock?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&variant_id=${encodeURIComponent(variantId)}`);
@@ -103,8 +108,7 @@ export function initAdminStock() {
 
                     Swal.fire({ icon: 'success', title: 'Stok Dikosongkan', background: '#1e293b', color: '#fff', showConfirmButton: false, timer: 1500 });
 
-                    await fetchCatalog();
-                    renderAdminView();
+                    await refreshAdminData();
                     updateStockStats();
                 } catch (e) {
                     Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, background: '#1e293b', color: '#fff' });
@@ -134,6 +138,7 @@ export function openStockModal(product) {
 
     // Reset fields
     stockInputBulk.value = '';
+    currentSnapshot = null;
     
     // Initial Stat Simulation
     updateStockStats();
@@ -167,6 +172,7 @@ async function updateStockStats() {
 
     try {
         const snapshot = await fetchStockSnapshot(selectedId);
+        currentSnapshot = snapshot;
         const stats = snapshot.stats || { AVAILABLE: 0, RESERVED: 0, SOLD: 0 };
 
         document.getElementById('stock-stat-ready').textContent = stats.AVAILABLE;
@@ -191,6 +197,7 @@ async function renderStockItems() {
     
     try {
         const snapshot = await fetchStockSnapshot(variantId);
+        currentSnapshot = snapshot;
         const items = Array.isArray(snapshot.items) ? snapshot.items : [];
 
         stockListContainer.innerHTML = '';
@@ -239,8 +246,7 @@ async function deleteStockItem(id) {
             if (!response.ok) throw new Error(result.error || 'Gagal menghapus item stok');
             
             Swal.fire({ icon: 'success', title: 'Terhapus', background: '#1e293b', color: '#fff', timer: 1000, showConfirmButton: false });
-            await fetchCatalog();
-            renderAdminView();
+            await refreshAdminData();
             updateStockStats();
         } catch (e) {
             Swal.fire({ icon: 'error', title: 'Gagal', text: e.message, background: '#1e293b', color: '#fff' });
@@ -267,7 +273,7 @@ async function saveStockAction(product) {
     }
 
     const fulfillment = variant.fulfillment;
-    const rawLines = stockInputBulk.value.split('\n').map(l => l.trim()).filter(l => l);
+    const rawLines = stockInputBulk.value.split('\n').map(normalizeStockLine).filter(Boolean);
     
     if (rawLines.length === 0) {
         return Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Silakan masukkan data stok terlebih dahulu!', background: '#1e293b', color: '#fff' });
@@ -307,13 +313,34 @@ async function saveStockAction(product) {
         });
     }
 
-    // 1. Check Internal Duplicates
-    const uniqueInInput = [...new Set(rawLines)];
-    const internalDupCount = rawLines.length - uniqueInInput.length;
+    const snapshot = currentSnapshot || await fetchStockSnapshot(selectedVal);
+    currentSnapshot = snapshot;
+    const availablePayloads = Array.isArray(snapshot.available_payloads)
+        ? snapshot.available_payloads.map(normalizeStockLine).filter(Boolean)
+        : [];
+    const dbPayloadSet = new Set(availablePayloads);
 
-    // 2. Simulate Database Duplicates (Check against "ready" stock items)
-    const dbDupCount = rawLines.length > 5 ? Math.floor(rawLines.length * 0.1) : 0;
-    
+    // 1. Check Internal Duplicates
+    const seenInput = new Set();
+    const uniqueInInput = [];
+    let internalDupCount = 0;
+    for (const line of rawLines) {
+        if (seenInput.has(line)) {
+            internalDupCount += 1;
+            continue;
+        }
+        seenInput.add(line);
+        uniqueInInput.push(line);
+    }
+
+    // 2. Check Database Duplicates against real AVAILABLE stock
+    let dbDupCount = 0;
+    for (const line of uniqueInInput) {
+        if (dbPayloadSet.has(line)) {
+            dbDupCount += 1;
+        }
+    }
+
     const totalDups = internalDupCount + dbDupCount;
 
     if (totalDups > 0) {
@@ -323,7 +350,7 @@ async function saveStockAction(product) {
                 <div class="text-xs text-gray-300 text-left space-y-2">
                     <p>Total Baris: <b>${rawLines.length}</b></p>
                     <p>Duplikat Internal: <span class="text-amber-400">${internalDupCount}</span></p>
-                    <p>Duplikat Database (Simulasi): <span class="text-red-400">${dbDupCount}</span></p>
+                    <p>Duplikat Database: <span class="text-red-400">${dbDupCount}</span></p>
                     <hr class="border-white/10 my-2">
                     <p>Apa yang ingin Anda lakukan?</p>
                 </div>
@@ -335,7 +362,7 @@ async function saveStockAction(product) {
             denyButtonColor: '#3b82f6',    // Blue
             cancelButtonColor: '#6b7280',  // Gray
             confirmButtonText: `Simpan Semua (${rawLines.length})`,
-            denyButtonText: `Hanya Unik (${rawLines.length - totalDups})`,
+            denyButtonText: `Hanya Unik (${Math.max(rawLines.length - totalDups, 0)})`,
             cancelButtonText: 'Batal',
             background: '#1e293b',
             color: '#fff'
@@ -344,7 +371,10 @@ async function saveStockAction(product) {
         if (isConfirmed) {
             finalizeStockSave(rawLines, selectedVal);
         } else if (isDenied) {
-            const uniqueLines = [...new Set(rawLines)];
+            const uniqueLines = uniqueInInput.filter((line) => !dbPayloadSet.has(line));
+            if (uniqueLines.length === 0) {
+                return Swal.fire({ icon: 'warning', title: 'Tidak Ada Data Unik', text: 'Semua baris sudah ada di stok atau terduplikasi.', background: '#1e293b', color: '#fff' });
+            }
             finalizeStockSave(uniqueLines, selectedVal, totalDups);
         }
     } else {
@@ -371,8 +401,7 @@ async function finalizeStockSave(lines, variantId, skipped = 0) {
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || 'Gagal menyimpan stok');
 
-        await fetchCatalog(); // Update memory
-        renderAdminView();    // Update dashboard stats
+        await refreshAdminData();
 
         Swal.fire({
             icon: 'success',
