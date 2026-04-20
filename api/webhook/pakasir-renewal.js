@@ -231,10 +231,10 @@ module.exports = async function handler(req, res) {
 
                 // Track notification delivery
                 if (notifSent) {
-                    await masterDb.from('rental_invoices')
+                    const { error: notifFlagErr } = await masterDb.from('rental_invoices')
                         .update({ notification_sent: true })
-                        .eq('id', orderId)
-                        .catch(err => console.error('[Renewal-Webhook] Failed to update notification_sent flag:', err.message));
+                        .eq('id', orderId);
+                    if (notifFlagErr) console.error('[Renewal-Webhook] Failed to update notification_sent flag:', notifFlagErr.message);
                 }
             }
         }
@@ -264,10 +264,10 @@ module.exports = async function handler(req, res) {
 
             // Track QRIS deletion
             if (qrisDeleted) {
-                await masterDb.from('rental_invoices')
+                const { error: qrisFlagErr } = await masterDb.from('rental_invoices')
                     .update({ qris_deleted: true })
-                    .eq('id', orderId)
-                    .catch(err => console.error('[Renewal-Webhook] Failed to update qris_deleted flag:', err.message));
+                    .eq('id', orderId);
+                if (qrisFlagErr) console.error('[Renewal-Webhook] Failed to update qris_deleted flag:', qrisFlagErr.message);
             }
         }
 
@@ -294,10 +294,10 @@ module.exports = async function handler(req, res) {
                 const fallbackDeleted = callbackResp.data?.qris_deleted === true;
 
                 if (fallbackDeleted && !result.qris_deleted) {
-                    await masterDb.from('rental_invoices')
+                    const { error: fallbackFlagErr } = await masterDb.from('rental_invoices')
                         .update({ qris_deleted: true })
-                        .eq('id', orderId)
-                        .catch(err => console.error('[Renewal-Webhook] Failed to persist fallback qris_deleted flag:', err.message));
+                        .eq('id', orderId);
+                    if (fallbackFlagErr) console.error('[Renewal-Webhook] Failed to persist fallback qris_deleted flag:', fallbackFlagErr.message);
                 }
             } catch (cacheErr) {
                 console.log(`[Renewal-Webhook] Cache invalidation to bot failed (non-fatal): ${cacheErr.message}`);
