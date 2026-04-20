@@ -143,9 +143,39 @@ module.exports = async function handler(req, res) {
         }
 
         // ── Shared delivery logic for both 'success' and incomplete 'already_processed' ──
-        const { bot_id, new_expiry, duration_days, qris_chat_id, qris_message_id,
+        const { bot_id, new_expiry, duration_days,
                 bot_token, owner_chat_id, bot_api_base_url } = result;
+        // qris ids as let — may be overwritten by fallback query below
+        let qris_chat_id = result.qris_chat_id;
+        let qris_message_id = result.qris_message_id;
         const needsNotification = !result.notification_sent;
+
+        // Race condition guard: RPC captures QRIS ids via RETURNING at the moment of the
+        // UPDATE. If update-qris-info (called by bot after sending the photo) hasn't
+        // committed yet, both values come back null. Re-query the row to get the
+        // up-to-date values before deciding whether deletion is needed.
+        if (!result.qris_deleted && (!qris_chat_id || !qris_message_id)) {
+            console.warn(`[Renewal-Webhook] ⚠️ QRIS ids null from RPC for ${orderId} — race condition suspected, querying DB for current values...`);
+            try {
+                const { data: invRow, error: invFbErr } = await masterDb
+                    .from('rental_invoices')
+                    .select('qris_chat_id, qris_message_id')
+                    .eq('id', orderId)
+                    .single();
+                if (invFbErr) {
+                    console.error(`[Renewal-Webhook] DB fallback query error for ${orderId}:`, invFbErr.message);
+                } else if (invRow?.qris_chat_id && invRow?.qris_message_id) {
+                    qris_chat_id = invRow.qris_chat_id;
+                    qris_message_id = invRow.qris_message_id;
+                    console.log(`[Renewal-Webhook] ✅ DB fallback got QRIS ids for ${orderId}: chat=${qris_chat_id} msg=${qris_message_id}`);
+                } else {
+                    console.warn(`[Renewal-Webhook] DB fallback: still no QRIS ids for ${orderId} — QRIS message will not be deleted`);
+                }
+            } catch (fbErr) {
+                console.error(`[Renewal-Webhook] DB fallback exception for ${orderId}:`, fbErr.message);
+            }
+        }
+
         const needsQrisDeletion = !result.qris_deleted && qris_chat_id && qris_message_id;
 
         // 4a. Send success notification
@@ -220,14 +250,15 @@ module.exports = async function handler(req, res) {
                 qrisDeleted = true;
                 console.log(`[Renewal-Webhook] 🗑️ Deleted QRIS message ${qris_message_id} in chat ${qris_chat_id}`);
             } catch (delErr) {
-                // Could be already deleted manually, or message expired (48h Telegram limit)
-                // Mark as deleted anyway if it's a "message not found" error (already gone)
-                const is404 = delErr.response?.data?.description?.includes('message to delete not found');
-                if (is404) {
+                const tgDesc = delErr.response?.data?.description || delErr.message || '';
+                const isAlreadyGone =
+                    tgDesc.includes('message to delete not found') ||
+                    tgDesc.includes("message can't be deleted");
+                if (isAlreadyGone) {
                     qrisDeleted = true;
-                    console.log(`[Renewal-Webhook] QRIS message already gone (deleted manually or expired)`);
+                    console.log(`[Renewal-Webhook] QRIS message already gone for ${orderId}: ${tgDesc}`);
                 } else {
-                    console.log(`[Renewal-Webhook] Could not delete QRIS message: ${delErr.message}`);
+                    console.error(`[Renewal-Webhook] ❌ Could not delete QRIS message for ${orderId} (chat=${qris_chat_id} msg=${qris_message_id}): ${tgDesc}`);
                 }
             }
 
