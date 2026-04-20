@@ -29,8 +29,8 @@ export const normalizeImageUrl = (url) => {
         const host = parsed.hostname.toLowerCase();
         if (!['http:', 'https:'].includes(parsed.protocol)) return null;
 
-        // Known page URLs from image hosts that are not direct image assets.
-        if (host.includes('ibb.co')) return null;
+        // Reject ImgBB preview pages, but allow direct image hosts like i.ibb.co.
+        if (['ibb.co', 'www.ibb.co', 'ibb.co.com', 'www.ibb.co.com'].includes(host)) return null;
         if (host.includes('imgbb.com') && !/\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(parsed.pathname)) return null;
 
         return parsed.toString();

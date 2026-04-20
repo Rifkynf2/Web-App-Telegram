@@ -304,6 +304,14 @@ function setupAdminModalListeners() {
                             <p class="font-bold text-white mb-2 underline">Metode 2: Link Dari Internet</p>
                             <p>Anda bisa klik kanan gambar di internet, pilih <b>"Copy Image Address"</b>, lalu tempel di sini. Pastikan link berakhiran .jpg, .png, atau .webp.</p>
                         </div>
+
+                        <div class="bg-white/5 p-3 rounded-lg border border-white/10">
+                            <p class="font-bold text-white mb-2 underline">Contoh Copy Link yang Benar</p>
+                            <p>Jika penyedia gambar memberi kode HTML atau BBCode, copy hanya link gambar langsungnya, bukan seluruh kodenya.</p>
+                            <p class="mt-2"><b>Benar:</b><br><code>https://i.ibb.co.com/xxxx/namafile.png</code></p>
+                            <p class="mt-2"><b>Salah:</b><br><code>https://ibb.co.com/xxxx</code></p>
+                            <p class="mt-2"><b>Salah:</b><br><code>&lt;a href="..."&gt;&lt;img src="..."&gt;&lt;/a&gt;</code></p>
+                        </div>
                     </div>
                 `,
                 icon: 'info',
