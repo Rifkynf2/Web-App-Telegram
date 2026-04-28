@@ -212,7 +212,7 @@ function renderAdminView(stats = null) {
         if(eUsers) eUsers.textContent = stats.users;
         if(eOrderToday) eOrderToday.textContent = stats.orders_today;
         if(eRevenue) eRevenue.textContent = formatCurrency(stats.revenue_lifetime);
-        if(eSold) eSold.textContent = stats.sold_lifetime ?? totalSold;
+        if(eSold) eSold.textContent = stats.sold_lifetime || totalSold;
     }
 
     if (adminList) {

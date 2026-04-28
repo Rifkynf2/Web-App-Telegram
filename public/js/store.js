@@ -85,6 +85,11 @@ export async function fetchShopSettings() {
         shopSettings.logoUrl = tenantInfo.botPhotoUrl;
     }
     
+    // Admin contact for help button (strip @ prefix if present)
+    if (settingsMap['ADMIN_USERNAME']) {
+        shopSettings.adminContact = settingsMap['ADMIN_USERNAME'].replace(/^@/, '');
+    }
+    
     return shopSettings;
 }
 

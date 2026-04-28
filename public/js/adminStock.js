@@ -369,17 +369,50 @@ async function saveStockAction(product) {
         });
 
         if (isConfirmed) {
-            finalizeStockSave(rawLines, selectedVal);
+            const confirmed = await showStockConfirmation(variant, fulfillment, rawLines.length);
+            if (confirmed) finalizeStockSave(rawLines, selectedVal);
         } else if (isDenied) {
             const uniqueLines = uniqueInInput.filter((line) => !dbPayloadSet.has(line));
             if (uniqueLines.length === 0) {
                 return Swal.fire({ icon: 'warning', title: 'Tidak Ada Data Unik', text: 'Semua baris sudah ada di stok atau terduplikasi.', background: '#1e293b', color: '#fff' });
             }
-            finalizeStockSave(uniqueLines, selectedVal, totalDups);
+            const confirmed = await showStockConfirmation(variant, fulfillment, uniqueLines.length);
+            if (confirmed) finalizeStockSave(uniqueLines, selectedVal, totalDups);
         }
     } else {
-        finalizeStockSave(rawLines, selectedVal);
+        const confirmed = await showStockConfirmation(variant, fulfillment, rawLines.length);
+        if (confirmed) finalizeStockSave(rawLines, selectedVal);
     }
+}
+
+async function showStockConfirmation(variant, fulfillment, itemCount) {
+    const { isConfirmed } = await Swal.fire({
+        title: 'Konfirmasi Stok Baru',
+        html: `
+            <div class="text-xs text-gray-300 text-left space-y-3">
+                <div class="p-3 bg-black/30 rounded-lg border border-white/5">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Varian</p>
+                    <p class="text-white font-bold">${variant.name}</p>
+                </div>
+                <div class="p-3 bg-black/30 rounded-lg border border-white/5">
+                    <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Metode</p>
+                    <p class="text-white font-bold">${fulfillment}</p>
+                </div>
+                <div class="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                    <p class="text-[10px] text-emerald-400 uppercase tracking-widest mb-1">Total stok yang ingin ditambahkan</p>
+                    <p class="text-emerald-300 font-black text-2xl">${itemCount} item</p>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Tambahkan!',
+        cancelButtonText: 'Batalkan',
+        background: '#1e293b',
+        color: '#fff'
+    });
+    return isConfirmed;
 }
 
 async function finalizeStockSave(lines, variantId, skipped = 0) {
