@@ -141,7 +141,7 @@ export function openStockModal(product) {
     currentSnapshot = null;
     
     // Initial Stat Simulation
-    updateStockStats();
+    updateStockStats(product);
     
     // Reset stock list view
     stockListContainer.classList.add('hidden');
@@ -149,7 +149,7 @@ export function openStockModal(product) {
     btnToggleStockList.innerHTML = '<i class="fa-solid fa-list-check mr-1"></i> Lihat Daftar Stok Tersedia';
 
     // Event for variant change
-    stockInputVariant.onchange = () => updateStockStats();
+    stockInputVariant.onchange = () => updateStockStats(product);
 
     btnSaveStock.onclick = () => saveStockAction(product);
 
@@ -157,7 +157,7 @@ export function openStockModal(product) {
     stockModal.classList.add('flex');
 }
 
-async function updateStockStats() {
+async function updateStockStats(product) {
     const selectedId = stockInputVariant.value;
     
     if (!selectedId) {
@@ -174,10 +174,14 @@ async function updateStockStats() {
         const snapshot = await fetchStockSnapshot(selectedId);
         currentSnapshot = snapshot;
         const stats = snapshot.stats || { AVAILABLE: 0, RESERVED: 0, SOLD: 0 };
+        
+        // Find variant to get correct sold count
+        const variant = product?.variants?.find(v => String(v.id) === String(selectedId));
+        const variantSold = variant ? parseInt(variant.total_sold || 0, 10) : 0;
 
         document.getElementById('stock-stat-ready').textContent = stats.AVAILABLE;
         document.getElementById('stock-stat-reserved').textContent = stats.RESERVED;
-        document.getElementById('stock-stat-sold').textContent = stats.SOLD;
+        document.getElementById('stock-stat-sold').textContent = variantSold;
 
         // Refresh list if open
         if (!stockListContainer.classList.contains('hidden')) {

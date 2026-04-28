@@ -124,6 +124,9 @@ export async function initBuyerApp() {
         let isDragging = false;
 
         detailModalCard.addEventListener('pointerdown', (e) => {
+            // Ignore if clicking a button (like the X close button)
+            if (e.target.closest('button') || e.target.closest('a')) return;
+
             // Only initiate drag from the top area (handle + header region)
             const touchY = e.clientY;
             const cardRect = detailModalCard.getBoundingClientRect();
