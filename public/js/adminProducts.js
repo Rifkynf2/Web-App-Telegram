@@ -252,7 +252,7 @@ function createAdminProductRow(product) {
             </div>
             <div class="text-left w-full">
                 <h4 class="text-xs font-bold text-white line-clamp-1">${product.name}</h4>
-                <p class="text-[10px] text-gray-400 mt-1">${compactSubText} • ${formatCurrency(lowestPrice)}</p>
+                <p class="text-[10px] text-gray-400 mt-1">${compactSubText} • ${product.stock_count} Stok</p>
                 <p class="text-[9px] ${product.is_active === false ? 'text-red-400' : 'text-emerald-400'} mt-1 uppercase tracking-widest font-bold">${productStatus}</p>
             </div>
         </div>
