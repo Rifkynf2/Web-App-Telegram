@@ -123,22 +123,23 @@ export async function initBuyerApp() {
         let currentY = 0;
         let isDragging = false;
 
-        detailModalCard.addEventListener('touchstart', (e) => {
+        detailModalCard.addEventListener('pointerdown', (e) => {
             // Only initiate drag from the top area (handle + header region)
-            const touchY = e.touches[0].clientY;
+            const touchY = e.clientY;
             const cardRect = detailModalCard.getBoundingClientRect();
             const touchOffset = touchY - cardRect.top;
             if (touchOffset > 80) return; // Only top 80px is draggable
 
-            startY = e.touches[0].clientY;
+            startY = e.clientY;
             currentY = startY;
             isDragging = true;
             detailModalCard.style.transition = 'none';
-        }, { passive: true });
+            try { detailModalCard.setPointerCapture(e.pointerId); } catch(err){}
+        });
 
-        detailModalCard.addEventListener('touchmove', (e) => {
+        detailModalCard.addEventListener('pointermove', (e) => {
             if (!isDragging) return;
-            currentY = e.touches[0].clientY;
+            currentY = e.clientY;
             const deltaY = currentY - startY;
             if (deltaY > 0) {
                 detailModalCard.style.transform = `translateY(${deltaY}px)`;
@@ -146,11 +147,12 @@ export async function initBuyerApp() {
                 const opacity = Math.max(0.2, 1 - (deltaY / 400));
                 detailModal.style.backgroundColor = `rgba(0,0,0,${opacity * 0.8})`;
             }
-        }, { passive: true });
+        });
 
-        detailModalCard.addEventListener('touchend', () => {
+        const handlePointerUp = (e) => {
             if (!isDragging) return;
             isDragging = false;
+            try { detailModalCard.releasePointerCapture(e.pointerId); } catch(err){}
             const deltaY = currentY - startY;
             detailModalCard.style.transition = 'transform 0.3s ease';
             detailModal.style.transition = 'background-color 0.3s ease';
@@ -170,7 +172,9 @@ export async function initBuyerApp() {
                 detailModal.style.transition = '';
                 detailModal.style.backgroundColor = '';
             }, 350);
-        }, { passive: true });
+        };
+        detailModalCard.addEventListener('pointerup', handlePointerUp);
+        detailModalCard.addEventListener('pointercancel', handlePointerUp);
     }
 
     const botUsername = getBotUsername() || currentBotId;
