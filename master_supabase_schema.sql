@@ -534,6 +534,48 @@ END;
 $$;
 
 -- =========================================================
+-- GRANTS — Explicit permissions for Data API compliance
+-- Required for new Supabase projects (post 2026-05-30) and
+-- for new tables in all projects (post 2026-10-30)
+-- Safe to run multiple times (idempotent)
+-- =========================================================
+
+-- service_role: full CRUD pada semua tabel (semua akses via backend)
+GRANT SELECT, INSERT, UPDATE, DELETE ON
+  public.plans,
+  public.tenants,
+  public.tenant_configs,
+  public.tenant_api_keys,
+  public.subscriptions,
+  public.telegram_users,
+  public.miniapp_sessions,
+  public.rental_invoices,
+  public.audit_logs
+TO service_role;
+
+-- anon: SELECT saja pada plans (sesuai plans_public_read RLS policy)
+-- Tabel lain: anon diblokir oleh RLS deny_all, tidak perlu GRANT eksplisit
+GRANT SELECT ON public.plans TO anon;
+
+-- Functions: service_role bisa memanggil semua RPC
+-- (tg_set_updated_at tidak di-GRANT karena trigger function, dipanggil internal oleh trigger)
+GRANT EXECUTE ON FUNCTION public.cleanup_expired_sessions() TO service_role;
+GRANT EXECUTE ON FUNCTION public.cleanup_old_audit_logs() TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_master_stats() TO service_role;
+GRANT EXECUTE ON FUNCTION public.process_renewal_payment(UUID, INTEGER) TO service_role;
+
+-- ALTER DEFAULT PRIVILEGES: tabel/function BARU otomatis dapat GRANT
+-- (FOR ROLE postgres karena Supabase membuat tabel dengan role postgres)
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO service_role;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  GRANT USAGE, SELECT ON SEQUENCES TO service_role;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  GRANT EXECUTE ON FUNCTIONS TO service_role;
+
+-- =========================================================
 -- SELESAI! Jalankan SQL ini di Supabase SQL Editor
 -- Project: https://ynorqtlefiskahvyykzl.supabase.co
 -- =========================================================
