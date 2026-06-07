@@ -217,6 +217,27 @@ export async function fetchAdminStats() {
     };
 }
 
+export async function fetchUserTransactionCount(chatId) {
+    if (!supabase || !chatId) return 0;
+    const { count, error } = await supabase
+        .from('transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('chat_id', chatId)
+        .eq('status', 'FULFILLED');
+    return error ? 0 : (count || 0);
+}
+
+export function subscribeToInventoryChanges(onUpdate) {
+    if (!supabase) return null;
+    return supabase
+        .channel('inventory_realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items' }, async () => {
+            await fetchCatalog();
+            onUpdate?.();
+        })
+        .subscribe();
+}
+
 // Keep for legacy if needed, but we now use catalogData
 export let mockData = [];
 export let mockAdminData = [];

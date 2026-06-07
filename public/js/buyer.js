@@ -1,4 +1,4 @@
-import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant } from './store.js';
+import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant } from './store.js';
 import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice } from './utils.js';
 
 // DOM Elements - Buyer
@@ -88,9 +88,12 @@ export async function initBuyerApp() {
         fetchShopSettings(),
         fetchCatalog()
     ]);
-    
+
     populateUserIdentity();
     renderBuyerProducts();
+
+    // Real-time stock update — buyer langsung lihat perubahan tanpa reload
+    subscribeToInventoryChanges(() => renderBuyerProducts());
 
     // Bind Detail Modal Buttons
     if (btnMin) btnMin.addEventListener('click', () => updateQty(-1));
@@ -242,6 +245,11 @@ function populateUserIdentity() {
         fetchUserBalance(tgUser.id).then(balance => {
             const elBalance = document.getElementById('prof-balance');
             if (elBalance) elBalance.textContent = formatCurrency(balance);
+        });
+
+        fetchUserTransactionCount(tgUser.id).then(count => {
+            const elTrxCount = document.getElementById('prof-total-trx');
+            if (elTrxCount) elTrxCount.textContent = count;
         });
     }
 
