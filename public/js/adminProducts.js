@@ -203,16 +203,12 @@ function renderAdminView(stats = null) {
     if(eProd) eProd.textContent = stats?.products ?? products.length;
     if(eStock) eStock.textContent = stats?.stock_available ?? products.reduce((sum, p) => sum + p.stock_count, 0);
     
-    // Revenue & Sold from product metrics (simplified)
-    const totalSold = products.reduce((sum, p) => sum + p.variants.reduce((variantSum, variant) => variantSum + parseInt(variant.total_sold || 0, 10), 0), 0);
-    if(eSold) eSold.textContent = totalSold;
-    
     // Real Stats from Database (Highly optimized)
     if(stats) {
         if(eUsers) eUsers.textContent = stats.users;
         if(eOrderToday) eOrderToday.textContent = stats.orders_today;
         if(eRevenue) eRevenue.textContent = formatCurrency(stats.revenue_lifetime);
-        if(eSold) eSold.textContent = totalSold;
+        if(eSold) eSold.textContent = stats.sold_lifetime;
     }
 
     if (adminList) {
