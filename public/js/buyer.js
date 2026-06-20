@@ -266,11 +266,11 @@ function renderBuyerProducts(overrideData) {
 
         card.innerHTML = `
             <!-- Image -->
-            <div class="relative overflow-hidden w-full" style="aspect-ratio:4/3; background:#0d0d1f;">
+            <div class="relative overflow-hidden w-full shrink-0" style="aspect-ratio:4/3; background:#0d0d1f;">
                 <img
                     src="${imageUrl}"
                     alt="${product.name}"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                     onerror="this.src='https://placehold.co/400x300/1e293b/white?text=${encodeURIComponent(product.name)}'">
                 ${isOutOfStock ? `
@@ -279,7 +279,7 @@ function renderBuyerProducts(overrideData) {
                 </div>` : ''}
             </div>
             <!-- Info -->
-            <div class="flex flex-col gap-2 p-3">
+            <div class="flex flex-col gap-2 p-3 flex-1">
                 <h3 class="font-bold text-white text-sm line-clamp-2 leading-snug">${product.name}</h3>
                 <div class="font-black text-blue-400 text-base tracking-wide">${priceLabel}</div>
                 ${isOutOfStock
@@ -290,7 +290,7 @@ function renderBuyerProducts(overrideData) {
                        </div>`
                 }
                 <button
-                    class="w-full text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-between mt-1 transition-all active:scale-95"
+                    class="w-full text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-between mt-auto transition-all active:scale-95"
                     style="${isOutOfStock
                         ? 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(107,114,128,1);cursor:not-allowed;'
                         : 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:white;'}"
