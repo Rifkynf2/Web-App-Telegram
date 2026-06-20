@@ -608,6 +608,9 @@
   .cursor-pointer {
     cursor: pointer;
   }
+  .resize {
+    resize: both;
+  }
   .list-decimal {
     list-style-type: decimal;
   }
@@ -2514,6 +2517,9 @@ html[data-theme="light"] .swal2-html-container .border-white\/10, html[data-them
 html[data-theme="light"] .swal2-html-container code, html[data-theme="light"] .swal2-html-container pre {
   background: rgba(235,230,255,0.7) !important;
   color: #3730a3 !important;
+}
+.swal2-textarea {
+  font-size: 12px !important;
 }
 html[data-theme="light"] .swal2-textarea, html[data-theme="light"] .swal2-input {
   background: rgba(255,255,255,0.92) !important;

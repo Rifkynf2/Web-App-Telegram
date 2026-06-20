@@ -638,6 +638,8 @@ html[data-theme="light"] .swal2-html-container pre {
 }
 
 /* SweetAlert2 input & textarea (termasuk SNK modal) */
+.swal2-textarea { font-size: 12px !important; }
+
 html[data-theme="light"] .swal2-textarea,
 html[data-theme="light"] .swal2-input {
   background: rgba(255,255,255,0.92) !important;

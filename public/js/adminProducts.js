@@ -523,14 +523,16 @@ function addVariantBlock(variant = null) {
         
         Swal.fire({
             title: 'Atur SNK Varian',
-            text: 'Tuliskan aturan main untuk varian ini. Teks ini akan dikirim oleh Bot bersama data produk.',
+            text: 'Aturan main varian — dikirim Bot bersama produk.',
             input: 'textarea',
             inputValue: snkInput.value,
-            inputPlaceholder: 'Contoh: \n1. Garansi 30 Hari\n2. Dilarang Ganti Password...',
+            inputPlaceholder: 'Contoh:\n1. Garansi 30 Hari\n2. Dilarang Ganti Password...',
             inputAttributes: {
                 'autocapitalize': 'off',
                 'autocorrect': 'off',
+                'style': 'font-size: 12px; height: 9rem; resize: vertical;',
             },
+            width: '92%',
             showCancelButton: true,
             confirmButtonText: 'Simpan SNK',
             cancelButtonText: 'Batal',
