@@ -2,10 +2,7 @@
 import { currentBotId, urlParams } from './store.js';
 import { refreshAdminData } from './adminProducts.js';
 
-// Stock Management Modal Elements and Logic
-
-const stockModal = document.getElementById('stock-modal');
-const btnCloseStockModal = document.getElementById('btn-close-stock-modal');
+const adminStockSlide = document.getElementById('admin-stock-slide');
 const btnSaveStock = document.getElementById('btn-save-stock');
 const stockInputVariant = document.getElementById('stock-input-variant');
 const stockInputBulk = document.getElementById('stock-input-bulk');
@@ -16,6 +13,16 @@ const btnDeleteAllStock = document.getElementById('btn-delete-all-stock');
 const stockListContainer = document.getElementById('stock-list-container');
 const adminAuthToken = urlParams.get('auth') || '';
 let currentSnapshot = null;
+let currentStockPage = 1;
+const STOCK_PAGE_SIZE = 10;
+
+function getSwalTheme() {
+    const isLight = document.documentElement.dataset.theme === 'light';
+    return {
+        background: isLight ? '#f5f3ff' : '#1e293b',
+        color: isLight ? '#1e1d35' : '#fff',
+    };
+}
 
 function normalizeStockLine(line) {
     return String(line || '').trim();
@@ -56,8 +63,7 @@ export function initAdminStock() {
                         </div>
                     </div>
                 `,
-                background: '#1e293b',
-                color: '#fff',
+                ...getSwalTheme(),
                 confirmButtonColor: '#3b82f6',
                 confirmButtonText: 'Paham'
             });
@@ -94,11 +100,10 @@ export function initAdminStock() {
                 cancelButtonColor: '#3b82f6',
                 confirmButtonText: 'Ya, Hapus Semua!',
                 cancelButtonText: 'Batal',
-                background: '#1e293b',
-                color: '#fff'
+                ...getSwalTheme()
             });
 
-            if (isConfirmed) {
+if (isConfirmed) {
                 try {
                     const response = await fetch(`/api/webapp/admin-stock?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&variant_id=${encodeURIComponent(selectedVal)}`, {
                         method: 'DELETE'
@@ -106,24 +111,31 @@ export function initAdminStock() {
                     const result = await response.json().catch(() => ({}));
                     if (!response.ok) throw new Error(result.error || 'Gagal menghapus stok');
 
-                    Swal.fire({ icon: 'success', title: 'Stok Dikosongkan', background: '#1e293b', color: '#fff', showConfirmButton: false, timer: 1500 });
+                    Swal.fire({ icon: 'success', title: 'Stok Dikosongkan', ...getSwalTheme(), showConfirmButton: false, timer: 1500 });
 
                     await refreshAdminData();
                     updateStockStats();
                 } catch (e) {
-                    Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, background: '#1e293b', color: '#fff' });
+                    Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, ...getSwalTheme() });
                 }
             }
         });
     }
 
-    if (btnCloseStockModal) {
-        btnCloseStockModal.addEventListener('click', () => stockModal.classList.replace('flex', 'hidden'));
-    }
+    document.getElementById('btn-back-admin-stock')?.addEventListener('click', () => {
+        adminStockSlide.classList.remove('active');
+    });
+
+    document.getElementById('btn-stock-prev')?.addEventListener('click', () => {
+        if (currentStockPage > 1) { currentStockPage--; renderStockItems(); }
+    });
+    document.getElementById('btn-stock-next')?.addEventListener('click', () => {
+        currentStockPage++; renderStockItems();
+    });
 }
 
 export function openStockModal(product) {
-    if(!stockModal) return;
+    if (!adminStockSlide) return;
     stockModalSubtitle.textContent = product.name;
     
     // Fill variant selector
@@ -148,13 +160,18 @@ export function openStockModal(product) {
     if (btnDeleteAllStock) btnDeleteAllStock.classList.add('hidden');
     btnToggleStockList.innerHTML = '<i class="fa-solid fa-list-check mr-1"></i> Lihat Daftar Stok Tersedia';
 
-    // Event for variant change
-    stockInputVariant.onchange = () => updateStockStats(product);
+    // Reset page saat ganti produk
+    currentStockPage = 1;
+    document.getElementById('stock-pagination')?.classList.add('hidden');
+
+    stockInputVariant.onchange = () => {
+        currentStockPage = 1;
+        updateStockStats(product);
+    };
 
     btnSaveStock.onclick = () => saveStockAction(product);
 
-    stockModal.classList.remove('hidden');
-    stockModal.classList.add('flex');
+    adminStockSlide.classList.add('active');
 }
 
 async function updateStockStats(product) {
@@ -198,7 +215,12 @@ async function renderStockItems() {
     if (!variantId) return;
 
     stockListContainer.innerHTML = '<p class="text-[10px] text-gray-500 italic animate-pulse">Memuat data...</p>';
-    
+
+    const paginationEl = document.getElementById('stock-pagination');
+    const pageInfoEl   = document.getElementById('stock-page-info');
+    const btnPrev      = document.getElementById('btn-stock-prev');
+    const btnNext      = document.getElementById('btn-stock-next');
+
     try {
         const snapshot = await fetchStockSnapshot(variantId);
         currentSnapshot = snapshot;
@@ -207,10 +229,19 @@ async function renderStockItems() {
         stockListContainer.innerHTML = '';
         if (items.length === 0) {
             stockListContainer.innerHTML = '<p class="text-[10px] text-gray-500 italic py-2">Stok kosong</p>';
+            if (paginationEl) paginationEl.classList.add('hidden');
             return;
         }
 
-        items.forEach(item => {
+        const totalPages = Math.max(1, Math.ceil(items.length / STOCK_PAGE_SIZE));
+        if (currentStockPage > totalPages) currentStockPage = totalPages;
+
+        const pageItems = items.slice(
+            (currentStockPage - 1) * STOCK_PAGE_SIZE,
+            currentStockPage * STOCK_PAGE_SIZE
+        );
+
+        pageItems.forEach(item => {
             const row = document.createElement('div');
             row.className = 'flex items-center justify-between gap-3 p-2 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors group';
             row.innerHTML = `
@@ -222,6 +253,17 @@ async function renderStockItems() {
             row.querySelector('.btn-del-item').onclick = () => deleteStockItem(item.id);
             stockListContainer.appendChild(row);
         });
+
+        if (paginationEl) {
+            if (totalPages <= 1) {
+                paginationEl.classList.add('hidden');
+            } else {
+                paginationEl.classList.remove('hidden');
+                if (pageInfoEl) pageInfoEl.textContent = `Hal ${currentStockPage} / ${totalPages}  (${items.length} item)`;
+                if (btnPrev) btnPrev.disabled = currentStockPage === 1;
+                if (btnNext) btnNext.disabled = currentStockPage === totalPages;
+            }
+        }
     } catch (e) {
         stockListContainer.innerHTML = `<p class="text-[10px] text-red-400">Gagal memuat: ${e.message}</p>`;
     }
@@ -237,8 +279,7 @@ async function deleteStockItem(id) {
         cancelButtonColor: '#3b82f6',
         confirmButtonText: 'Ya, Hapus!',
         cancelButtonText: 'Batal',
-        background: '#1e293b',
-        color: '#fff'
+        ...getSwalTheme()
     });
 
     if (isConfirmed) {
@@ -249,11 +290,11 @@ async function deleteStockItem(id) {
             const result = await response.json().catch(() => ({}));
             if (!response.ok) throw new Error(result.error || 'Gagal menghapus item stok');
             
-            Swal.fire({ icon: 'success', title: 'Terhapus', background: '#1e293b', color: '#fff', timer: 1000, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Terhapus', ...getSwalTheme(), timer: 1000, showConfirmButton: false });
             await refreshAdminData();
             updateStockStats();
         } catch (e) {
-            Swal.fire({ icon: 'error', title: 'Gagal', text: e.message, background: '#1e293b', color: '#fff' });
+            Swal.fire({ icon: 'error', title: 'Gagal', text: e.message, ...getSwalTheme() });
         }
     }
 }
@@ -261,7 +302,7 @@ async function deleteStockItem(id) {
 async function saveStockAction(product) {
     const selectedVal = stockInputVariant.value;
     if (!selectedVal) {
-        return Swal.fire({ icon: 'error', title: 'Pilih Varian', text: 'Anda harus memilih varian produk sebelum memasukkan stok!', background: '#1e293b', color: '#fff' });
+        return Swal.fire({ icon: 'error', title: 'Pilih Varian', text: 'Anda harus memilih varian produk sebelum memasukkan stok!', ...getSwalTheme() });
     }
 
     const selectedVariantId = String(selectedVal);
@@ -271,8 +312,7 @@ async function saveStockAction(product) {
             icon: 'error',
             title: 'Varian Tidak Ditemukan',
             text: 'Varian yang dipilih tidak cocok dengan data produk. Silakan tutup lalu buka ulang modal stok.',
-            background: '#1e293b',
-            color: '#fff'
+            ...getSwalTheme()
         });
     }
 
@@ -280,7 +320,7 @@ async function saveStockAction(product) {
     const rawLines = stockInputBulk.value.split('\n').map(normalizeStockLine).filter(Boolean);
     
     if (rawLines.length === 0) {
-        return Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Silakan masukkan data stok terlebih dahulu!', background: '#1e293b', color: '#fff' });
+        return Swal.fire({ icon: 'warning', title: 'Kosong', text: 'Silakan masukkan data stok terlebih dahulu!', ...getSwalTheme() });
     }
 
     // 0. Format Validation
@@ -311,8 +351,7 @@ async function saveStockAction(product) {
                     <p class="pt-2 italic text-gray-400">Silakan perbaiki format data Anda sesuai panduan di menu (?) di atas.</p>
                 </div>
             `,
-            background: '#1e293b',
-            color: '#fff',
+            ...getSwalTheme(),
             confirmButtonColor: '#3b82f6'
         });
     }
@@ -368,8 +407,7 @@ async function saveStockAction(product) {
             confirmButtonText: `Simpan Semua (${rawLines.length})`,
             denyButtonText: `Hanya Unik (${Math.max(rawLines.length - totalDups, 0)})`,
             cancelButtonText: 'Batal',
-            background: '#1e293b',
-            color: '#fff'
+            ...getSwalTheme()
         });
 
         if (isConfirmed) {
@@ -378,7 +416,7 @@ async function saveStockAction(product) {
         } else if (isDenied) {
             const uniqueLines = uniqueInInput.filter((line) => !dbPayloadSet.has(line));
             if (uniqueLines.length === 0) {
-                return Swal.fire({ icon: 'warning', title: 'Tidak Ada Data Unik', text: 'Semua baris sudah ada di stok atau terduplikasi.', background: '#1e293b', color: '#fff' });
+                return Swal.fire({ icon: 'warning', title: 'Tidak Ada Data Unik', text: 'Semua baris sudah ada di stok atau terduplikasi.', ...getSwalTheme() });
             }
             const confirmed = await showStockConfirmation(variant, fulfillment, uniqueLines.length);
             if (confirmed) finalizeStockSave(uniqueLines, selectedVal, totalDups);
@@ -413,14 +451,13 @@ async function showStockConfirmation(variant, fulfillment, itemCount) {
         cancelButtonColor: '#6b7280',
         confirmButtonText: 'Ya, Tambahkan!',
         cancelButtonText: 'Batalkan',
-        background: '#1e293b',
-        color: '#fff'
+        ...getSwalTheme()
     });
     return isConfirmed;
 }
 
 async function finalizeStockSave(lines, variantId, skipped = 0) {
-    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...getSwalTheme() });
 
     try {
         const response = await fetch('/api/webapp/admin-stock', {
@@ -449,14 +486,13 @@ async function finalizeStockSave(lines, variantId, skipped = 0) {
                     ${skipped > 0 ? `<p>⚠️ Diabaikan (Duplikat): <b>${skipped}</b> baris</p>` : ''}
                 </div>
             `,
-            background: '#1e293b',
-            color: '#fff',
+            ...getSwalTheme(),
             showConfirmButton: false,
             timer: 2000
         });
         
-        stockModal.classList.replace('flex', 'hidden');
+        adminStockSlide.classList.remove('active');
     } catch (e) {
-        Swal.fire({ icon: 'error', title: 'Gagal Simpan', text: e.message, background: '#1e293b', color: '#fff' });
+        Swal.fire({ icon: 'error', title: 'Gagal Simpan', text: e.message, ...getSwalTheme() });
     }
 }

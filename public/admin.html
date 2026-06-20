@@ -24,6 +24,15 @@
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+    <!-- Theme: init BEFORE render to avoid flash -->
+    <script type="module">
+      import { initTheme, toggleTheme } from './js/theme.js';
+      initTheme();
+      document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('btn-theme-toggle');
+        if (btn) btn.addEventListener('click', toggleTheme);
+      });
+    </script>
     <script type="module" src="js/admin-main.js" defer></script>
   </head>
   <body
@@ -91,34 +100,26 @@
         class="absolute top-[40%] -right-[20%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]"></div>
     </div>
 
-    <!-- Header / Navbar -->
-    <header
-      class="sticky top-0 z-40 glass-panel border-x-0 border-t-0 !rounded-b-3xl !rounded-t-none mb-6 bg-black/50 backdrop-blur-xl shadow-lg shadow-black/20">
-      <div
-        class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between relative z-10">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 glass-panel border-x-0 border-t-0 mb-6 bg-black/50 backdrop-blur-xl shadow-lg shadow-black/20" style="border-radius: 0 0 1.5rem 1.5rem;">
+      <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between relative z-10">
         <div class="flex items-center gap-4">
-          <div
-            class="w-12 h-12 rounded-2xl bg-linear-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30 overflow-hidden relative">
-            <span id="shop-initial" class="z-10"
-              ><i class="fa-solid fa-store"></i
-            ></span>
-            <img
-              id="shop-logo"
-              class="absolute inset-0 w-full h-full object-cover hidden z-20"
-              alt="Logo" />
+          <div class="w-12 h-12 rounded-2xl bg-linear-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30 overflow-hidden relative">
+            <span id="shop-initial" class="z-10"><i class="fa-solid fa-store"></i></span>
+            <img id="shop-logo" class="absolute inset-0 w-full h-full object-cover hidden z-20" alt="Logo" />
           </div>
           <div>
-            <h1
-              class="font-bold text-lg leading-tight text-white tracking-wide">
-              Admin Panel
-            </h1>
-            <p
-              id="header-shop-name"
-              class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-              RNF BOT SYSTEM
-            </p>
+            <h1 class="font-bold text-lg leading-tight text-white tracking-wide">Admin Panel</h1>
+            <p id="header-shop-name" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">RNF BOT SYSTEM</p>
           </div>
         </div>
+        <!-- Theme Toggle -->
+        <button
+          id="btn-theme-toggle"
+          class="transition-all active:scale-90 hover:scale-110 p-1"
+          title="Ganti tema">
+          <i class="fa-solid fa-sun text-amber-400 text-xl"></i>
+        </button>
       </div>
     </header>
 
@@ -265,230 +266,183 @@
       </div>
     </main>
 
-    <!-- Editor and Stock Modals Follow -->
+    <!-- Admin Product Slide-In Page -->
+    <div id="admin-product-slide" class="detail-page-slide fixed inset-0 z-200 flex flex-col" style="background: #111111;">
 
-    <!-- Admin Editor Modal -->
-    <div
-      id="admin-modal"
-      class="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] hidden items-center justify-center p-4">
-      <div
-        id="admin-modal-card"
-        class="glass-panel w-full max-w-lg p-6 flex flex-col gap-5 max-h-[90vh] overflow-y-auto relative">
-        <button
-          id="btn-close-admin-modal"
-          class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
-          <i class="fa-solid fa-xmark text-xl"></i>
+      <!-- Sticky Header -->
+      <div id="admin-product-slide-header"
+        class="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-white/10"
+        style="background: rgba(17,17,17,0.95); backdrop-filter: blur(20px);">
+        <button id="btn-back-admin-product"
+          class="btn-back-pulse w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+          <i class="fa-solid fa-chevron-left"></i>
         </button>
+        <div class="flex-1 min-w-0">
+          <h2 id="admin-modal-title" class="font-black text-white text-base leading-tight">Tambah Produk Baru</h2>
+          <p id="admin-product-subtitle" class="hidden text-[10px] text-indigo-400 font-bold uppercase tracking-wider truncate mt-0.5"></p>
+        </div>
+        <button id="btn-save-product-header"
+          class="hidden md:flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all shadow-lg">
+          <i class="fa-solid fa-floppy-disk"></i> Simpan
+        </button>
+      </div>
 
-        <h3 id="admin-modal-title" class="text-xl font-bold text-white">
-          Tambah Produk Baru
-        </h3>
+      <!-- Scrollable Content -->
+      <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-5 pb-28">
 
         <!-- Global Product Info -->
         <div class="flex flex-col gap-4">
           <div class="flex flex-col gap-1.5">
-            <label
-              class="text-[10px] uppercase tracking-widest text-gray-400 font-bold"
-              >Nama Produk (*)</label
-            >
-            <input
-              type="text"
-              id="admin-input-name"
-              placeholder="Netflix Premium"
+            <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Nama Produk (*)</label>
+            <input type="text" id="admin-input-name" placeholder="Netflix Premium"
               class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors" />
           </div>
 
           <div class="flex flex-col gap-1.5">
             <div class="flex items-center justify-between">
-              <label
-                class="text-[10px] uppercase tracking-widest text-gray-400 font-bold"
-                >URL Gambar</label
-              >
-              <button
-                id="btn-tutorial-cdn"
-                class="text-xs text-blue-400 hover:text-blue-300 font-semibold">
+              <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">URL Gambar</label>
+              <button id="btn-tutorial-cdn" class="text-xs text-blue-400 hover:text-blue-300 font-semibold">
                 <i class="fa-solid fa-circle-question"></i> Cara Ambil Link
               </button>
             </div>
-            <input
-              type="text"
-              id="admin-input-image"
-              placeholder="https://..."
+            <input type="text" id="admin-input-image" placeholder="https://..."
               class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors" />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label
-              class="text-[10px] uppercase tracking-widest text-gray-400 font-bold"
-              >Deskripsi Tambahan</label
-            >
-            <textarea
-              id="admin-input-desc"
-              rows="2"
-              placeholder="Penjelasan opsional product..."
+            <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Deskripsi Tambahan</label>
+            <textarea id="admin-input-desc" rows="2" placeholder="Penjelasan opsional product..."
               class="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors"></textarea>
           </div>
         </div>
 
         <!-- Dynamic Variant Section -->
-        <div class="flex flex-col gap-3 mt-1">
+        <div class="flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <h4
-              class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
               <i class="fa-solid fa-tags text-indigo-400"></i> Daftar Varian
             </h4>
-            <button
-              id="btn-add-variant"
+            <button id="btn-add-variant"
               class="text-xs bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white px-3 py-1.5 rounded-lg transition-colors font-bold">
               <i class="fa-solid fa-plus"></i> Tambah
             </button>
           </div>
-
           <div id="admin-variants-container" class="flex flex-col gap-3">
-            <!-- Variant blocks will be injected here via JS -->
+            <!-- Variant blocks injected by JS -->
           </div>
         </div>
+      </div>
 
-        <div class="flex gap-3 mt-4">
-          <button
-            id="btn-save-product"
-            class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-500/20 transition-all">
-            Simpan Produk
-          </button>
-        </div>
+      <!-- Fixed Bottom Bar -->
+      <div class="shrink-0 px-4 py-3 border-t border-white/10"
+        style="background: rgba(17,17,17,0.95); backdrop-filter: blur(20px);">
+        <button id="btn-save-product"
+          class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-500/20 transition-all">
+          Simpan Produk
+        </button>
       </div>
     </div>
 
-    <!-- Stock Management Modal -->
-    <div
-      id="stock-modal"
-      class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
-      <div
-        class="glass-panel w-full max-w-lg p-6 flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-xl font-black text-white" id="stock-modal-title">
-              Kelola Stok
-            </h3>
-            <p
-              class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider"
-              id="stock-modal-subtitle">
-              Product Name
-            </p>
-          </div>
-          <button
-            id="btn-close-stock-modal"
-            class="w-10 h-10 rounded-xl bg-white/5 text-gray-400 hover:text-white flex items-center justify-center transition-colors">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
+    <!-- Admin Stock Slide-In Page -->
+    <div id="admin-stock-slide" class="detail-page-slide fixed inset-0 z-190 flex flex-col" style="background: #111111;">
+
+      <!-- Sticky Header -->
+      <div class="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-white/10"
+        style="background: rgba(17,17,17,0.95); backdrop-filter: blur(20px);">
+        <button id="btn-back-admin-stock"
+          class="btn-back-pulse w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <div class="flex-1 min-w-0">
+          <h2 id="stock-modal-title" class="font-black text-white text-base">Kelola Stok</h2>
+          <p id="stock-modal-subtitle" class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider truncate">Product Name</p>
+        </div>
+      </div>
+
+      <!-- Scrollable Content -->
+      <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 pb-28">
+
+        <!-- Variant Selection -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Pilih Varian</label>
+          <select id="stock-input-variant"
+            class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 appearance-none">
+            <!-- Options injected by JS -->
+          </select>
         </div>
 
-        <div class="flex flex-col gap-4">
-          <!-- Variant Selection (if multiple) -->
-          <div class="flex flex-col gap-1.5">
-            <label
-              class="text-[10px] uppercase tracking-widest text-gray-400 font-bold"
-              >Pilih Varian</label
-            >
-            <select
-              id="stock-input-variant"
-              class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 appearance-none">
-              <!-- Options injected by JS -->
-            </select>
+        <!-- Stock Stats -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-center">
+            <p class="text-[9px] text-emerald-400 uppercase font-bold mb-1">Ready</p>
+            <p class="text-lg font-black text-white" id="stock-stat-ready">0</p>
           </div>
-
-          <!-- Stock Stats -->
-          <div class="grid grid-cols-3 gap-3">
-            <div
-              class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-center">
-              <p class="text-[9px] text-emerald-400 uppercase font-bold mb-1">
-                Ready
-              </p>
-              <p class="text-lg font-black text-white" id="stock-stat-ready">
-                0
-              </p>
-            </div>
-            <div
-              class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-center">
-              <p class="text-[9px] text-amber-400 uppercase font-bold mb-1">
-                Reserved
-              </p>
-              <p class="text-lg font-black text-white" id="stock-stat-reserved">
-                0
-              </p>
-            </div>
-            <div
-              class="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">
-              <p class="text-[9px] text-red-400 uppercase font-bold mb-1">
-                Sold
-              </p>
-              <p class="text-lg font-black text-white" id="stock-stat-sold">
-                0
-              </p>
-            </div>
+          <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-center">
+            <p class="text-[9px] text-amber-400 uppercase font-bold mb-1">Reserved</p>
+            <p class="text-lg font-black text-white" id="stock-stat-reserved">0</p>
           </div>
-
-          <!-- Bulk Input -->
-          <div class="flex flex-col gap-1.5 mt-2">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <label
-                  class="text-[10px] uppercase tracking-widest text-indigo-300 font-bold"
-                  >Tambah Stok Baru</label
-                >
-                <button
-                  type="button"
-                  id="btn-tutorial-format"
-                  class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
-                  title="Panduan Format Stok">
-                  <i class="fa-solid fa-circle-question"></i>
-                  <span class="text-[10px] font-bold">Format Stok</span>
-                </button>
-              </div>
-              <span class="text-[10px] text-gray-500 font-medium"
-                >1 baris = 1 stok item</span
-              >
-            </div>
-            <textarea
-              id="stock-input-bulk"
-              rows="5"
-              placeholder="1 baris = 1 stok"
-              class="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors font-mono"></textarea>
+          <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">
+            <p class="text-[9px] text-red-400 uppercase font-bold mb-1">Sold</p>
+            <p class="text-lg font-black text-white" id="stock-stat-sold">0</p>
           </div>
+        </div>
 
-          <!-- View/Delete Stock Section -->
-          <div class="flex flex-col gap-2 mt-2">
-            <div class="flex items-center justify-between">
-              <button
-                type="button"
-                id="btn-toggle-stock-list"
-                class="text-[10px] uppercase tracking-widest text-gray-500 hover:text-indigo-400 font-bold transition-colors">
-                <i class="fa-solid fa-list-check mr-1"></i> Lihat Daftar Stok
-                Tersedia
-              </button>
-              <button
-                type="button"
-                id="btn-delete-all-stock"
-                class="hidden text-[10px] uppercase tracking-widest text-red-500/70 hover:text-red-500 font-bold transition-colors">
-                <i class="fa-solid fa-trash-can mr-1"></i> Hapus Semua
+        <!-- Bulk Input -->
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <label class="text-[10px] uppercase tracking-widest text-indigo-300 font-bold">Tambah Stok Baru</label>
+              <button type="button" id="btn-tutorial-format"
+                class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1" title="Panduan Format Stok">
+                <i class="fa-solid fa-circle-question"></i>
+                <span class="text-[10px] font-bold">Format Stok</span>
               </button>
             </div>
+            <span class="text-[10px] text-gray-500 font-medium">1 baris = 1 stok item</span>
+          </div>
+          <textarea id="stock-input-bulk" rows="5" placeholder="1 baris = 1 stok"
+            class="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors font-mono"></textarea>
+        </div>
 
-            <div
-              id="stock-list-container"
-              class="hidden flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar scroll-smooth">
-              <!-- Stock items will be injected here -->
-            </div>
+        <!-- View/Delete Stock List -->
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <button type="button" id="btn-toggle-stock-list"
+              class="text-[10px] uppercase tracking-widest text-gray-500 hover:text-indigo-400 font-bold transition-colors">
+              <i class="fa-solid fa-list-check mr-1"></i> Lihat Daftar Stok Tersedia
+            </button>
+            <button type="button" id="btn-delete-all-stock"
+              class="hidden text-[10px] uppercase tracking-widest text-red-500/70 hover:text-red-500 font-bold transition-colors">
+              <i class="fa-solid fa-trash-can mr-1"></i> Hapus Semua
+            </button>
+          </div>
+          <div id="stock-list-container"
+            class="hidden flex flex-col gap-2 pr-1">
+            <!-- Stock items injected by JS -->
+          </div>
+
+          <!-- Pagination Controls -->
+          <div id="stock-pagination" class="hidden flex items-center justify-between gap-2 pt-1">
+            <button id="btn-stock-prev"
+              class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-white/10 transition-all disabled:opacity-40 disabled:pointer-events-none">
+              ← Prev
+            </button>
+            <span id="stock-page-info" class="text-xs text-gray-400">Hal 1 / 1</span>
+            <button id="btn-stock-next"
+              class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:bg-white/10 transition-all disabled:opacity-40 disabled:pointer-events-none">
+              Next →
+            </button>
           </div>
         </div>
+      </div>
 
-        <div class="flex gap-3 mt-2">
-          <button
-            id="btn-save-stock"
-            class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-black py-3 rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
-            <i class="fa-solid fa-plus-circle"></i> Tambah Stok
-          </button>
-        </div>
+      <!-- Fixed Bottom Bar -->
+      <div class="shrink-0 px-4 py-3 border-t border-white/10"
+        style="background: rgba(17,17,17,0.95); backdrop-filter: blur(20px);">
+        <button id="btn-save-stock"
+          class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-3 rounded-xl transition-all shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-plus-circle"></i> Tambah Stok
+        </button>
       </div>
     </div>
   </body>

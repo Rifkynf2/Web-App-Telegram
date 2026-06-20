@@ -1,79 +1,163 @@
-import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant } from './store.js';
-import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice } from './utils.js';
+import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant, urlParams } from './store.js';
+import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, formatRestockDate } from './utils.js';
 
-// DOM Elements - Buyer
-const elGrid = document.getElementById('product-grid');
-const elHeaderUserName = document.getElementById('header-user-name');
-const elHeaderShopName = document.getElementById('header-shop-name');
+// ── Mock Catalog (preview mode tanpa API) ──────────────────────────────────────
+const MOCK_CATALOG = [
+    {
+        id: 'm1', name: 'Gsuite x Pay', description: 'Private Region UK. Hitungan durasi dimulai langsung saat transaksi sukses. PSC = PaysafeCard', image_url: '', category: 'GENERAL', stock_count: 3106,
+        variants: [
+            { id: 'mv1', name: '3D PSC UK', price: 630, stock: 2165, min_qty: 1, max_qty: 100, description: 'Private Region UK dengan PSC', total_sold: 18420, last_restock_at: new Date(Date.now() - 2*86400000).toISOString() },
+            { id: 'mv2', name: '3D PSC FR', price: 650, stock: 941, min_qty: 1, max_qty: 100, description: 'Private Region FR dengan PSC', total_sold: 11958, last_restock_at: new Date(Date.now() - 5*86400000).toISOString() },
+        ]
+    },
+    {
+        id: 'm2', name: 'Mail Fresh', description: 'Email baru siap pakai, verified dan aman digunakan.', image_url: '', category: 'EMAIL', stock_count: 0,
+        variants: [
+            { id: 'mv3', name: 'Gmail Fresh', price: 1250, stock: 0, min_qty: 1, max_qty: 50, description: null, total_sold: 9341, last_restock_at: new Date(Date.now() - 14*86400000).toISOString() },
+        ]
+    },
+    {
+        id: 'm3', name: 'Alight Motion', description: 'Aplikasi edit video profesional dengan semua fitur premium unlocked.', image_url: '', category: 'APLIKASI', stock_count: 114,
+        variants: [
+            { id: 'mv4', name: 'Premium 1 Bulan', price: 2000, stock: 114, min_qty: 1, max_qty: 10, description: 'Akses penuh semua fitur selama 30 hari', total_sold: 4210, last_restock_at: new Date(Date.now() - 1*86400000).toISOString() },
+        ]
+    },
+    {
+        id: 'm4', name: 'Apple Music', description: 'Nikmati jutaan lagu tanpa iklan dengan kualitas audio lossless.', image_url: '', category: 'MUSIK', stock_count: 0,
+        variants: [
+            { id: 'mv5', name: 'Individual 3 Bulan', price: 5000, stock: 0, min_qty: 1, max_qty: 5, description: null, total_sold: 7892, last_restock_at: new Date(Date.now() - 20*86400000).toISOString() },
+        ]
+    },
+    {
+        id: 'm5', name: 'Netflix Premium', description: 'Streaming film dan serial tanpa batas di semua perangkat.', image_url: '', category: 'STREAMING', stock_count: 57,
+        variants: [
+            { id: 'mv6', name: '1 Bulan Sharing', price: 15000, stock: 32, min_qty: 1, max_qty: 5, description: 'Sharing screen, 1 profil aktif', total_sold: 3120, last_restock_at: new Date(Date.now() - 3*86400000).toISOString() },
+            { id: 'mv7', name: '1 Bulan Private', price: 45000, stock: 25, min_qty: 1, max_qty: 3, description: 'Private screen, semua profil', total_sold: 890, last_restock_at: new Date(Date.now() - 3*86400000).toISOString() },
+        ]
+    },
+    {
+        id: 'm6', name: 'Spotify Premium', description: 'Dengarkan musik favoritmu tanpa iklan, bisa download offline.', image_url: '', category: 'MUSIK', stock_count: 200,
+        variants: [
+            { id: 'mv8', name: 'Individual 1 Bulan', price: 8000, stock: 200, min_qty: 1, max_qty: 10, description: null, total_sold: 12500, last_restock_at: new Date(Date.now() - 0.5*86400000).toISOString() },
+        ]
+    },
+];
+
+// ── DOM References ─────────────────────────────────────────────────────────────
+const elGrid              = document.getElementById('product-grid');
+const elHeaderUserName    = document.getElementById('header-user-name');
+const elHeaderShopName    = document.getElementById('header-shop-name');
 const elHeaderUserInitial = document.getElementById('header-user-initial');
-const elHeaderUserAvatar = document.getElementById('header-user-avatar');
-const elProfName = document.getElementById('prof-name');
-const elProfId = document.getElementById('prof-id');
-const elProfInitial = document.getElementById('prof-initial');
-const elProfImg = document.getElementById('prof-img');
+const elHeaderUserAvatar  = document.getElementById('header-user-avatar');
+const elProfName          = document.getElementById('prof-name');
+const elProfId            = document.getElementById('prof-id');
+const elProfInitial       = document.getElementById('prof-initial');
+const elProfImg           = document.getElementById('prof-img');
 
-// Detail Modal Elements
-const detailModal = document.getElementById('detail-modal');
-const detailModalCard = document.getElementById('detail-modal-card');
-const btnCloseDetail = document.getElementById('btn-close-detail');
-const detailTitle = document.getElementById('detail-title');
-const detailSoldCount = document.getElementById('detail-sold-count');
-const detailVariantsContainer = document.getElementById('detail-variants-container');
-const detailImage = document.getElementById('detail-image');
-const detailPrice = document.getElementById('detail-price');
-const detailQty = document.getElementById('detail-qty');
-const btnMin = document.getElementById('detail-btn-min');
-const btnPlus = document.getElementById('detail-btn-plus');
-const btnCheckout = document.getElementById('btn-checkout');
-const checkoutText = document.getElementById('checkout-text');
-const elDetailDesc = document.getElementById('detail-desc');
-const elVariantInfoBox = document.getElementById('variant-info-box');
-const elVariantDesc = document.getElementById('variant-desc');
+// Detail Page Elements
+const detailPage            = document.getElementById('detail-page');
+const detailPageHeaderTitle = document.getElementById('detail-page-header-title');
+const detailPageImage       = document.getElementById('detail-page-image');
+const detailPageName        = document.getElementById('detail-page-name');
+const detailPageDesc        = document.getElementById('detail-page-desc');
+const detailPageSold        = document.getElementById('detail-page-sold');
+const detailPageRestock     = document.getElementById('detail-page-restock');
+const detailPageVariants    = document.getElementById('detail-page-variants');
+const detailPagePrice       = document.getElementById('detail-page-price');
+const detailPageStock       = document.getElementById('detail-page-stock');
+const detailPageVariantDescBox  = document.getElementById('detail-page-variant-desc-box');
+const detailPageVariantDesc     = document.getElementById('detail-page-variant-desc');
+const btnBackCatalog        = document.getElementById('btn-back-catalog');
+
+// Detail Bottom Bar (mobile)
+const detailBottomBar      = document.getElementById('detail-bottom-bar');
+const detailPageQty        = document.getElementById('detail-page-qty');
+const detailPageTotal      = document.getElementById('detail-page-total');
+const detailPageBtnMin     = document.getElementById('detail-page-btn-min');
+const detailPageBtnPlus    = document.getElementById('detail-page-btn-plus');
+const btnDetailCheckout    = document.getElementById('btn-detail-checkout');
+const detailCheckoutText   = document.getElementById('detail-checkout-text');
+
+// Detail Inline Controls (desktop)
+const detailPageQtyDesk    = document.getElementById('detail-page-qty-desk');
+const detailPageTotalDesk  = document.getElementById('detail-page-total-desk');
+const detailPageBtnMinDesk = document.getElementById('detail-page-btn-min-desk');
+const detailPageBtnPlusDesk= document.getElementById('detail-page-btn-plus-desk');
+const btnDetailCheckoutDesk= document.getElementById('btn-detail-checkout-desk');
+const detailCheckoutTextDesk=document.getElementById('detail-checkout-text-desk');
 
 // Checkout Modal
-const checkoutModal = document.getElementById('checkout-modal');
-const btnCloseModal = document.getElementById('btn-close-modal');
-const btnBackToBot = document.getElementById('btn-back-to-bot');
-const checkoutModalTitle = checkoutModal?.querySelector('h3');
-const checkoutModalDesc = checkoutModal?.querySelector('p');
+const checkoutModal        = document.getElementById('checkout-modal');
+const btnCloseModal        = document.getElementById('btn-close-modal');
+const btnBackToBot         = document.getElementById('btn-back-to-bot');
+const checkoutModalTitle   = checkoutModal?.querySelector('h3');
+const checkoutModalDesc    = checkoutModal?.querySelector('p');
 
-// Nav Elements
-const navHome = document.getElementById('nav-btn-home');
-const navProfile = document.getElementById('nav-btn-profile');
-const profileView = document.getElementById('profile-view');
-const bottomNav = document.getElementById('bottom-nav');
+// Navigation
+const navHome      = document.getElementById('nav-btn-home');
+const navProfile   = document.getElementById('nav-btn-profile');
+const profileView  = document.getElementById('profile-view');
+const bottomNav    = document.getElementById('bottom-nav');
 const telegramFallback = document.getElementById('telegram-fallback');
 
-// Global State for Buyer
-let activeProduct = null;
-let activeVariant = null;
-let currentQty = 0;
+// ── Global State ───────────────────────────────────────────────────────────────
+let activeProduct  = null;
+let activeVariant  = null;
+let currentQty     = 0;
 let isCheckoutSubmitting = false;
 
+// ── Init ───────────────────────────────────────────────────────────────────────
 export async function initBuyerApp() {
-    console.log("[App] Version: 1.1.0-tenant-resolver");
-    const telegramFallback = document.getElementById('telegram-fallback');
+    console.log("[App] Version: 1.2.0-ui-overhaul");
 
-    // 1. Check Technical Environment
+    const isPreviewMode = urlParams.get('preview') === 'true';
+    const hasBotId      = !!urlParams.get('bot_id');
+
     if (tg && tg.initData) {
         if (telegramFallback) telegramFallback.classList.add('hidden');
         tg.expand();
         tg.ready();
+    } else if (isPreviewMode) {
+        if (telegramFallback) telegramFallback.classList.add('hidden');
+        console.log('[App] Preview mode active — Telegram check bypassed');
     } else {
-        // Stop here and keep fallback visible if not in Telegram
         console.log("Not in Telegram environment.");
         return;
     }
 
-    // 2. Resolve Tenant (connects to the correct tenant database)
+    // Preview tanpa bot_id → pakai mock data, skip semua API/Supabase calls
+    if (isPreviewMode && !hasBotId) {
+        shopSettings.name = 'Preview Toko';
+        populateUserIdentity();
+        renderBuyerProducts(MOCK_CATALOG);
+        bindDetailPageEvents();
+        bindCheckoutModalEvents();
+        bindNavEvents();
+        hideLoading();
+        console.log('[App] Running with MOCK data (no bot_id)');
+        return;
+    }
+
     const tenantResolved = await initTenant();
     if (!tenantResolved) {
+        // Preview dengan bot_id tapi tenant gagal → tetap pakai mock
+        if (isPreviewMode) {
+            console.warn('[App] Tenant failed in preview mode, falling back to mock data');
+            shopSettings.name = 'Preview Toko';
+            populateUserIdentity();
+            renderBuyerProducts(MOCK_CATALOG);
+            bindDetailPageEvents();
+            bindCheckoutModalEvents();
+            bindNavEvents();
+            hideLoading();
+            return;
+        }
+
         hideLoading();
         if (telegramFallback) telegramFallback.classList.add('hidden');
-        const errorState = document.getElementById('error-state');
-        const errorTitle = document.getElementById('error-title');
+        const errorState   = document.getElementById('error-state');
+        const errorTitle   = document.getElementById('error-title');
         const errorMessage = document.getElementById('error-message');
-        
         if (errorState) errorState.classList.replace('hidden', 'flex');
         if (errorTitle) errorTitle.textContent = 'Konfigurasi Belum Lengkap';
         if (errorMessage) {
@@ -83,105 +167,15 @@ export async function initBuyerApp() {
         return;
     }
 
-    // 3. Fetch Live Data in Parallel (Super Irit & Cepat)
-    await Promise.all([
-        fetchShopSettings(),
-        fetchCatalog()
-    ]);
+    await Promise.all([fetchShopSettings(), fetchCatalog()]);
 
     populateUserIdentity();
     renderBuyerProducts();
-
-    // Real-time stock update — buyer langsung lihat perubahan tanpa reload
     subscribeToInventoryChanges(() => renderBuyerProducts());
 
-    // Bind Detail Modal Buttons
-    if (btnMin) btnMin.addEventListener('click', () => updateQty(-1));
-    if (btnPlus) btnPlus.addEventListener('click', () => updateQty(1));
-    if (btnCloseDetail) btnCloseDetail.addEventListener('click', closeDetailModal);
-    if (btnCheckout) btnCheckout.addEventListener('click', handleCheckout);
-
-    // Strip/handle click to close
-    const dragHandle = document.getElementById('modal-drag-handle');
-    if (dragHandle) dragHandle.addEventListener('click', closeDetailModal);
-
-    // Bind Checkout Modal Buttons
-    if (btnCloseModal) {
-        btnCloseModal.addEventListener('click', () => {
-            checkoutModal.classList.replace('flex', 'hidden');
-            if (bottomNav) bottomNav.classList.remove('hidden');
-        });
-    }
-    
-    // Add backdrop-click to close
-    if (detailModal) {
-        detailModal.addEventListener('click', (e) => {
-            if (e.target === detailModal) closeDetailModal();
-        });
-    }
-
-    // Swipe-to-close on modal card
-    if (detailModalCard) {
-        let startY = 0;
-        let currentY = 0;
-        let isDragging = false;
-
-        detailModalCard.addEventListener('pointerdown', (e) => {
-            // Ignore if clicking a button (like the X close button)
-            if (e.target.closest('button') || e.target.closest('a')) return;
-
-            // Only initiate drag from the top area (handle + header region)
-            const touchY = e.clientY;
-            const cardRect = detailModalCard.getBoundingClientRect();
-            const touchOffset = touchY - cardRect.top;
-            if (touchOffset > 80) return; // Only top 80px is draggable
-
-            startY = e.clientY;
-            currentY = startY;
-            isDragging = true;
-            detailModalCard.style.transition = 'none';
-            try { detailModalCard.setPointerCapture(e.pointerId); } catch(err){}
-        });
-
-        detailModalCard.addEventListener('pointermove', (e) => {
-            if (!isDragging) return;
-            currentY = e.clientY;
-            const deltaY = currentY - startY;
-            if (deltaY > 0) {
-                detailModalCard.style.transform = `translateY(${deltaY}px)`;
-                // Fade backdrop as user drags
-                const opacity = Math.max(0.2, 1 - (deltaY / 400));
-                detailModal.style.backgroundColor = `rgba(0,0,0,${opacity * 0.8})`;
-            }
-        });
-
-        const handlePointerUp = (e) => {
-            if (!isDragging) return;
-            isDragging = false;
-            try { detailModalCard.releasePointerCapture(e.pointerId); } catch(err){}
-            const deltaY = currentY - startY;
-            detailModalCard.style.transition = 'transform 0.3s ease';
-            detailModal.style.transition = 'background-color 0.3s ease';
-
-            if (deltaY > 100) {
-                // Threshold exceeded — close modal
-                closeDetailModal();
-            } else {
-                // Snap back
-                detailModalCard.style.transform = 'translateY(0)';
-                detailModal.style.backgroundColor = '';
-            }
-
-            // Clean up inline styles after animation
-            setTimeout(() => {
-                detailModalCard.style.transition = '';
-                detailModal.style.transition = '';
-                detailModal.style.backgroundColor = '';
-            }, 350);
-        };
-        detailModalCard.addEventListener('pointerup', handlePointerUp);
-        detailModalCard.addEventListener('pointercancel', handlePointerUp);
-    }
+    bindDetailPageEvents();
+    bindCheckoutModalEvents();
+    bindNavEvents();
 
     const botUsername = getBotUsername() || currentBotId;
     if (btnBackToBot && botUsername) {
@@ -189,297 +183,291 @@ export async function initBuyerApp() {
         btnBackToBot.href = telegramBotUrl;
         btnBackToBot.addEventListener('click', (event) => {
             event.preventDefault();
-
             try {
-                if (tg?.openTelegramLink) {
-                    tg.openTelegramLink(telegramBotUrl);
-                } else {
-                    window.location.href = telegramBotUrl;
-                }
+                if (tg?.openTelegramLink) tg.openTelegramLink(telegramBotUrl);
+                else window.location.href = telegramBotUrl;
             } finally {
-                if (tg?.close) {
-                    setTimeout(() => tg.close(), 150);
-                }
+                if (tg?.close) setTimeout(() => tg.close(), 150);
             }
         });
     }
 
-    // Bind Navigation
-    if (navHome) navHome.addEventListener('click', () => switchTab('home'));
-    if (navProfile) navProfile.addEventListener('click', () => switchTab('profile'));
-
     hideLoading();
 }
 
+// ── User Identity ──────────────────────────────────────────────────────────────
 function populateUserIdentity() {
-    // Header
-    if (elHeaderUserName) elHeaderUserName.textContent = tgUser?.first_name || userName;
-    if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
-    
-    // Profile Tab
-    if (elProfName) elProfName.textContent = tgUser?.first_name || userName;
-    const displayId = tgUser?.username ? `@${tgUser.username}` : (userUsername ? `@${userUsername}` : `ID: ${tgUser?.id || 'Anonymous'}`);
-    if (elProfId) elProfId.textContent = displayId;
-    
-    // Avatar Logic
-    const finalName = tgUser?.first_name || userName;
-    const initial = finalName.charAt(0).toUpperCase();
+    const finalName  = tgUser?.first_name || userName;
+    const initial    = finalName.charAt(0).toUpperCase();
     const finalPhoto = tgUser?.photo_url || userPhoto;
-    
+
+    if (elHeaderUserName)    elHeaderUserName.textContent  = finalName;
+    if (elHeaderShopName)    elHeaderShopName.textContent  = shopSettings.name;
+    if (elProfName)          elProfName.textContent        = finalName;
+
+    const displayId = tgUser?.username
+        ? `@${tgUser.username}`
+        : (userUsername ? `@${userUsername}` : `ID: ${tgUser?.id || 'Anonymous'}`);
+    if (elProfId) elProfId.textContent = displayId;
+
     if (finalPhoto) {
-        if (elHeaderUserAvatar) {
-            elHeaderUserAvatar.src = finalPhoto;
-            elHeaderUserAvatar.classList.remove('hidden');
-        }
-        if (elProfImg) {
-            elProfImg.src = finalPhoto;
-            elProfImg.classList.remove('hidden');
-        }
+        if (elHeaderUserAvatar) { elHeaderUserAvatar.src = finalPhoto; elHeaderUserAvatar.classList.remove('hidden'); }
+        if (elProfImg)          { elProfImg.src = finalPhoto; elProfImg.classList.remove('hidden'); }
     } else {
         if (elHeaderUserInitial) elHeaderUserInitial.textContent = initial;
-        if (elProfInitial) elProfInitial.textContent = initial;
+        if (elProfInitial)       elProfInitial.textContent       = initial;
     }
 
-    // Balance (Live fetch if possible)
     if (tgUser?.id) {
         fetchUserBalance(tgUser.id).then(balance => {
-            const elBalance = document.getElementById('prof-balance');
-            if (elBalance) elBalance.textContent = formatCurrency(balance);
+            const el = document.getElementById('prof-balance');
+            if (el) el.textContent = formatCurrency(balance);
         });
-
         fetchUserTransactionCount(tgUser.id).then(count => {
-            const elTrxCount = document.getElementById('prof-total-trx');
-            if (elTrxCount) elTrxCount.textContent = count;
+            const el = document.getElementById('prof-total-trx');
+            if (el) el.textContent = count;
         });
     }
 
-    // Dynamic Help Button — redirect to admin contact or bot fallback
     const btnContactAdmin = document.getElementById('btn-contact-admin');
     if (btnContactAdmin) {
         const adminUsername = shopSettings.adminContact || getBotUsername();
         if (adminUsername) {
-            const adminTelegramUrl = `https://t.me/${adminUsername}`;
-            btnContactAdmin.href = adminTelegramUrl;
+            const adminUrl = `https://t.me/${adminUsername}`;
+            btnContactAdmin.href = adminUrl;
             btnContactAdmin.addEventListener('click', (e) => {
                 e.preventDefault();
                 try {
-                    if (tg?.openTelegramLink) {
-                        tg.openTelegramLink(adminTelegramUrl);
-                    } else {
-                        window.open(adminTelegramUrl, '_blank');
-                    }
-                } catch (err) {
-                    window.open(adminTelegramUrl, '_blank');
-                }
+                    if (tg?.openTelegramLink) tg.openTelegramLink(adminUrl);
+                    else window.open(adminUrl, '_blank');
+                } catch { window.open(adminUrl, '_blank'); }
             });
         }
     }
 }
 
-function renderBuyerProducts() {
+// ── Product Grid (2-col) ───────────────────────────────────────────────────────
+function renderBuyerProducts(overrideData) {
     if (!elGrid) return;
     elGrid.innerHTML = '';
-    
-    const products = catalogData;
-    
-    products.forEach(product => {
-        const div = document.createElement('div');
-        div.className = 'glass-panel p-3 flex flex-col gap-3 group cursor-pointer hover:bg-white/5 transition-all transform hover:-translate-y-1 !rounded-3xl';
-        
-        const totalStock = product.stock_count;
-        const badgeColor = totalStock > 0 ? 'bg-green-500' : 'bg-red-500';
-        const priceDisplay = formatCurrency(getLowestVariantPrice(product.variants));
 
-        div.innerHTML = `
-            <!-- Inner Logo Box -->
-            <div class="w-full aspect-square rounded-2xl bg-white/5 flex items-center justify-center relative overflow-hidden group-hover:bg-white/10 transition-colors">
-                <!-- Stock Badge -->
-                <div class="absolute top-2 right-2 ${badgeColor} text-white text-[9px] font-black px-2 py-0.5 rounded-lg shadow-lg z-20">
-                    ${totalStock}
-                </div>
-                
-                <!-- Logo -->
-                <div class="w-2/3 h-2/3 rounded-full overflow-hidden shadow-2xl relative z-10">
-                    <img src="${getImageFallback(product.image_url, product.name)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                </div>
+    const products = overrideData || catalogData;
+    products.forEach(product => {
+        const totalStock    = product.stock_count;
+        const isOutOfStock  = totalStock === 0;
+        const lowestPrice   = getLowestVariantPrice(product.variants);
+        const hasMultiVariant = (product.variants || []).length > 1;
+        const priceLabel    = formatCurrency(lowestPrice) + (hasMultiVariant ? ' +' : '');
+        const imageUrl      = getImageFallback(product.image_url, product.name);
+
+        const card = document.createElement('div');
+        card.className = 'flex flex-col overflow-hidden cursor-pointer group transition-all active:scale-95';
+        card.style.cssText = 'background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);';
+
+        card.innerHTML = `
+            <!-- Image -->
+            <div class="relative overflow-hidden w-full" style="aspect-ratio:4/3; background:#0d0d1f;">
+                <img
+                    src="${imageUrl}"
+                    alt="${product.name}"
+                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                    onerror="this.src='https://placehold.co/400x300/1e293b/white?text=${encodeURIComponent(product.name)}'">
+                ${isOutOfStock ? `
+                <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span class="text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full" style="background:rgba(239,68,68,0.7);backdrop-filter:blur(4px);">Habis</span>
+                </div>` : ''}
             </div>
-            
-            <!-- Product Info -->
-            <div class="flex flex-col gap-1 px-1 pb-1">
-                <h3 class="font-bold text-white text-sm line-clamp-1 group-hover:text-indigo-300 transition-colors uppercase tracking-tight">${product.name}</h3>
-                <div class="text-blue-400 font-black text-sm tracking-wide">${priceDisplay}</div>
+            <!-- Info -->
+            <div class="flex flex-col gap-2 p-3">
+                <h3 class="font-bold text-white text-sm line-clamp-2 leading-snug">${product.name}</h3>
+                <div class="font-black text-blue-400 text-base tracking-wide">${priceLabel}</div>
+                ${isOutOfStock
+                    ? `<div class="text-[11px] text-red-400/80 font-bold">Stok Habis</div>`
+                    : `<div class="flex items-center gap-1.5">
+                          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                          <span class="text-[11px] text-emerald-400 font-bold">${totalStock.toLocaleString('id-ID')} stok</span>
+                       </div>`
+                }
+                <button
+                    class="w-full text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-between mt-1 transition-all active:scale-95"
+                    style="${isOutOfStock
+                        ? 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(107,114,128,1);cursor:not-allowed;'
+                        : 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:white;'}"
+                    ${isOutOfStock ? 'disabled' : ''}>
+                    <span>${isOutOfStock ? 'Stok Habis' : 'Lihat Detail'}</span>
+                    ${!isOutOfStock ? `<i class="fa-solid fa-arrow-right text-[10px] text-gray-400"></i>` : ''}
+                </button>
             </div>
         `;
 
-        div.onclick = () => openDetailModal(product);
-        elGrid.appendChild(div);
+        if (!isOutOfStock) {
+            card.addEventListener('click', () => openDetailPage(product));
+        }
+
+        elGrid.appendChild(card);
     });
 }
 
-function openDetailModal(product) {
+// ── Detail Page ────────────────────────────────────────────────────────────────
+function openDetailPage(product) {
     activeProduct = product;
-    detailTitle.textContent = product.name;
-    if (elDetailDesc) elDetailDesc.textContent = product.description || '';
-    const finalImageUrl = getImageFallback(product.image_url, product.name);
-    detailImage.style.backgroundImage = `url('${finalImageUrl}')`;
-    
-    if (detailSoldCount) {
-        const soldCount = (product.variants || []).reduce((sum, variant) => {
-            return sum + (Number.parseInt(variant.total_sold ?? 0, 10) || 0);
-        }, 0);
-        detailSoldCount.textContent = `${soldCount.toLocaleString('id-ID')} terjual`;
+    activeVariant = null;
+    currentQty    = 0;
+
+    // Populate header & image
+    if (detailPageHeaderTitle) detailPageHeaderTitle.textContent = product.name;
+    if (detailPageName)        detailPageName.textContent        = product.name;
+    if (detailPageDesc)        detailPageDesc.textContent        = product.description || '';
+
+    const imageUrl = getImageFallback(product.image_url, product.name);
+    if (detailPageImage) {
+        detailPageImage.style.backgroundImage = `url('${imageUrl}')`;
     }
 
-    // Render Variants as Cards
-    if (detailVariantsContainer) {
-        detailVariantsContainer.innerHTML = '';
-        product.variants.forEach((v, index) => {
-            const card = document.createElement('div');
-            card.className = 'variant-card glass-panel p-4 flex items-center justify-between gap-4 cursor-pointer hover:bg-white/5 transition-all border border-white/10 relative overflow-hidden group';
-            
-            // Stock info from variants (already calculated during fetchCatalog)
-            const dummyStock = v.stock || 0;
-            const isOutOfStock = dummyStock === 0;
-            const statusColor = isOutOfStock ? '#ef4444' : '#10b981'; // Red vs Green
-            const statusLabel = isOutOfStock ? 'habis' : 'tersedia';
+    // Sold count (sum across all variants)
+    if (detailPageSold) {
+        const totalSold = (product.variants || []).reduce((sum, v) => sum + (parseInt(v.total_sold ?? 0, 10) || 0), 0);
+        detailPageSold.textContent = totalSold.toLocaleString('id-ID');
+    }
 
-            card.innerHTML = `
-                <div class="flex flex-col gap-1 z-10 ${isOutOfStock ? 'opacity-50' : ''}">
-                    <h4 class="font-bold text-white text-md group-hover:text-indigo-300 transition-colors">${v.name}</h4>
-                    <p class="text-blue-400 font-black text-lg">${formatCurrency(v.price)}</p>
-                </div>
-                <div class="flex flex-col items-center justify-center z-10">
-                    <span class="text-2xl font-black" style="color: ${statusColor};">${dummyStock}</span>
-                    <span class="text-[8px] uppercase font-bold tracking-widest" style="color: ${statusColor}; opacity: 0.8;">${statusLabel}</span>
-                </div>
-                <!-- Selection Indicator -->
-                <div class="absolute inset-y-0 left-0 w-1 bg-indigo-500 opacity-0 transition-opacity"></div>
+    // Render variant chips
+    if (detailPageVariants) {
+        detailPageVariants.innerHTML = '';
+        (product.variants || []).forEach((v, index) => {
+            const isOut = (v.stock || 0) === 0;
+            const chip  = document.createElement('button');
+            chip.className = 'variant-chip flex flex-col items-start px-4 py-3 rounded-xl transition-all active:scale-95';
+            chip.style.cssText = isOut
+                ? 'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);opacity:0.5;cursor:not-allowed;'
+                : 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);';
+            chip.disabled = isOut;
+            chip.innerHTML = `
+                <span class="font-bold text-sm ${isOut ? 'text-gray-500' : 'text-white'}">${v.name}</span>
+                <span class="text-[11px] mt-0.5 ${isOut ? 'text-red-400/60' : 'text-emerald-400/80'}">${isOut ? 'Habis' : `Stok: ${(v.stock || 0).toLocaleString('id-ID')}`}</span>
             `;
-            
-            if (isOutOfStock) {
-                card.classList.add('pointer-events-none', 'grayscale-[0.5]');
-                card.title = "Stok Sedang Kosong";
-            } else {
-                card.onclick = () => selectVariant(v, card);
+            if (!isOut) {
+                chip.addEventListener('click', () => selectDetailVariant(v, chip));
             }
-            
-            detailVariantsContainer.appendChild(card);
-            
-            // Auto select first variant
-            if (index === 0) selectVariant(v, card);
+            detailPageVariants.appendChild(chip);
+
+            // Auto-select first available
+            if (!isOut && index === 0) {
+                setTimeout(() => selectDetailVariant(v, chip), 0);
+            }
         });
     }
 
-    // Animate details in
-    detailModal.classList.remove('hidden');
-    detailModal.classList.add('flex');
+    // Show detail page with slide-in animation
+    if (detailPage) {
+        detailPage.classList.remove('hidden');
+        detailPage.scrollTop = 0;
+        requestAnimationFrame(() => {
+            detailPage.classList.add('active');
+        });
+    }
+    if (detailBottomBar) detailBottomBar.classList.remove('hidden');
     if (bottomNav) bottomNav.classList.add('hidden');
-    setTimeout(() => {
-        detailModalCard.classList.remove('translate-y-full');
-    }, 10);
 }
 
-function selectVariant(variant, cardElement) {
+function closeDetailPage() {
+    if (detailPage) {
+        detailPage.classList.remove('active');
+        setTimeout(() => {
+            detailPage.classList.add('hidden');
+        }, 320);
+    }
+    if (detailBottomBar) detailBottomBar.classList.add('hidden');
+    if (bottomNav) bottomNav.classList.remove('hidden');
+
+    // Reset state
+    activeProduct = null;
+    activeVariant = null;
+    currentQty    = 0;
+}
+
+function selectDetailVariant(variant, chipElement) {
     activeVariant = variant;
-    currentQty = variant.min_qty || 1;
+    currentQty    = variant.min_qty || 1;
 
-    // Highlight current card
-    const allCards = detailVariantsContainer.querySelectorAll('.variant-card');
-    allCards.forEach(c => {
-        c.classList.remove('border-indigo-500', 'bg-indigo-500/10', 'ring-1', 'ring-indigo-500/50');
-        c.classList.add('border-white/10');
-        c.querySelector('.absolute').classList.add('opacity-0');
-        c.querySelector('.absolute').classList.remove('opacity-100');
+    // Highlight chip
+    const allChips = detailPageVariants?.querySelectorAll('.variant-chip');
+    allChips?.forEach(c => {
+        c.style.background = 'rgba(255,255,255,0.05)';
+        c.style.border     = '1px solid rgba(255,255,255,0.12)';
+        c.style.boxShadow  = 'none';
     });
+    chipElement.style.background  = 'rgba(59,130,246,0.2)';
+    chipElement.style.border      = '1px solid rgba(59,130,246,0.5)';
+    chipElement.style.boxShadow   = '0 0 12px rgba(59,130,246,0.2)';
 
-    cardElement.classList.remove('border-white/10');
-    cardElement.classList.add('border-indigo-500', 'bg-indigo-500/10', 'ring-1', 'ring-indigo-500/50');
-    cardElement.querySelector('.absolute').classList.remove('opacity-0');
-    cardElement.querySelector('.absolute').classList.add('opacity-100');
-    
-    // Update Variant Description
-    if (elVariantInfoBox && elVariantDesc) {
+    // Update price & stock
+    if (detailPagePrice) detailPagePrice.textContent = formatCurrency(variant.price);
+    if (detailPageStock) {
+        const stockVal = variant.stock || 0;
+        detailPageStock.textContent = stockVal.toLocaleString('id-ID');
+        detailPageStock.style.color = stockVal > 0 ? '#34d399' : '#f87171';
+    }
+
+    // Update restock date
+    if (detailPageRestock) {
+        const restockTime = variant.last_restock_at || variant.updated_at || null;
+        detailPageRestock.textContent = formatRestockDate(restockTime);
+    }
+
+    // Variant description
+    if (detailPageVariantDescBox && detailPageVariantDesc) {
         if (variant.description) {
-            elVariantDesc.textContent = variant.description;
-            elVariantInfoBox.classList.remove('hidden');
+            detailPageVariantDesc.textContent = variant.description;
+            detailPageVariantDescBox.classList.remove('hidden');
         } else {
-            elVariantInfoBox.classList.add('hidden');
+            detailPageVariantDescBox.classList.add('hidden');
         }
     }
 
-    updateQtyDisplay();
+    updateDetailQtyDisplay();
 }
 
-function closeDetailModal() {
-    detailModalCard.classList.add('translate-y-full');
-    setTimeout(() => {
-        detailModal.classList.remove('flex');
-        detailModal.classList.add('hidden');
-        if (bottomNav) bottomNav.classList.remove('hidden');
-    }, 300);
-}
-
-function updateQty(change) {
+function updateDetailQty(change) {
     if (!activeVariant) return;
-    
     const min = activeVariant.min_qty || 1;
-    const max = activeVariant.max_qty || 999;
-
-    let newQty = currentQty + change;
-    
-    if (newQty < min) newQty = min;
-    if (newQty > max) newQty = max;
-    
-    currentQty = newQty;
-    updateQtyDisplay();
+    const max = activeVariant.max_qty || Math.min(activeVariant.stock || 999, 999);
+    currentQty = Math.min(Math.max(currentQty + change, min), max);
+    updateDetailQtyDisplay();
 }
 
-function updateQtyDisplay() {
+function updateDetailQtyDisplay() {
     if (!activeVariant) return;
 
-    detailQty.textContent = currentQty;
-    
-    const price = parseInt(activeVariant.price);
-    const total = currentQty * price;
-    
-    detailPrice.textContent = formatCurrency(total);
-    
-    btnCheckout.disabled = currentQty === 0;
-    
-    if (currentQty > 0) {
-        checkoutText.textContent = `Checkout - ${formatCurrency(total)}`;
-        btnCheckout.classList.remove('opacity-50', 'cursor-not-allowed');
-    } else {
-        checkoutText.textContent = 'Pilih Jumlah Dulu';
-        btnCheckout.classList.add('opacity-50', 'cursor-not-allowed');
-    }
+    const total       = formatCurrency(currentQty * parseInt(activeVariant.price));
+    const canCheckout = currentQty > 0 && !isCheckoutSubmitting;
+    const btnLabel    = currentQty > 0
+        ? `Beli Sekarang — ${formatCurrency(currentQty * parseInt(activeVariant.price))}`
+        : 'Pilih Varian Dulu';
+
+    // Mobile controls
+    if (detailPageQty)       detailPageQty.textContent        = currentQty;
+    if (detailPageTotal)     detailPageTotal.textContent      = total;
+    if (btnDetailCheckout)   { btnDetailCheckout.disabled     = !canCheckout; btnDetailCheckout.style.opacity = canCheckout ? '1' : '0.5'; }
+    if (detailCheckoutText)  detailCheckoutText.textContent   = btnLabel;
+
+    // Desktop controls (same values, different elements)
+    if (detailPageQtyDesk)   detailPageQtyDesk.textContent    = currentQty;
+    if (detailPageTotalDesk) detailPageTotalDesk.textContent  = total;
+    if (btnDetailCheckoutDesk) { btnDetailCheckoutDesk.disabled = !canCheckout; btnDetailCheckoutDesk.style.opacity = canCheckout ? '1' : '0.5'; }
+    if (detailCheckoutTextDesk) detailCheckoutTextDesk.textContent = btnLabel;
 }
 
-function showCheckoutModal(title, description) {
-    if (checkoutModalTitle) checkoutModalTitle.textContent = title;
-    if (checkoutModalDesc) checkoutModalDesc.textContent = description;
-    checkoutModal.classList.remove('hidden');
-    checkoutModal.classList.add('flex');
-    if (bottomNav) bottomNav.classList.add('hidden');
-}
-
-function setCheckoutLoading(isLoading) {
-    isCheckoutSubmitting = isLoading;
-    if (!btnCheckout) return;
-
-    btnCheckout.disabled = isLoading || currentQty === 0;
-    if (isLoading) {
-        checkoutText.textContent = 'Membuat QRIS di Telegram...';
-        btnCheckout.classList.add('opacity-50', 'cursor-not-allowed');
-    } else {
-        updateQtyDisplay();
-    }
-}
-
+// ── Checkout ───────────────────────────────────────────────────────────────────
 async function handleCheckout() {
     if (!activeVariant || currentQty < 1 || isCheckoutSubmitting) return;
 
-    setCheckoutLoading(true);
+    isCheckoutSubmitting = true;
+    const loadingLabel = 'Membuat QRIS di Telegram...';
+    if (btnDetailCheckout)    { btnDetailCheckout.disabled = true;    btnDetailCheckout.style.opacity = '0.6'; }
+    if (detailCheckoutText)   detailCheckoutText.textContent   = loadingLabel;
+    if (btnDetailCheckoutDesk){ btnDetailCheckoutDesk.disabled = true; btnDetailCheckoutDesk.style.opacity = '0.6'; }
+    if (detailCheckoutTextDesk) detailCheckoutTextDesk.textContent = loadingLabel;
 
     try {
         const response = await fetch('/api/webapp/checkout', {
@@ -496,53 +484,100 @@ async function handleCheckout() {
         });
 
         const result = await response.json().catch(() => ({}));
-        if (!response.ok) {
-            throw new Error(result.error || 'Checkout gagal diproses');
-        }
+        if (!response.ok) throw new Error(result.error || 'Checkout gagal diproses');
 
-        closeDetailModal();
-        setTimeout(() => {
-            showCheckoutModal(
-                'QRIS Terkirim ke Telegram',
-                'Pesanan Anda sudah diteruskan ke bot. Silakan cek chat Telegram untuk melihat QRIS dan menyelesaikan pembayaran.'
-            );
-        }, 300);
+        closeDetailPage();
+        setTimeout(() => showCheckoutModal(
+            'QRIS Terkirim ke Telegram',
+            'Pesanan Anda sudah diteruskan ke bot. Silakan cek chat Telegram untuk melihat QRIS dan menyelesaikan pembayaran.'
+        ), 350);
+
     } catch (err) {
         console.error('[Buyer] Checkout failed:', err.message);
-
         if (tg?.showAlert) {
             tg.showAlert(err.message || 'Checkout gagal diproses');
-            return;
-        }
-
-        closeDetailModal();
-        setTimeout(() => {
-            showCheckoutModal(
+        } else {
+            closeDetailPage();
+            setTimeout(() => showCheckoutModal(
                 'Checkout Gagal',
                 err.message || 'Terjadi kesalahan saat membuat QRIS. Silakan coba lagi dari Mini App.'
-            );
-        }, 300);
+            ), 350);
+        }
     } finally {
-        setCheckoutLoading(false);
+        isCheckoutSubmitting = false;
+        updateDetailQtyDisplay();
     }
 }
 
+function showCheckoutModal(title, description) {
+    if (checkoutModalTitle) checkoutModalTitle.textContent = title;
+    if (checkoutModalDesc)  checkoutModalDesc.textContent  = description;
+    checkoutModal?.classList.replace('hidden', 'flex');
+    if (bottomNav) bottomNav.classList.add('hidden');
+}
+
+// ── Event Binding ──────────────────────────────────────────────────────────────
+function bindDetailPageEvents() {
+    if (btnBackCatalog)      btnBackCatalog.addEventListener('click', closeDetailPage);
+    document.getElementById('btn-back-to-home')?.addEventListener('click', closeDetailPage);
+
+    // Mobile controls
+    if (detailPageBtnMin)    detailPageBtnMin.addEventListener('click', () => updateDetailQty(-1));
+    if (detailPageBtnPlus)   detailPageBtnPlus.addEventListener('click', () => updateDetailQty(1));
+    if (btnDetailCheckout)   btnDetailCheckout.addEventListener('click', handleCheckout);
+
+    // Desktop controls
+    if (detailPageBtnMinDesk)  detailPageBtnMinDesk.addEventListener('click', () => updateDetailQty(-1));
+    if (detailPageBtnPlusDesk) detailPageBtnPlusDesk.addEventListener('click', () => updateDetailQty(1));
+    if (btnDetailCheckoutDesk) btnDetailCheckoutDesk.addEventListener('click', handleCheckout);
+}
+
+function bindCheckoutModalEvents() {
+    if (btnCloseModal) {
+        btnCloseModal.addEventListener('click', () => {
+            checkoutModal?.classList.replace('flex', 'hidden');
+            if (bottomNav) bottomNav.classList.remove('hidden');
+        });
+    }
+}
+
+function bindNavEvents() {
+    if (navHome)    navHome.addEventListener('click', () => switchTab('home'));
+    if (navProfile) navProfile.addEventListener('click', () => switchTab('profile'));
+}
+
+// ── Tab Switching ──────────────────────────────────────────────────────────────
 function switchTab(tab) {
     if (!elGrid || !profileView || !navHome || !navProfile) return;
+
+    // Close detail page if open
+    if (detailPage && detailPage.classList.contains('active')) {
+        closeDetailPage();
+    }
 
     if (tab === 'home') {
         elGrid.classList.remove('hidden');
         profileView.classList.replace('flex', 'hidden');
-        
-        navHome.classList.replace('text-gray-500', 'text-blue-400');
-        navProfile.classList.replace('text-blue-400', 'text-gray-500');
-        navProfile.classList.add('hover:text-white');
+
+        navHome.style.background = 'rgba(59,130,246,0.2)';
+        navHome.querySelector('i').className    = 'fa-solid fa-house text-lg text-blue-400';
+        navHome.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-blue-400';
+        navHome.classList.add('nav-tab-active');
+        navProfile.style.background = 'transparent';
+        navProfile.querySelector('i').className    = 'fa-solid fa-user-astronaut text-lg text-gray-400';
+        navProfile.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-gray-400';
+        navProfile.classList.remove('nav-tab-active');
     } else {
         elGrid.classList.add('hidden');
         profileView.classList.replace('hidden', 'flex');
-        
-        navProfile.classList.replace('text-gray-500', 'text-blue-400');
-        navProfile.classList.remove('hover:text-white');
-        navHome.classList.replace('text-blue-400', 'text-gray-500');
+
+        navProfile.style.background = 'rgba(59,130,246,0.2)';
+        navProfile.querySelector('i').className    = 'fa-solid fa-user-astronaut text-lg text-blue-400';
+        navProfile.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-blue-400';
+        navProfile.classList.add('nav-tab-active');
+        navHome.style.background = 'transparent';
+        navHome.querySelector('i').className    = 'fa-solid fa-house text-lg text-gray-400';
+        navHome.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-gray-400';
+        navHome.classList.remove('nav-tab-active');
     }
 }

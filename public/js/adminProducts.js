@@ -3,23 +3,75 @@ import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminSt
 import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl } from './utils.js';
 import { openStockModal, initAdminStock } from './adminStock.js';
 
+// ── Mock Data (preview mode) ───────────────────────────────────────────────────
+const MOCK_ADMIN_STATS = {
+    products: 6, stock_available: 3591, sold_lifetime: 54331,
+    users: 248, orders_today: 17, revenue_lifetime: 18750000, logo_url: ''
+};
+
+const MOCK_ADMIN_PRODUCTS = [
+    {
+        id: 'ma1', name: 'Gsuite x Pay', description: 'Private Region UK. PSC = PaysafeCard', image_url: '', is_active: true, stock_count: 3106, sort_order: 1,
+        variants: [
+            { id: 'mv1', name: '3D PSC UK', price: 630, is_active: true, stock: 2165, total_sold: 18420 },
+            { id: 'mv2', name: '3D PSC FR', price: 650, is_active: true, stock: 941, total_sold: 11958 },
+        ]
+    },
+    {
+        id: 'ma2', name: 'Mail Fresh', description: 'Email baru siap pakai, verified dan aman.', image_url: '', is_active: false, stock_count: 0, sort_order: 2,
+        variants: [
+            { id: 'mv3', name: 'Gmail Fresh', price: 1250, is_active: true, stock: 0, total_sold: 9341 },
+        ]
+    },
+    {
+        id: 'ma3', name: 'Alight Motion', description: 'Aplikasi edit video premium unlocked.', image_url: '', is_active: true, stock_count: 114, sort_order: 3,
+        variants: [
+            { id: 'mv4', name: 'Premium 1 Bulan', price: 2000, is_active: true, stock: 114, total_sold: 4210 },
+        ]
+    },
+    {
+        id: 'ma4', name: 'Apple Music', description: 'Jutaan lagu tanpa iklan, audio lossless.', image_url: '', is_active: false, stock_count: 0, sort_order: 4,
+        variants: [
+            { id: 'mv5', name: 'Individual 3 Bulan', price: 5000, is_active: false, stock: 0, total_sold: 7892 },
+        ]
+    },
+    {
+        id: 'ma5', name: 'Netflix Premium', description: 'Streaming film dan serial tanpa batas.', image_url: '', is_active: true, stock_count: 57, sort_order: 5,
+        variants: [
+            { id: 'mv6', name: '1 Bulan Sharing', price: 15000, is_active: true, stock: 32, total_sold: 3120 },
+            { id: 'mv7', name: '1 Bulan Private', price: 45000, is_active: true, stock: 25, total_sold: 890 },
+        ]
+    },
+    {
+        id: 'ma6', name: 'Spotify Premium', description: 'Musik tanpa iklan, bisa download offline.', image_url: '', is_active: true, stock_count: 200, sort_order: 6,
+        variants: [
+            { id: 'mv8', name: 'Individual 1 Bulan', price: 8000, is_active: true, stock: 200, total_sold: 12500 },
+        ]
+    },
+];
+
 const telegramFallback = document.getElementById('telegram-fallback');
 
 // Elements
-const elShopName = document.getElementById('shop-name');
 const elHeaderShopName = document.getElementById('header-shop-name');
-const elShopDesc = document.getElementById('shop-desc');
 const adminList = document.getElementById('admin-product-list');
 
-// Admin Modal Elements
-const adminModal = document.getElementById('admin-modal');
+// Admin Slide-In Pages
+const adminProductSlide = document.getElementById('admin-product-slide');
 const btnAddProduct = document.getElementById('btn-add-product');
-const btnCloseAdminModal = document.getElementById('btn-close-admin-modal');
 const btnSaveProduct = document.getElementById('btn-save-product');
 const btnAddVariant = document.getElementById('btn-add-variant');
 const btnTutorialCdn = document.getElementById('btn-tutorial-cdn');
 const adminVariantsContainer = document.getElementById('admin-variants-container');
 const adminAuthToken = urlParams.get('auth') || '';
+
+function getSwalTheme() {
+    const isLight = document.documentElement.dataset.theme === 'light';
+    return {
+        background: isLight ? '#f5f3ff' : '#1e293b',
+        color: isLight ? '#1e1d35' : '#fff',
+    };
+}
 let adminCatalogData = [];
 let latestAdminStats = null;
 let deletedVariantIds = [];
@@ -44,24 +96,46 @@ export async function initAdminApp() {
     const telegramFallback = document.getElementById('telegram-fallback');
 
     // 1. Technical & Environment Check
-    const urlAuthToken = urlParams.get('auth');
-    
+    const urlAuthToken  = urlParams.get('auth');
+    const isPreviewMode = urlParams.get('preview') === 'true';
+
     if (tg && tg.initData) {
         if (telegramFallback) telegramFallback.classList.add('hidden');
         tg.expand();
         tg.ready();
     } else if (urlAuthToken) {
-        // Allow browser access if auth token is present
         if (telegramFallback) telegramFallback.classList.add('hidden');
         console.log("Accessing from browser with auth token.");
+    } else if (isPreviewMode) {
+        if (telegramFallback) telegramFallback.classList.add('hidden');
+        console.log('[Admin] Preview mode active — auth bypassed');
     } else {
         console.log("Not in Telegram environment & no auth token.");
         return;
     }
 
     // 2. Resolve Tenant (CRITICAL)
+    // Preview mode tanpa bot_id: skip semua API, render mock data langsung
+    if (isPreviewMode && !urlParams.get('bot_id')) {
+        hideLoading();
+        if (elHeaderShopName) elHeaderShopName.textContent = 'Preview Toko';
+        adminCatalogData = MOCK_ADMIN_PRODUCTS;
+        renderAdminView(MOCK_ADMIN_STATS);
+        initAdminStock();
+        setupAdminModalListeners();
+        console.log('[Admin] Preview mode — mock data loaded');
+        return;
+    }
+
     const tenantResolved = await initTenant();
     if (!tenantResolved) {
+        // Preview dengan bot_id tapi gagal: tampilkan shell kosong
+        if (isPreviewMode) {
+            hideLoading();
+            if (elHeaderShopName) elHeaderShopName.textContent = 'Preview Admin';
+            console.warn('[Admin] Tenant failed in preview mode, showing empty shell');
+            return;
+        }
         hideLoading();
         if (telegramFallback) telegramFallback.classList.add('hidden');
         const errorState = document.getElementById('error-state');
@@ -103,8 +177,7 @@ export async function initAdminApp() {
             text: 'Token keamanan tidak valid atau sudah kedaluwarsa. Silakan ambil link baru dari bot.',
             icon: 'warning',
             confirmButtonText: 'Kembali Ke Bot',
-            background: '#1e293b',
-            color: '#fff',
+            ...getSwalTheme(),
             allowOutsideClick: false
         }).then(() => {
             window.location.href = `https://t.me/rnf_shopp`;
@@ -125,8 +198,7 @@ export async function initAdminApp() {
             text: 'ID Telegram Anda (' + tgUser.id + ') tidak terdaftar sebagai Admin.',
             icon: 'error',
             confirmButtonText: 'Tutup',
-            background: '#1e293b',
-            color: '#fff'
+            ...getSwalTheme()
         }).then(() => {
             tg.close();
         });
@@ -168,9 +240,6 @@ export async function refreshAdminData() {
 
 function renderAdminView(stats = null) {
     stats = stats || latestAdminStats;
-    if (elShopName) elShopName.textContent = "Admin Panel";
-    if (elShopDesc) elShopDesc.textContent = "Kelola Katalog Toko";
-    
     const adminView = document.getElementById('admin-view');
     if (adminView) adminView.classList.remove('hidden');
     
@@ -311,8 +380,7 @@ function setupAdminModalListeners() {
                     </div>
                 `,
                 icon: 'info',
-                background: '#0f172a',
-                color: '#fff',
+                ...getSwalTheme(),
                 confirmButtonColor: '#3b82f6',
                 confirmButtonText: 'Saya Paham'
             });
@@ -324,7 +392,13 @@ function setupAdminModalListeners() {
     }
 
     if (btnAddProduct) btnAddProduct.addEventListener('click', () => openAdminModal());
-    if (btnCloseAdminModal) btnCloseAdminModal.addEventListener('click', () => adminModal.classList.replace('flex', 'hidden'));
+
+    document.getElementById('btn-back-admin-product')?.addEventListener('click', () => {
+        adminProductSlide.classList.remove('active');
+    });
+    document.getElementById('btn-save-product-header')?.addEventListener('click', () => {
+        btnSaveProduct.click();
+    });
 }
 
 function addVariantBlock(variant = null) {
@@ -437,8 +511,7 @@ function addVariantBlock(variant = null) {
                 </div>
             `,
             icon: 'info',
-            background: '#0f172a',
-            color: '#fff',
+            ...getSwalTheme(),
             confirmButtonColor: '#3b82f6',
             confirmButtonText: 'Siap!'
         });
@@ -457,20 +530,18 @@ function addVariantBlock(variant = null) {
             inputAttributes: {
                 'autocapitalize': 'off',
                 'autocorrect': 'off',
-                'style': 'font-size: 11px; height: 15rem; background: #0f172a; color: #fff; border: 1px solid #334155;'
             },
             showCancelButton: true,
             confirmButtonText: 'Simpan SNK',
             cancelButtonText: 'Batal',
-            background: '#1e293b',
-            color: '#fff',
+            ...getSwalTheme(),
             confirmButtonColor: '#3b82f6',
         }).then((result) => {
             if (result.isConfirmed) {
                 snkInput.value = result.value;
                 snkLabel.textContent = result.value ? 'Edit SNK (Sudah Terisi)' : 'Tambah SNK (Kosong)';
                 if (result.value) {
-                    Swal.fire({ icon: 'success', title: 'Tersimpan', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#1e293b', color: '#fff' });
+                    Swal.fire({ icon: 'success', title: 'Tersimpan', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, ...getSwalTheme() });
                 }
             }
         });
@@ -505,8 +576,7 @@ function addVariantBlock(variant = null) {
                 </div>
             `,
             icon: 'info',
-            background: '#0f172a',
-            color: '#fff',
+            ...getSwalTheme(),
             confirmButtonColor: '#3b82f6',
             confirmButtonText: 'Mantap'
         });
@@ -527,8 +597,7 @@ function addVariantBlock(variant = null) {
                 cancelButtonColor: '#3b82f6',
                 confirmButtonText: 'Ya, Hapus!',
                 cancelButtonText: 'Batal',
-                background: '#1e293b',
-                color: '#fff'
+                ...getSwalTheme()
             }).then((result) => {
                 if (result.isConfirmed) {
                     const variantId = div.getAttribute('data-id');
@@ -539,7 +608,7 @@ function addVariantBlock(variant = null) {
                 }
             });
         } else {
-            Swal.fire({ icon: 'warning', title: 'Eiits!', text: 'Minimal harus ada 1 varian.', background: '#1e293b', color: '#fff' });
+            Swal.fire({ icon: 'warning', title: 'Eiits!', text: 'Minimal harus ada 1 varian.', ...getSwalTheme() });
         }
     });
 
@@ -548,15 +617,17 @@ function addVariantBlock(variant = null) {
 
 function openAdminModal(product = null) {
     const title = document.getElementById('admin-modal-title');
+    const subtitle = document.getElementById('admin-product-subtitle');
     const inputName = document.getElementById('admin-input-name');
     const inputImage = document.getElementById('admin-input-image');
     const inputDesc = document.getElementById('admin-input-desc');
-    
+
     adminVariantsContainer.innerHTML = '';
     deletedVariantIds = [];
 
     if (product) {
         title.textContent = 'Edit Produk';
+        if (subtitle) { subtitle.textContent = product.name; subtitle.classList.remove('hidden'); }
         inputName.value = product.name;
         inputImage.value = product.image_url || '';
         inputDesc.value = product.description || '';
@@ -570,6 +641,7 @@ function openAdminModal(product = null) {
         btnSaveProduct.onclick = () => saveProduct(product.id, product.name);
     } else {
         title.textContent = 'Tambah Produk Baru';
+        if (subtitle) subtitle.classList.add('hidden');
         inputName.value = '';
         inputImage.value = '';
         inputDesc.value = '';
@@ -578,8 +650,7 @@ function openAdminModal(product = null) {
         btnSaveProduct.onclick = () => saveProduct(null, null);
     }
 
-    adminModal.classList.remove('hidden');
-    adminModal.classList.add('flex');
+    adminProductSlide.classList.add('active');
 }
 
 async function saveProduct(pid, oldName) {
@@ -588,9 +659,9 @@ async function saveProduct(pid, oldName) {
     const desc = document.getElementById('admin-input-desc').value.trim();
     const variantBlocks = document.querySelectorAll('#admin-variants-container > div');
     
-    if (!name) return Swal.fire({ icon: 'error', title: 'Data Tidak Lengkap', text: 'Nama Produk wajib diisi!', background: '#1e293b', color: '#fff' });
+    if (!name) return Swal.fire({ icon: 'error', title: 'Data Tidak Lengkap', text: 'Nama Produk wajib diisi!', ...getSwalTheme() });
 
-    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...getSwalTheme() });
 
     try {
         const normalizedImage = image ? normalizeImageUrl(image) : '';
@@ -652,16 +723,15 @@ async function saveProduct(pid, oldName) {
             icon: 'success',
             title: 'Tersimpan!',
             text: 'Data produk berhasil diperbarui.',
-            background: '#1e293b',
-            color: '#fff',
+            ...getSwalTheme(),
             showConfirmButton: false,
             timer: 1500
         });
 
-        adminModal.classList.replace('flex', 'hidden');
+        adminProductSlide.classList.remove('active');
     } catch (e) {
         console.error(e);
-        Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: e.message, background: '#1e293b', color: '#fff' });
+        Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: e.message, ...getSwalTheme() });
     }
 }
 
@@ -675,13 +745,12 @@ async function deleteProduct(id, name) {
         cancelButtonColor: '#3b82f6',
         confirmButtonText: 'Ya, Hapus!',
         cancelButtonText: 'Batal',
-        background: '#1e293b',
-        color: '#fff'
+        ...getSwalTheme()
     });
 
     if (isConfirmed) {
         try {
-            Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), background: '#1e293b', color: '#fff' });
+            Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...getSwalTheme() });
             
             const response = await fetch(`/api/webapp/admin-products?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&id=${encodeURIComponent(id)}`, {
                 method: 'DELETE'
@@ -695,13 +764,12 @@ async function deleteProduct(id, name) {
                 title: 'Terhapus!',
                 text: 'Produk berhasil dihapus.',
                 icon: 'success',
-                background: '#1e293b',
-                color: '#fff',
+                ...getSwalTheme(),
                 showConfirmButton: false,
                 timer: 1500
             });
         } catch (e) {
-            Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, background: '#1e293b', color: '#fff' });
+            Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, ...getSwalTheme() });
         }
     }
 }

@@ -50,8 +50,17 @@ export const getLowestVariantPrice = (variants = []) => {
 export const getImageFallback = (url, name = 'Product') => {
     const normalizedUrl = normalizeImageUrl(url);
     if (normalizedUrl) return normalizedUrl;
-    
+
     // Use placehold.co with theme-friendly colors and product name
     const encodedName = encodeURIComponent(name);
     return `https://placehold.co/400x400/1e293b/white?text=${encodedName}`;
+};
+
+export const formatRestockDate = (isoString) => {
+    if (!isoString) return '-';
+    return new Date(isoString).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    });
 };

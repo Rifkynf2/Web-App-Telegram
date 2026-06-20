@@ -12,3 +12,652 @@ body {
 .glass-panel {
   @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl;
 }
+
+.liquid-glass {
+  @apply bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.ios-nav-pill {
+  @apply fixed bottom-6 left-1/2 z-50;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 999px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.detail-page-slide {
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.detail-page-slide.active {
+  transform: translateX(0);
+}
+
+/* Theme icon swap animation */
+@keyframes themeIconOut {
+  0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: scale(0) rotate(90deg); opacity: 0; }
+}
+@keyframes themeIconIn {
+  0%   { transform: scale(0) rotate(-90deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.theme-icon-out {
+  animation: themeIconOut 0.18s ease-in forwards;
+}
+.theme-icon-in {
+  animation: themeIconIn 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+@keyframes backBtnPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.55); }
+  50%       { box-shadow: 0 0 0 7px rgba(99,102,241,0); }
+}
+.btn-back-pulse {
+  animation: backBtnPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes navTabPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+}
+.nav-tab-active {
+  animation: navTabPulse 2s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════
+   HOVER STATES (dark + light)
+   ═══════════════════════════════════════════ */
+
+/* "Lihat Detail" button — dark mode hover */
+#product-grid button:not([disabled]):hover {
+  background: rgba(255,255,255,0.12) !important;
+  border-color: rgba(255,255,255,0.35) !important;
+  transform: translateY(-1px);
+}
+#product-grid button:not([disabled]) {
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+/* Qty buttons — dark mode hover */
+#detail-page-btn-min:hover,
+#detail-page-btn-min-desk:hover {
+  background: rgba(255,255,255,0.12) !important;
+  color: white !important;
+}
+#detail-page-btn-plus:hover,
+#detail-page-btn-plus-desk:hover {
+  background: rgba(59,130,246,0.5) !important;
+  color: white !important;
+}
+
+/* Checkout "Beli Sekarang" — shimmer glow animation */
+@keyframes btn-shimmer {
+  0%   { box-shadow: 0 4px 20px rgba(59,130,246,0.4); }
+  50%  { box-shadow: 0 4px 32px rgba(99,102,241,0.7), 0 0 0 3px rgba(99,102,241,0.15); }
+  100% { box-shadow: 0 4px 20px rgba(59,130,246,0.4); }
+}
+
+#btn-detail-checkout:not([disabled]):hover,
+#btn-detail-checkout-desk:not([disabled]):hover {
+  transform: translateY(-2px) scale(1.01);
+  animation: btn-shimmer 1.2s ease-in-out infinite;
+}
+#btn-detail-checkout,
+#btn-detail-checkout-desk {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* ═══════════════════════════════════════════
+   LIGHT MODE
+   ═══════════════════════════════════════════ */
+
+html[data-theme="light"] body {
+  background: linear-gradient(135deg, #f2f0ff 0%, #ece8f8 50%, #eef0ff 100%) !important;
+  color: #1e1d35;
+}
+
+/* Glass panels */
+html[data-theme="light"] .glass-panel {
+  background: rgba(255,255,255,0.78) !important;
+  border-color: rgba(180,168,230,0.35) !important;
+  box-shadow: 0 4px 20px rgba(100,80,180,0.07) !important;
+}
+
+html[data-theme="light"] .liquid-glass {
+  background: rgba(255,255,255,0.82) !important;
+  border-color: rgba(180,168,230,0.4) !important;
+  box-shadow: 0 8px 32px rgba(100,80,180,0.1), inset 0 1px 0 rgba(255,255,255,0.95) !important;
+}
+
+/* Floating nav pill — liquid glass */
+html[data-theme="light"] .ios-nav-pill {
+  background: rgba(255,255,255,0.52) !important;
+  border-color: rgba(255,255,255,0.88) !important;
+  box-shadow: 0 8px 32px rgba(120,100,220,0.08), inset 0 1px 0 rgba(255,255,255,0.95) !important;
+}
+
+/* ── Header ── */
+html[data-theme="light"] header {
+  background: rgba(242,240,255,0.88) !important;
+  border-color: rgba(180,168,230,0.25) !important;
+  box-shadow: 0 4px 20px rgba(100,80,180,0.08) !important;
+}
+
+/* ── Text overrides inside glass panels and main areas ── */
+html[data-theme="light"] .glass-panel .text-white,
+html[data-theme="light"] .liquid-glass .text-white,
+html[data-theme="light"] header .text-white,
+html[data-theme="light"] main .text-white,
+html[data-theme="light"] nav .text-white {
+  color: #1e1d35 !important;
+}
+
+html[data-theme="light"] .glass-panel .text-gray-100,
+html[data-theme="light"] main .text-gray-100 { color: #2a2845 !important; }
+
+html[data-theme="light"] .glass-panel .text-gray-300,
+html[data-theme="light"] main .text-gray-300 { color: #4e4c72 !important; }
+
+html[data-theme="light"] .glass-panel .text-gray-400,
+html[data-theme="light"] main .text-gray-400,
+html[data-theme="light"] nav .text-gray-400 { color: #6a6888 !important; }
+
+html[data-theme="light"] .glass-panel .text-gray-500,
+html[data-theme="light"] main .text-gray-500 { color: #8a889a !important; }
+
+html[data-theme="light"] .glass-panel .text-gray-600,
+html[data-theme="light"] main .text-gray-600 { color: #9a98aa !important; }
+
+/* Nav active text stays blue */
+html[data-theme="light"] nav .text-blue-400 { color: #3b82f6 !important; }
+
+/* Header text */
+html[data-theme="light"] #header-user-name,
+html[data-theme="light"] #header-shop-name { color: #1e1d35 !important; }
+
+/* Keep button text white on colored backgrounds */
+html[data-theme="light"] button[style*="background: linear-gradient"],
+html[data-theme="light"] button[style*="background: #2AABEE"],
+html[data-theme="light"] a[style*="background: #2AABEE"],
+html[data-theme="light"] button[style*="background: rgba(59,130,246"] {
+  color: white !important;
+}
+html[data-theme="light"] button[style*="background: linear-gradient"] span,
+html[data-theme="light"] button[style*="background: linear-gradient"] i { color: white !important; }
+
+/* ── Background decorations (soften in light mode) ── */
+html[data-theme="light"] .bg-purple-600\/10 { background-color: rgba(139,92,246,0.05) !important; }
+html[data-theme="light"] .bg-blue-600\/10   { background-color: rgba(59,130,246,0.05) !important; }
+html[data-theme="light"] .bg-indigo-600\/10 { background-color: rgba(99,102,241,0.05) !important; }
+
+/* ── Product grid cards (rendered with inline style) ── */
+html[data-theme="light"] #product-grid > div {
+  background: rgba(255,255,255,0.82) !important;
+  border-color: rgba(180,168,230,0.3) !important;
+  box-shadow: 0 4px 16px rgba(100,80,180,0.06) !important;
+}
+
+html[data-theme="light"] #product-grid .text-white { color: #1e1d35 !important; }
+html[data-theme="light"] #product-grid .text-gray-400 { color: #6a6888 !important; }
+
+/* ── Header Pill — liquid glass ── */
+html[data-theme="light"] #header-pill { background: transparent !important; }
+html[data-theme="light"] #header-pill-inner {
+  background: rgba(255,255,255,0.52) !important;
+  border: 1px solid rgba(255,255,255,0.88) !important;
+  box-shadow: 0 8px 32px rgba(120,100,220,0.08), inset 0 1px 0 rgba(255,255,255,0.95) !important;
+}
+html[data-theme="light"] #header-pill .text-white { color: #1e1d35 !important; }
+html[data-theme="light"] #header-pill .text-gray-400 { color: #6a6888 !important; }
+html[data-theme="light"] #header-pill .text-indigo-400 { color: #4f46e5 !important; }
+
+/* ── Detail page ── */
+html[data-theme="light"] #detail-page {
+  background: linear-gradient(180deg, #f2f0ff 0%, #eeeaff 100%) !important;
+}
+
+html[data-theme="light"] #detail-page-header {
+  background: rgba(242,240,255,0.9) !important;
+  border-color: rgba(180,168,230,0.25) !important;
+}
+
+html[data-theme="light"] #detail-page .text-white { color: #1e1d35 !important; }
+html[data-theme="light"] #detail-page .text-gray-400 { color: #6a6888 !important; }
+html[data-theme="light"] #detail-page .text-gray-300 { color: #4e4c72 !important; }
+
+html[data-theme="light"] #detail-bottom-bar {
+  background: rgba(242,240,255,0.94) !important;
+  border-color: rgba(180,168,230,0.3) !important;
+  box-shadow: 0 -8px 32px rgba(100,80,180,0.08) !important;
+}
+html[data-theme="light"] #detail-bottom-bar .text-white { color: #1e1d35 !important; }
+html[data-theme="light"] #detail-bottom-bar .text-gray-400 { color: #6a6888 !important; }
+
+/* Stats boxes inside detail (keep their colored text, just fix bg) */
+html[data-theme="light"] #detail-page [style*="rgba(245,158,11,0.08)"] {
+  background: rgba(253,230,138,0.25) !important;
+  border-color: rgba(245,158,11,0.3) !important;
+}
+html[data-theme="light"] #detail-page [style*="rgba(16,185,129,0.08)"] {
+  background: rgba(167,243,208,0.25) !important;
+  border-color: rgba(16,185,129,0.3) !important;
+}
+html[data-theme="light"] #detail-page [style*="rgba(255,255,255,0.04)"] {
+  background: rgba(255,255,255,0.7) !important;
+  border-color: rgba(180,168,230,0.3) !important;
+}
+html[data-theme="light"] #detail-page [style*="rgba(99,102,241,0.08)"] {
+  background: rgba(196,181,253,0.2) !important;
+  border-color: rgba(99,102,241,0.3) !important;
+}
+
+/* Variant chips */
+html[data-theme="light"] .variant-chip { color: #1e1d35 !important; }
+
+/* Back button */
+html[data-theme="light"] #btn-back-catalog {
+  background: rgba(255,255,255,0.7) !important;
+  border-color: rgba(180,168,230,0.35) !important;
+  color: #1e1d35 !important;
+}
+
+/* Theme toggle button — no container, just icon */
+html[data-theme="light"] #btn-theme-toggle {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Back button pulse ring — light mode: indigo ring */
+html[data-theme="light"] #btn-back-catalog,
+html[data-theme="light"] #btn-back-admin-product,
+html[data-theme="light"] #btn-back-admin-stock {
+  background: rgba(255,255,255,0.75) !important;
+  border-color: rgba(99,102,241,0.4) !important;
+  color: #4338ca !important;
+}
+
+/* Back-to-home link in detail header */
+html[data-theme="light"] #btn-back-to-home {
+  color: #4338ca !important;
+}
+html[data-theme="light"] #btn-back-to-home:hover {
+  color: #3730a3 !important;
+}
+
+/* Stock count in detail page — darker emerald in light mode */
+html[data-theme="light"] #detail-page-stock { color: #059669 !important; }
+
+/* Variant chip stock text (text-emerald-400/80) */
+html[data-theme="light"] .text-emerald-400\/80 { color: #059669 !important; }
+
+/* ── Profile page ── */
+html[data-theme="light"] #profile-view .text-white { color: #1e1d35 !important; }
+html[data-theme="light"] #profile-view .text-gray-400 { color: #6a6888 !important; }
+
+/* ── Checkout modal ── */
+html[data-theme="light"] #checkout-modal {
+  background: rgba(242,240,255,0.96) !important;
+}
+html[data-theme="light"] #checkout-modal .text-white { color: #1e1d35 !important; }
+html[data-theme="light"] #checkout-modal .text-gray-400 { color: #6a6888 !important; }
+
+/* ── Admin panel specific ── */
+html[data-theme="light"] #admin-product-list .text-white { color: #1e1d35 !important; }
+html[data-theme="light"] #admin-product-list .text-gray-400 { color: #6a6888 !important; }
+/* Admin: "Kelola katalog" dan teks indigo-200 yang terlalu pucat */
+html[data-theme="light"] .text-indigo-200 { color: #5b21b6 !important; opacity: 1 !important; }
+html[data-theme="light"] .text-indigo-300 { color: #6d28d9 !important; }
+html[data-theme="light"] .opacity-80 { opacity: 0.8; }
+
+/* ── Product card image area (dark bg → light) ── */
+html[data-theme="light"] #product-grid > div > div:first-child {
+  background: #e8e5f5 !important;
+}
+
+/* Product card: teks */
+html[data-theme="light"] #product-grid h3 { color: #1e1d35 !important; }
+html[data-theme="light"] #product-grid .text-gray-400 { color: #6a6888 !important; }
+html[data-theme="light"] #product-grid .text-blue-400 { color: #2563eb !important; }
+html[data-theme="light"] #product-grid .text-emerald-400 { color: #059669 !important; }
+html[data-theme="light"] #product-grid .text-red-400 { color: #dc2626 !important; }
+
+/* ── "Lihat Detail" button ── */
+html[data-theme="light"] #product-grid button:not([disabled]) {
+  background: rgba(99,102,241,0.1) !important;
+  border-color: rgba(99,102,241,0.35) !important;
+  color: #4338ca !important;
+}
+html[data-theme="light"] #product-grid button:not([disabled]) i { color: #6366f1 !important; }
+html[data-theme="light"] #product-grid button:not([disabled]):hover {
+  background: rgba(99,102,241,0.2) !important;
+  border-color: rgba(99,102,241,0.55) !important;
+  color: #3730a3 !important;
+}
+
+/* "Stok Habis" disabled button */
+html[data-theme="light"] #product-grid button[disabled] {
+  background: rgba(0,0,0,0.04) !important;
+  border-color: rgba(0,0,0,0.1) !important;
+  color: #9a98aa !important;
+}
+
+/* ── Qty container ( - qty + ) ── */
+html[data-theme="light"] #detail-bottom-bar > div > div:first-child,
+html[data-theme="light"] #detail-page .hidden.md\:block > div > div:first-child {
+  background: rgba(225,222,252,0.7) !important;
+  border-color: rgba(165,158,230,0.5) !important;
+}
+
+/* Minus button */
+html[data-theme="light"] #detail-page-btn-min,
+html[data-theme="light"] #detail-page-btn-min-desk { color: #4a4870 !important; }
+html[data-theme="light"] #detail-page-btn-min:hover,
+html[data-theme="light"] #detail-page-btn-min-desk:hover {
+  background: rgba(100,90,210,0.15) !important;
+  color: #1e1d35 !important;
+}
+
+/* Plus button — lebih kontras */
+html[data-theme="light"] #detail-page-btn-plus,
+html[data-theme="light"] #detail-page-btn-plus-desk {
+  background: rgba(59,130,246,0.25) !important;
+  color: #1d4ed8 !important;
+  border: 1px solid rgba(59,130,246,0.35) !important;
+}
+html[data-theme="light"] #detail-page-btn-plus:hover,
+html[data-theme="light"] #detail-page-btn-plus-desk:hover {
+  background: rgba(59,130,246,0.45) !important;
+  color: white !important;
+  border-color: rgba(59,130,246,0.6) !important;
+}
+
+/* Qty number */
+html[data-theme="light"] #detail-page-qty,
+html[data-theme="light"] #detail-page-qty-desk { color: #1e1d35 !important; }
+
+/* Subtotal text */
+html[data-theme="light"] #detail-page-total,
+html[data-theme="light"] #detail-page-total-desk { color: #1e1d35 !important; }
+
+/* Input fields in light mode */
+html[data-theme="light"] input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] select {
+  background: rgba(255,255,255,0.85) !important;
+  border-color: rgba(180,168,230,0.4) !important;
+  color: #1e1d35 !important;
+}
+
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder { color: #9a98aa !important; }
+
+/* ── Fix: Profile stat boxes (TRX, Balance) inline style ── */
+html[data-theme="light"] #profile-view [style*="rgba(255,255,255,0.05)"] {
+  background: rgba(255,255,255,0.75) !important;
+  border-color: rgba(180,168,230,0.4) !important;
+  box-shadow: 0 2px 8px rgba(100,80,180,0.06) !important;
+}
+html[data-theme="light"] #profile-view .text-white { color: #1e1d35 !important; }
+
+/* ── Fix: Admin edit button ── */
+html[data-theme="light"] .btn-edit {
+  background: rgba(99,102,241,0.08) !important;
+  color: #6366f1 !important;
+}
+html[data-theme="light"] .btn-edit:hover {
+  background: rgba(99,102,241,0.22) !important;
+  color: #4338ca !important;
+}
+/* stock + delete button hover fix */
+html[data-theme="light"] .btn-stock:hover {
+  background: rgba(99,102,241,0.8) !important;
+  color: white !important;
+}
+html[data-theme="light"] .btn-delete:hover {
+  background: rgba(239,68,68,0.8) !important;
+  color: white !important;
+}
+
+/* ── Fix: Select <option> dropdown ── */
+html[data-theme="light"] option,
+html[data-theme="light"] .bg-slate-900 {
+  background-color: #f5f3ff !important;
+  color: #1e1d35 !important;
+}
+
+/* textarea bulk stok */
+html[data-theme="light"] #stock-input-bulk {
+  background: rgba(255,255,255,0.9) !important;
+  border-color: rgba(180,168,230,0.4) !important;
+  color: #1e1d35 !important;
+}
+/* variant row dalam modal */
+html[data-theme="light"] .admin-variant-row {
+  background: rgba(240,238,255,0.8) !important;
+  border-color: rgba(180,168,230,0.4) !important;
+}
+html[data-theme="light"] .admin-variant-row .text-white { color: #1e1d35 !important; }
+html[data-theme="light"] .admin-variant-row .text-gray-400 { color: #6a6888 !important; }
+html[data-theme="light"] .admin-variant-row .text-gray-300 { color: #4e4c72 !important; }
+html[data-theme="light"] .admin-variant-row .text-indigo-300 { color: #4338ca !important; }
+html[data-theme="light"] .admin-variant-row .bg-white\/5 {
+  background: rgba(255,255,255,0.75) !important;
+  border-color: rgba(180,168,230,0.3) !important;
+}
+/* SNK button dalam variant row */
+html[data-theme="light"] .btn-manage-snk {
+  background: rgba(255,255,255,0.75) !important;
+  border-color: rgba(180,168,230,0.35) !important;
+  color: #6a6888 !important;
+}
+html[data-theme="light"] .btn-manage-snk:hover {
+  background: rgba(99,102,241,0.12) !important;
+  border-color: rgba(99,102,241,0.4) !important;
+  color: #4338ca !important;
+}
+
+/* ── Light mode: Admin Slide Pages ── */
+html[data-theme="light"] #admin-product-slide,
+html[data-theme="light"] #admin-stock-slide {
+  background: linear-gradient(180deg, #f2f0ff 0%, #eeeaff 100%) !important;
+}
+html[data-theme="light"] #admin-product-slide-header,
+html[data-theme="light"] #admin-stock-slide > div:first-child {
+  background: rgba(242,240,255,0.95) !important;
+  border-color: rgba(180,168,230,0.3) !important;
+}
+html[data-theme="light"] #admin-product-slide .text-white,
+html[data-theme="light"] #admin-stock-slide .text-white { color: #1e1d35 !important; }
+html[data-theme="light"] #admin-product-slide .text-gray-400,
+html[data-theme="light"] #admin-stock-slide .text-gray-400 { color: #6a6888 !important; }
+html[data-theme="light"] #admin-product-slide .text-gray-500,
+html[data-theme="light"] #admin-stock-slide .text-gray-500 { color: #8a889a !important; }
+html[data-theme="light"] #admin-product-slide .text-indigo-400,
+html[data-theme="light"] #admin-stock-slide .text-indigo-400 { color: #4f46e5 !important; }
+html[data-theme="light"] #admin-product-slide .text-indigo-300,
+html[data-theme="light"] #admin-stock-slide .text-indigo-300 { color: #4338ca !important; }
+html[data-theme="light"] #admin-product-slide .glass-panel {
+  background: rgba(255,255,255,0.82) !important;
+  border-color: rgba(180,168,230,0.35) !important;
+}
+html[data-theme="light"] #admin-product-slide > div:last-child,
+html[data-theme="light"] #admin-stock-slide > div:last-child {
+  background: rgba(242,240,255,0.96) !important;
+  border-color: rgba(180,168,230,0.3) !important;
+}
+html[data-theme="light"] #btn-back-admin-product,
+html[data-theme="light"] #btn-back-admin-stock {
+  background: rgba(255,255,255,0.75) !important;
+  border-color: rgba(180,168,230,0.4) !important;
+  color: #1e1d35 !important;
+}
+html[data-theme="light"] #admin-stock-slide .bg-emerald-500\/10 {
+  background: rgba(167,243,208,0.35) !important; border-color: rgba(16,185,129,0.35) !important;
+}
+html[data-theme="light"] #admin-stock-slide .bg-amber-500\/10 {
+  background: rgba(253,230,138,0.35) !important; border-color: rgba(245,158,11,0.35) !important;
+}
+html[data-theme="light"] #admin-stock-slide .bg-red-500\/10 {
+  background: rgba(254,202,202,0.4) !important; border-color: rgba(239,68,68,0.3) !important;
+}
+html[data-theme="light"] #stock-list-container > div {
+  background: rgba(255,255,255,0.75) !important;
+  border-color: rgba(180,168,230,0.3) !important;
+}
+html[data-theme="light"] #stock-list-container code { color: #2a2845 !important; }
+html[data-theme="light"] #stock-pagination button:not([disabled]) {
+  background: rgba(255,255,255,0.75) !important;
+  border-color: rgba(180,168,230,0.4) !important;
+  color: #4338ca !important;
+}
+html[data-theme="light"] #stock-pagination button:not([disabled]):hover {
+  background: rgba(99,102,241,0.15) !important;
+}
+
+/* ── Fix: Semua tombol indigo agar lebih ringan di light mode ── */
+/* btn-add-product: gradient sama dengan Beli Sekarang */
+html[data-theme="light"] #btn-add-product {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.35) !important;
+}
+html[data-theme="light"] #btn-add-product:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+  box-shadow: 0 6px 20px rgba(59,130,246,0.5) !important;
+  transform: translateY(-1px);
+}
+/* btn-save-stock: gradient, sertakan parent slide agar menang lawan .text-white override */
+html[data-theme="light"] #admin-stock-slide #btn-save-stock {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.35) !important;
+}
+html[data-theme="light"] #admin-stock-slide #btn-save-stock:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+  box-shadow: 0 6px 20px rgba(59,130,246,0.5) !important;
+  transform: translateY(-1px);
+}
+/* btn-save-product + header: gradient biru-indigo, sertakan parent slide */
+html[data-theme="light"] #admin-product-slide #btn-save-product,
+html[data-theme="light"] #admin-product-slide #btn-save-product-header {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.35) !important;
+}
+html[data-theme="light"] #admin-product-slide #btn-save-product:hover,
+html[data-theme="light"] #admin-product-slide #btn-save-product-header:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+  box-shadow: 0 6px 24px rgba(59,130,246,0.5) !important;
+  transform: translateY(-1px);
+}
+#btn-add-product, #btn-save-product, #btn-save-stock {
+  transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* ── Fix: "Tambah Varian" button ── */
+html[data-theme="light"] #btn-add-variant {
+  background: rgba(129,140,248,0.18) !important;
+  color: #4338ca !important;
+  border: 1px solid rgba(129,140,248,0.35) !important;
+}
+html[data-theme="light"] #btn-add-variant:hover {
+  background: #818cf8 !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(129,140,248,0.4);
+}
+#btn-add-variant { transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; }
+
+/* ── Fix global: semua warna hijau neon → hijau gelap di light mode ── */
+html[data-theme="light"] .text-emerald-400 { color: #059669 !important; }
+html[data-theme="light"] .text-emerald-300 { color: #047857 !important; }
+html[data-theme="light"] .text-green-400   { color: #16a34a !important; }
+html[data-theme="light"] .text-green-300   { color: #15803d !important; }
+html[data-theme="light"] .text-teal-400    { color: #0f766e !important; }
+/* Hijau di nav (aktif tab tetap biru, bukan hijau, jadi tidak dioverride) */
+
+/* ── Fix global: border-white/5 separator line ── */
+html[data-theme="light"] .border-white\/5 { border-color: rgba(180,168,230,0.2) !important; }
+
+/* ── Fix: Aktif / Nonaktif badge di variant ── */
+html[data-theme="light"] .variant-status-badge.text-emerald-300 {
+  color: #065f46 !important;
+  background: rgba(167,243,208,0.4) !important;
+  border-color: rgba(16,185,129,0.4) !important;
+}
+html[data-theme="light"] .variant-status-badge.text-amber-200 {
+  color: #92400e !important;
+  background: rgba(253,230,138,0.4) !important;
+  border-color: rgba(245,158,11,0.4) !important;
+}
+
+/* ── Fix: SweetAlert2 popup (SNK, tutorial, semua dialog admin) ── */
+html[data-theme="light"] .swal2-popup {
+  background: #f5f3ff !important;
+  color: #1e1d35 !important;
+  border: 1px solid rgba(180,168,230,0.4) !important;
+  box-shadow: 0 8px 40px rgba(100,80,180,0.18) !important;
+}
+html[data-theme="light"] .swal2-title { color: #1e1d35 !important; }
+html[data-theme="light"] .swal2-html-container,
+html[data-theme="light"] .swal2-content { color: #2a2845 !important; }
+
+/* Inner HTML content inside Swal (bg-white/5, text-white, text-gray-300, dll) */
+html[data-theme="light"] .swal2-html-container .text-white,
+html[data-theme="light"] .swal2-html-container b.text-white { color: #1e1d35 !important; }
+html[data-theme="light"] .swal2-html-container .text-gray-300 { color: #4e4c72 !important; }
+html[data-theme="light"] .swal2-html-container .text-gray-400 { color: #6a6888 !important; }
+html[data-theme="light"] .swal2-html-container .text-indigo-400 { color: #4338ca !important; }
+html[data-theme="light"] .swal2-html-container .text-indigo-300 { color: #4f46e5 !important; }
+html[data-theme="light"] .swal2-html-container .text-blue-400 { color: #1d4ed8 !important; }
+html[data-theme="light"] .swal2-html-container .text-emerald-400 { color: #065f46 !important; }
+html[data-theme="light"] .swal2-html-container .text-red-400 { color: #991b1b !important; }
+html[data-theme="light"] .swal2-html-container .text-amber-400 { color: #92400e !important; }
+
+/* Inner card/box di HTML tutorial — bg-white/5, bg-black/30, border-white/5, border-white/10 */
+html[data-theme="light"] .swal2-html-container .bg-white\/5,
+html[data-theme="light"] .swal2-html-container .bg-black\/30 {
+  background: rgba(255,255,255,0.82) !important;
+  border-color: rgba(180,168,230,0.3) !important;
+  box-shadow: 0 2px 8px rgba(100,80,180,0.06) !important;
+}
+html[data-theme="light"] .swal2-html-container .border-white\/10,
+html[data-theme="light"] .swal2-html-container .border-white\/5 {
+  border-color: rgba(180,168,230,0.3) !important;
+}
+html[data-theme="light"] .swal2-html-container code,
+html[data-theme="light"] .swal2-html-container pre {
+  background: rgba(235,230,255,0.7) !important;
+  color: #3730a3 !important;
+}
+
+/* SweetAlert2 input & textarea (termasuk SNK modal) */
+html[data-theme="light"] .swal2-textarea,
+html[data-theme="light"] .swal2-input {
+  background: rgba(255,255,255,0.92) !important;
+  border-color: rgba(180,168,230,0.5) !important;
+  color: #1e1d35 !important;
+}
+html[data-theme="light"] .swal2-textarea::placeholder,
+html[data-theme="light"] .swal2-input::placeholder { color: #9a98aa !important; }
+
+/* Cancel button */
+html[data-theme="light"] .swal2-cancel {
+  background: rgba(200,195,250,0.45) !important;
+  color: #1e1d35 !important;
+}
+html[data-theme="light"] .swal2-cancel:hover {
+  background: rgba(200,195,250,0.7) !important;
+}
+
+/* Swal icon ring (info circle border) */
+html[data-theme="light"] .swal2-icon.swal2-info {
+  border-color: rgba(99,102,241,0.5) !important;
+  color: #4338ca !important;
+}
