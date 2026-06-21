@@ -13,10 +13,12 @@
     --color-amber-200: oklch(92.4% 0.12 95.746);
     --color-amber-400: oklch(82.8% 0.189 84.429);
     --color-amber-500: oklch(76.9% 0.188 70.08);
+    --color-green-300: oklch(87.1% 0.15 154.449);
     --color-green-400: oklch(79.2% 0.209 151.711);
     --color-emerald-300: oklch(84.5% 0.143 164.978);
     --color-emerald-400: oklch(76.5% 0.177 163.223);
     --color-emerald-500: oklch(69.6% 0.17 162.48);
+    --color-teal-400: oklch(77.7% 0.152 181.912);
     --color-blue-50: oklch(97% 0.014 254.604);
     --color-blue-300: oklch(80.9% 0.105 251.813);
     --color-blue-400: oklch(70.7% 0.165 254.624);
@@ -80,6 +82,8 @@
     --radius-xl: 0.75rem;
     --radius-2xl: 1rem;
     --radius-3xl: 1.5rem;
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
     --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     --animate-bounce: bounce 1s infinite;
     --blur-md: 12px;
@@ -243,6 +247,9 @@
 @layer utilities {
   .pointer-events-none {
     pointer-events: none;
+  }
+  .visible {
+    visibility: visible;
   }
   .absolute {
     position: absolute;
@@ -1013,6 +1020,9 @@
   .to-transparent {
     --tw-gradient-to: transparent;
     --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+  .object-contain {
+    object-fit: contain;
   }
   .object-cover {
     object-fit: cover;
@@ -1920,6 +1930,34 @@ body {
 .detail-page-slide.active {
   transform: translateX(0);
 }
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.tab-fade-in {
+  animation: tabFadeIn 0.18s ease forwards;
+}
+@keyframes cardStagger {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.card-scroll {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.card-scroll.visible {
+  animation: cardStagger 0.3s ease forwards;
+}
 @keyframes themeIconOut {
   0% {
     transform: scale(1) rotate(0deg);
@@ -2066,9 +2104,9 @@ html[data-theme="light"] .bg-indigo-600\/10 {
   background-color: rgba(99,102,241,0.05) !important;
 }
 html[data-theme="light"] #product-grid > div {
-  background: rgba(255,255,255,0.82) !important;
-  border-color: rgba(180,168,230,0.3) !important;
-  box-shadow: 0 4px 16px rgba(100,80,180,0.06) !important;
+  background: rgba(255,255,255,0.97) !important;
+  border-color: rgba(130,100,220,0.28) !important;
+  box-shadow: 0 6px 24px rgba(100,80,200,0.13), 0 1px 6px rgba(100,80,200,0.07) !important;
 }
 html[data-theme="light"] #product-grid .text-white {
   color: #1e1d35 !important;

@@ -261,7 +261,7 @@ function renderBuyerProducts(overrideData) {
         const imageUrl      = getImageFallback(product.image_url, product.name);
 
         const card = document.createElement('div');
-        card.className = 'flex flex-col overflow-hidden cursor-pointer group transition-all active:scale-95';
+        card.className = 'card-scroll flex flex-col overflow-hidden cursor-pointer group transition-all active:scale-95';
         card.style.cssText = 'background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);';
 
         card.innerHTML = `
@@ -307,6 +307,31 @@ function renderBuyerProducts(overrideData) {
 
         elGrid.appendChild(card);
     });
+    observeCards();
+}
+
+// ── Scroll Observer ────────────────────────────────────────────────────────────
+let _cardObserver = null;
+let _staggerIdx = 0;
+let _staggerReset = null;
+
+function observeCards() {
+    if (!_cardObserver) {
+        _cardObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const el = entry.target;
+                el.style.animationDelay = `${_staggerIdx * 60}ms`;
+                el.classList.add('visible');
+                _staggerIdx++;
+                _cardObserver.unobserve(el);
+                clearTimeout(_staggerReset);
+                _staggerReset = setTimeout(() => { _staggerIdx = 0; }, 300);
+            });
+        }, { threshold: 0.05, rootMargin: '0px 0px -10px 0px' });
+    }
+    // Only observe cards not yet visible
+    document.querySelectorAll('.card-scroll:not(.visible)').forEach(el => _cardObserver.observe(el));
 }
 
 // ── Detail Page ────────────────────────────────────────────────────────────────
@@ -550,15 +575,16 @@ function bindNavEvents() {
 function switchTab(tab) {
     if (!elGrid || !profileView || !navHome || !navProfile) return;
 
-    // Close detail page if open
-    if (detailPage && detailPage.classList.contains('active')) {
-        closeDetailPage();
-    }
+    if (detailPage && detailPage.classList.contains('active')) closeDetailPage();
 
+    const currentTab = navHome.classList.contains('nav-tab-active') ? 'home' : 'profile';
+    if (currentTab === tab) return;
+
+    const outEl = currentTab === 'home' ? elGrid : profileView;
+    const inEl  = tab === 'home' ? elGrid : profileView;
+
+    // Update nav state immediately
     if (tab === 'home') {
-        elGrid.classList.remove('hidden');
-        profileView.classList.replace('flex', 'hidden');
-
         navHome.style.background = 'rgba(59,130,246,0.2)';
         navHome.querySelector('i').className    = 'fa-solid fa-house text-lg text-blue-400';
         navHome.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-blue-400';
@@ -568,9 +594,6 @@ function switchTab(tab) {
         navProfile.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-gray-400';
         navProfile.classList.remove('nav-tab-active');
     } else {
-        elGrid.classList.add('hidden');
-        profileView.classList.replace('hidden', 'flex');
-
         navProfile.style.background = 'rgba(59,130,246,0.2)';
         navProfile.querySelector('i').className    = 'fa-solid fa-user-astronaut text-lg text-blue-400';
         navProfile.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-blue-400';
@@ -580,4 +603,19 @@ function switchTab(tab) {
         navHome.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-gray-400';
         navHome.classList.remove('nav-tab-active');
     }
+
+    // Fade out → swap → fade in
+    outEl.style.transition = 'opacity 0.15s ease';
+    outEl.style.opacity = '0';
+    setTimeout(() => {
+        outEl.style.cssText = '';
+        if (currentTab === 'home') outEl.classList.add('hidden');
+        else outEl.classList.replace('flex', 'hidden');
+
+        if (tab === 'home') inEl.classList.remove('hidden');
+        else inEl.classList.replace('hidden', 'flex');
+
+        // Trigger observer for newly visible card-scroll elements
+        observeCards();
+    }, 150);
 }

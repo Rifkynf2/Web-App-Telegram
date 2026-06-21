@@ -298,11 +298,36 @@ function renderAdminView(stats = null) {
             adminList.appendChild(div);
         });
     }
+    observeAdminCards();
+}
+
+// ── Scroll Observer ────────────────────────────────────────────────────────────
+let _adminObserver = null;
+let _adminStaggerIdx = 0;
+let _adminStaggerReset = null;
+
+function observeAdminCards() {
+    if (!_adminObserver) {
+        _adminObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const el = entry.target;
+                el.style.animationDelay = `${_adminStaggerIdx * 55}ms`;
+                el.classList.add('visible');
+                _adminStaggerIdx++;
+                _adminObserver.unobserve(el);
+                clearTimeout(_adminStaggerReset);
+                _adminStaggerReset = setTimeout(() => { _adminStaggerIdx = 0; }, 300);
+            });
+        }, { threshold: 0.05, rootMargin: '0px 0px -10px 0px' });
+    }
+    // Only observe cards not yet visible
+    document.querySelectorAll('.card-scroll:not(.visible)').forEach(el => _adminObserver.observe(el));
 }
 
 function createAdminProductRow(product) {
     const div = document.createElement('div');
-    div.className = 'glass-panel p-3 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors';
+    div.className = 'card-scroll glass-panel p-3 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors';
     
     const varCount = product.variants ? product.variants.length : 0;
     const activeVarCount = (product.variants || []).filter((variant) => variant.is_active !== false).length;
