@@ -38,10 +38,6 @@ body {
   transform: translateX(0);
 }
 
-/* Tab fade transition */
-@keyframes tabFadeIn { from { opacity: 0; } to { opacity: 1; } }
-.tab-fade-in { animation: tabFadeIn 0.18s ease forwards; }
-
 /* Card scroll-triggered entrance */
 @keyframes cardStagger {
   from { opacity: 0; transform: translateY(16px); }
