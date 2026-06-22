@@ -104,8 +104,9 @@ export async function fetchCatalog() {
         .from('products')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-        
+        .order('sort_order', { ascending: true })
+        .limit(500);
+
     if (pError) return [];
 
     // Fetch active variants for these products
@@ -113,15 +114,17 @@ export async function fetchCatalog() {
         .from('variants')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-        
+        .order('sort_order', { ascending: true })
+        .limit(2000);
+
     if (vError) return products;
 
     // Fetch Stock Counts + latest restock date via Inventory Table
     const { data: stocks, error: sError } = await supabase
         .from('inventory_items')
         .select('variant_id, created_at')
-        .eq('status', 'AVAILABLE');
+        .eq('status', 'AVAILABLE')
+        .limit(10000);
 
     const variantStockMap = {};
     const variantRestockMap = {};
