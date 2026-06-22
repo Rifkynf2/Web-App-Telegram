@@ -61,6 +61,7 @@ export const formatRestockDate = (isoString) => {
     return new Date(isoString).toLocaleDateString('id-ID', {
         day: 'numeric',
         month: 'short',
-        year: 'numeric'
+        year: 'numeric',
+        timeZone: 'Asia/Jakarta'
     });
 };

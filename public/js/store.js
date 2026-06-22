@@ -117,18 +117,22 @@ export async function fetchCatalog() {
         
     if (vError) return products;
 
-    // Fetch Stock Counts via Inventory Table
+    // Fetch Stock Counts + latest restock date via Inventory Table
     const { data: stocks, error: sError } = await supabase
         .from('inventory_items')
-        .select('variant_id')
+        .select('variant_id, created_at')
         .eq('status', 'AVAILABLE');
 
     const variantStockMap = {};
-    const productStockMap = {};
-    
+    const variantRestockMap = {};
+
     if (!sError && stocks) {
         stocks.forEach(s => {
             variantStockMap[s.variant_id] = (variantStockMap[s.variant_id] || 0) + 1;
+            // Track latest created_at per variant (same as bot logic)
+            if (!variantRestockMap[s.variant_id] || s.created_at > variantRestockMap[s.variant_id]) {
+                variantRestockMap[s.variant_id] = s.created_at;
+            }
         });
     }
 
@@ -136,7 +140,8 @@ export async function fetchCatalog() {
     catalogData = products.map(p => {
         const productVariants = variants.filter(v => v.product_id === p.id).map(v => ({
             ...v,
-            stock: variantStockMap[v.id] || 0
+            stock: variantStockMap[v.id] || 0,
+            last_restock_at: variantRestockMap[v.id] || v.last_restock_at || null
         }));
         
         const totalStock = productVariants.reduce((sum, v) => sum + v.stock, 0);
