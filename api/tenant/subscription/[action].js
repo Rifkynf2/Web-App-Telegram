@@ -73,12 +73,6 @@ async function handleConfirmPayment(req, res) {
 
         await masterDb.from('tenants').update({ status: 'ACTIVE' }).eq('bot_id', botId);
 
-        await masterDb.from('audit_logs').insert({
-            bot_id: botId, actor: 'system', action: 'PAYMENT_CONFIRMED',
-            entity: 'rental_invoices', entity_id: invoice_id,
-            detail: { amount: amount || inv.amount, new_expiry: newExpiry.toISOString(), duration_days: durationDays }
-        });
-
         return success(res, {
             message: 'Payment confirmed and subscription extended',
             owner_chat_id: inv.tenants?.owner_chat_id,

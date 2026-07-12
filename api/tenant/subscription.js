@@ -183,15 +183,6 @@ async function createRenewalInvoice(req, res) {
             return serverError(res, 'Failed to create invoice');
         }
 
-        // 5. Audit log
-        await masterDb.from('audit_logs').insert({
-            bot_id: botId,
-            actor: 'bot',
-            action: 'INVOICE_CREATED',
-            entity: 'rental_invoices',
-            entity_id: invoice.id,
-            detail: { amount, plan: planName }
-        });
 
         return success(res, {
             invoice,

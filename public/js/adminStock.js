@@ -8,6 +8,10 @@ const stockInputVariant = document.getElementById('stock-input-variant');
 const stockInputBulk = document.getElementById('stock-input-bulk');
 const stockModalSubtitle = document.getElementById('stock-modal-subtitle');
 const btnTutorialFormat = document.getElementById('btn-tutorial-format');
+const btnUploadStockFile = document.getElementById('btn-upload-stock-file');
+const btnClearStockInput = document.getElementById('btn-clear-stock-input');
+const stockInputFile = document.getElementById('stock-input-file');
+const stockFileLoadedInfo = document.getElementById('stock-file-loaded-info');
 const btnToggleStockList = document.getElementById('btn-toggle-stock-list');
 const btnDeleteAllStock = document.getElementById('btn-delete-all-stock');
 const stockListContainer = document.getElementById('stock-list-container');
@@ -70,16 +74,48 @@ export function initAdminStock() {
         });
     }
 
+    if (btnUploadStockFile && stockInputFile) {
+        btnUploadStockFile.addEventListener('click', () => stockInputFile.click());
+        stockInputFile.addEventListener('change', async () => {
+            const file = stockInputFile.files?.[0];
+            stockInputFile.value = '';
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.txt')) {
+                return Swal.fire({ icon: 'error', title: 'File Tidak Didukung', text: 'File harus berformat .txt', ...getSwalTheme() });
+            }
+
+            try {
+                const text = await file.text();
+                stockInputBulk.value = text;
+                const lineCount = text.split('\n').map(normalizeStockLine).filter(Boolean).length;
+                if (stockFileLoadedInfo) {
+                    stockFileLoadedInfo.textContent = `✓ ${lineCount} baris dimuat dari ${file.name}`;
+                    stockFileLoadedInfo.classList.remove('hidden');
+                }
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Gagal Membaca File', text: e.message, ...getSwalTheme() });
+            }
+        });
+    }
+
+    if (btnClearStockInput) {
+        btnClearStockInput.addEventListener('click', () => {
+            stockInputBulk.value = '';
+            if (stockFileLoadedInfo) stockFileLoadedInfo.classList.add('hidden');
+        });
+    }
+
     if (btnToggleStockList) {
         btnToggleStockList.addEventListener('click', () => {
             const isHidden = stockListContainer.classList.contains('hidden');
             if (isHidden) {
-                stockListContainer.classList.remove('hidden');
+                stockListContainer.classList.replace('hidden', 'flex');
                 if (btnDeleteAllStock) btnDeleteAllStock.classList.remove('hidden');
                 btnToggleStockList.innerHTML = '<i class="fa-solid fa-eye-slash mr-1"></i> Sembunyikan Daftar Stok';
                 renderStockItems();
             } else {
-                stockListContainer.classList.add('hidden');
+                stockListContainer.classList.replace('flex', 'hidden');
                 if (btnDeleteAllStock) btnDeleteAllStock.classList.add('hidden');
                 btnToggleStockList.innerHTML = '<i class="fa-solid fa-list-check mr-1"></i> Lihat Daftar Stok Tersedia';
             }
@@ -150,19 +186,20 @@ export function openStockModal(product) {
 
     // Reset fields
     stockInputBulk.value = '';
+    if (stockFileLoadedInfo) stockFileLoadedInfo.classList.add('hidden');
     currentSnapshot = null;
     
     // Initial Stat Simulation
     updateStockStats(product);
     
     // Reset stock list view
-    stockListContainer.classList.add('hidden');
+    stockListContainer.classList.replace('flex', 'hidden');
     if (btnDeleteAllStock) btnDeleteAllStock.classList.add('hidden');
     btnToggleStockList.innerHTML = '<i class="fa-solid fa-list-check mr-1"></i> Lihat Daftar Stok Tersedia';
 
     // Reset page saat ganti produk
     currentStockPage = 1;
-    document.getElementById('stock-pagination')?.classList.add('hidden');
+    document.getElementById('stock-pagination')?.classList.replace('flex', 'hidden');
 
     stockInputVariant.onchange = () => {
         currentStockPage = 1;
@@ -229,7 +266,7 @@ async function renderStockItems() {
         stockListContainer.innerHTML = '';
         if (items.length === 0) {
             stockListContainer.innerHTML = '<p class="text-[10px] text-gray-500 italic py-2">Stok kosong</p>';
-            if (paginationEl) paginationEl.classList.add('hidden');
+            if (paginationEl) paginationEl.classList.replace('flex', 'hidden');
             return;
         }
 
@@ -256,9 +293,9 @@ async function renderStockItems() {
 
         if (paginationEl) {
             if (totalPages <= 1) {
-                paginationEl.classList.add('hidden');
+                paginationEl.classList.replace('flex', 'hidden');
             } else {
-                paginationEl.classList.remove('hidden');
+                paginationEl.classList.replace('hidden', 'flex');
                 if (pageInfoEl) pageInfoEl.textContent = `Hal ${currentStockPage} / ${totalPages}  (${items.length} item)`;
                 if (btnPrev) btnPrev.disabled = currentStockPage === 1;
                 if (btnNext) btnNext.disabled = currentStockPage === totalPages;

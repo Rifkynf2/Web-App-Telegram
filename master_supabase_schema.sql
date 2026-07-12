@@ -8,7 +8,7 @@
 -- https://ynorqtlefiskahvyykzl.supabase.co
 -- 
 -- PERUBAHAN dari v1:
--- ✅ Tambah tabel: plans, tenant_api_keys, telegram_users, miniapp_sessions, audit_logs
+-- ✅ Tambah tabel: plans, tenant_api_keys, telegram_users, miniapp_sessions
 -- ✅ Tambah kolom: tenants.metadata, tenants.updated_at, tenants.bot_token (sudah ada)
 -- ✅ Update enum tenant_status (tambah BANNED)
 -- ✅ Tambah relasi subscriptions → plans
@@ -268,25 +268,6 @@ CREATE INDEX IF NOT EXISTS idx_invoices_status ON public.rental_invoices(status)
 ALTER TABLE public.rental_invoices ENABLE ROW LEVEL SECURITY;
 
 -- =========================================================
--- 9) AUDIT_LOGS — BARU
--- =========================================================
-CREATE TABLE IF NOT EXISTS public.audit_logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  bot_id BIGINT REFERENCES public.tenants(bot_id) ON DELETE SET NULL,
-  actor TEXT NOT NULL DEFAULT 'system',
-  action TEXT NOT NULL,
-  entity TEXT NOT NULL,
-  entity_id TEXT,
-  detail JSONB NOT NULL DEFAULT '{}',
-  ip_address TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_audit_created ON public.audit_logs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_bot ON public.audit_logs(bot_id, created_at DESC);
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-
--- =========================================================
 -- RLS POLICIES — Deny All for anon/authenticated
 -- service_role BYPASSES all RLS by default.
 -- =========================================================
@@ -301,9 +282,9 @@ BEGIN
     SELECT schemaname || '.' || tablename, policyname 
     FROM pg_policies 
     WHERE schemaname = 'public' 
-    AND tablename IN ('tenants', 'tenant_configs', 'tenant_api_keys', 
-                      'plans', 'subscriptions', 'telegram_users', 
-                      'miniapp_sessions', 'rental_invoices', 'audit_logs')
+    AND tablename IN ('tenants', 'tenant_configs', 'tenant_api_keys',
+                      'plans', 'subscriptions', 'telegram_users',
+                      'miniapp_sessions', 'rental_invoices')
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON %s', pol, tbl);
   END LOOP;
@@ -317,7 +298,6 @@ CREATE POLICY "deny_all" ON public.subscriptions FOR ALL USING (false);
 CREATE POLICY "deny_all" ON public.telegram_users FOR ALL USING (false);
 CREATE POLICY "deny_all" ON public.miniapp_sessions FOR ALL USING (false);
 CREATE POLICY "deny_all" ON public.rental_invoices FOR ALL USING (false);
-CREATE POLICY "deny_all" ON public.audit_logs FOR ALL USING (false);
 
 -- Plans: public read (so pricing page can show plans)
 CREATE POLICY "plans_public_read" ON public.plans FOR SELECT USING (is_active = true);
@@ -348,23 +328,6 @@ DECLARE
 BEGIN
   DELETE FROM public.miniapp_sessions
   WHERE expires_at < NOW();
-  
-  GET DIAGNOSTICS v_deleted = ROW_COUNT;
-  RETURN v_deleted;
-END $$;
-
--- =========================================================
--- RPC: Cleanup old audit logs (>24 hours)
--- =========================================================
-CREATE OR REPLACE FUNCTION public.cleanup_old_audit_logs()
-RETURNS INTEGER
-LANGUAGE plpgsql AS $$
-DECLARE
-  v_deleted INTEGER;
-BEGIN
-  -- Hapus log yang umurnya lebih dari 24 jam (1 hari)
-  DELETE FROM public.audit_logs
-  WHERE created_at < (NOW() - INTERVAL '24 hours');
   
   GET DIAGNOSTICS v_deleted = ROW_COUNT;
   RETURN v_deleted;
@@ -498,20 +461,7 @@ BEGIN
     -- Step 5: Activate tenant
     UPDATE tenants SET status = 'ACTIVE' WHERE bot_id = v_bot_id;
 
-    -- Step 6: Audit log
-    INSERT INTO audit_logs (bot_id, actor, action, entity, entity_id, detail)
-    VALUES (
-        v_bot_id, 'system', 'PAYMENT_CONFIRMED', 'rental_invoices',
-        p_invoice_id::TEXT,
-        jsonb_build_object(
-            'amount', p_amount,
-            'new_expiry', v_new_expiry,
-            'duration_days', v_duration_days,
-            'source', 'centralized_webhook'
-        )
-    );
-
-    -- Step 7: Fetch tenant info for notification
+    -- Step 6: Fetch tenant info for notification
     SELECT t.bot_token, t.owner_chat_id, t.metadata
     INTO v_tenant
     FROM tenants t WHERE t.bot_id = v_bot_id;
@@ -549,8 +499,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON
   public.subscriptions,
   public.telegram_users,
   public.miniapp_sessions,
-  public.rental_invoices,
-  public.audit_logs
+  public.rental_invoices
 TO service_role;
 
 -- anon: SELECT saja pada plans (sesuai plans_public_read RLS policy)
@@ -560,7 +509,6 @@ GRANT SELECT ON public.plans TO anon;
 -- Functions: service_role bisa memanggil semua RPC
 -- (tg_set_updated_at tidak di-GRANT karena trigger function, dipanggil internal oleh trigger)
 GRANT EXECUTE ON FUNCTION public.cleanup_expired_sessions() TO service_role;
-GRANT EXECUTE ON FUNCTION public.cleanup_old_audit_logs() TO service_role;
 GRANT EXECUTE ON FUNCTION public.get_master_stats() TO service_role;
 GRANT EXECUTE ON FUNCTION public.process_renewal_payment(UUID, INTEGER) TO service_role;
 

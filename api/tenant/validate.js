@@ -85,15 +85,6 @@ module.exports = async function handler(req, res) {
             };
         }
 
-        // 4. Log access (non-blocking)
-        masterDb.from('audit_logs').insert({
-            bot_id: parseInt(botId),
-            actor: 'bot',
-            action: 'VALIDATE_SUBSCRIPTION',
-            entity: 'subscriptions',
-            detail: { active: result.active, ip: req.headers['x-forwarded-for'] || 'unknown' }
-        }).then(() => {}).catch(() => {});
-
         return success(res, result);
     } catch (err) {
         console.error('[API/tenant/validate] Error:', err.message);

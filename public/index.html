@@ -42,7 +42,7 @@
     <!-- Telegram Fallback / Landing Page -->
     <div
       id="telegram-fallback"
-      class="fixed inset-0 z-[1000] bg-[#020617] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+      class="fixed inset-0 z-1000 bg-[#020617] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
       <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-50">
         <div class="absolute top-[10%] left-[10%] w-[80%] h-[80%] rounded-full bg-blue-600/10 blur-[150px] animate-pulse"></div>
         <div class="absolute bottom-[10%] right-[10%] w-[60%] h-[60%] rounded-full bg-indigo-600/10 blur-[150px]"></div>
@@ -266,12 +266,21 @@
           <div class="flex items-center justify-between p-4 rounded-2xl" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);">
             <div>
               <span class="text-[10px] text-gray-400 uppercase tracking-widest block mb-1">Harga / Satuan</span>
-              <p id="detail-page-price" class="font-black text-blue-400 text-2xl">Rp 0</p>
+              <div class="flex items-center gap-2">
+                <span id="detail-page-price-original" class="hidden text-base text-gray-500 line-through"></span>
+                <p id="detail-page-price" class="font-black text-blue-400 text-2xl">Rp 0</p>
+              </div>
             </div>
             <div class="text-right">
               <span class="text-[10px] text-gray-400 uppercase tracking-widest block mb-1">Stok</span>
               <p id="detail-page-stock" class="font-black text-emerald-400 text-2xl">0</p>
             </div>
+          </div>
+
+          <!-- Harga Grosir -->
+          <div id="detail-page-wholesale-box" class="hidden p-4 rounded-2xl" style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25);">
+            <h4 class="text-xs uppercase font-black text-emerald-400 mb-2 tracking-widest">🏷️ Harga Grosir</h4>
+            <div id="detail-page-wholesale-list" class="flex flex-col gap-2 text-sm"></div>
           </div>
 
           <!-- Deskripsi Varian -->
@@ -296,7 +305,10 @@
               </div>
               <div class="text-right">
                 <span class="text-[10px] text-gray-400 uppercase tracking-widest block">Subtotal</span>
-                <p id="detail-page-total-desk" class="font-black text-white text-2xl">Rp 0</p>
+                <div class="flex items-center justify-end gap-2">
+                  <span id="detail-page-total-desk-original" class="hidden text-sm text-gray-500 line-through"></span>
+                  <p id="detail-page-total-desk" class="font-black text-white text-2xl">Rp 0</p>
+                </div>
               </div>
             </div>
             <button
@@ -331,7 +343,10 @@
         </div>
         <div class="text-right">
           <span class="text-[10px] text-gray-400 uppercase tracking-widest block">Subtotal</span>
-          <p id="detail-page-total" class="font-black text-white text-xl">Rp 0</p>
+          <div class="flex items-center justify-end gap-2">
+            <span id="detail-page-total-original" class="hidden text-sm text-gray-500 line-through"></span>
+            <p id="detail-page-total" class="font-black text-white text-xl">Rp 0</p>
+          </div>
         </div>
       </div>
       <button

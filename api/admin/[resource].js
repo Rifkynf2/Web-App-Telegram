@@ -140,11 +140,6 @@ async function updateSubscription(req, res) {
 
         if (dbError || !data) return notFound(res, 'Subscription not found');
 
-        await masterDb.from('audit_logs').insert({
-            bot_id: parseInt(bot_id), actor: 'admin',
-            action: 'SUBSCRIPTION_UPDATED', entity: 'subscriptions', detail: updateData
-        });
-
         return success(res, { subscription: data });
     } catch (err) {
         console.error('[API/admin/subscriptions] Update error:', err.message);
@@ -184,11 +179,6 @@ async function manualRenew(req, res) {
         }
 
         await masterDb.from('tenants').update({ status: 'ACTIVE' }).eq('bot_id', bot_id);
-        await masterDb.from('audit_logs').insert({
-            bot_id: parseInt(bot_id), actor: 'admin',
-            action: 'SUBSCRIPTION_MANUAL_RENEW', entity: 'subscriptions',
-            detail: { days, new_expiry: newExpiry.toISOString() }
-        });
 
         return success(res, {
             subscription: data,
@@ -283,12 +273,6 @@ async function updateTenant(req, res) {
 
         if (dbError || !data) return notFound(res, 'Tenant not found');
 
-        await masterDb.from('audit_logs').insert({
-            bot_id: parseInt(bot_id), actor: 'admin',
-            action: `TENANT_${action.toUpperCase()}`, entity: 'tenants',
-            detail: { new_status: newStatus }
-        });
-
         return success(res, { tenant: data, message: `Tenant ${data.username || bot_id} has been ${action}d` });
     } catch (err) {
         console.error('[API/admin/tenants] Update error:', err.message);
@@ -312,12 +296,6 @@ async function deleteTenant(req, res) {
             console.error('[API/admin/tenants] Delete error:', delError.message);
             return serverError(res, 'Failed to delete tenant');
         }
-
-        await masterDb.from('audit_logs').insert({
-            actor: 'admin', action: 'TENANT_DELETED', entity: 'tenants',
-            entity_id: bot_id.toString(),
-            detail: { username: tenant.username, shop_name: tenant.shop_name }
-        });
 
         return success(res, { deleted: true, message: `Tenant ${tenant.username || bot_id} (${tenant.shop_name}) has been deleted` });
     } catch (err) {

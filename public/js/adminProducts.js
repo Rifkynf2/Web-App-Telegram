@@ -5,49 +5,96 @@ import { openStockModal, initAdminStock } from './adminStock.js';
 
 // ── Mock Data (preview mode) ───────────────────────────────────────────────────
 const MOCK_ADMIN_STATS = {
-    products: 6, stock_available: 3591, sold_lifetime: 54331,
-    users: 248, orders_today: 17, revenue_lifetime: 18750000, logo_url: ''
+  products: 6,
+  stock_available: 3591,
+  sold_lifetime: 54331,
+  users: 248,
+  orders_today: 17,
+  revenue_lifetime: 18750000,
+  logo_url: '',
 };
 
 const MOCK_ADMIN_PRODUCTS = [
-    {
-        id: 'ma1', name: 'Gsuite x Pay', description: 'Private Region UK. PSC = PaysafeCard', image_url: '', is_active: true, stock_count: 3106, sort_order: 1,
-        variants: [
-            { id: 'mv1', name: '3D PSC UK', price: 630, is_active: true, stock: 2165, total_sold: 18420 },
-            { id: 'mv2', name: '3D PSC FR', price: 650, is_active: true, stock: 941, total_sold: 11958 },
-        ]
-    },
-    {
-        id: 'ma2', name: 'Mail Fresh', description: 'Email baru siap pakai, verified dan aman.', image_url: '', is_active: false, stock_count: 0, sort_order: 2,
-        variants: [
-            { id: 'mv3', name: 'Gmail Fresh', price: 1250, is_active: true, stock: 0, total_sold: 9341 },
-        ]
-    },
-    {
-        id: 'ma3', name: 'Alight Motion', description: 'Aplikasi edit video premium unlocked.', image_url: '', is_active: true, stock_count: 114, sort_order: 3,
-        variants: [
-            { id: 'mv4', name: 'Premium 1 Bulan', price: 2000, is_active: true, stock: 114, total_sold: 4210 },
-        ]
-    },
-    {
-        id: 'ma4', name: 'Apple Music', description: 'Jutaan lagu tanpa iklan, audio lossless.', image_url: '', is_active: false, stock_count: 0, sort_order: 4,
-        variants: [
-            { id: 'mv5', name: 'Individual 3 Bulan', price: 5000, is_active: false, stock: 0, total_sold: 7892 },
-        ]
-    },
-    {
-        id: 'ma5', name: 'Netflix Premium', description: 'Streaming film dan serial tanpa batas.', image_url: '', is_active: true, stock_count: 57, sort_order: 5,
-        variants: [
-            { id: 'mv6', name: '1 Bulan Sharing', price: 15000, is_active: true, stock: 32, total_sold: 3120 },
-            { id: 'mv7', name: '1 Bulan Private', price: 45000, is_active: true, stock: 25, total_sold: 890 },
-        ]
-    },
-    {
-        id: 'ma6', name: 'Spotify Premium', description: 'Musik tanpa iklan, bisa download offline.', image_url: '', is_active: true, stock_count: 200, sort_order: 6,
-        variants: [
-            { id: 'mv8', name: 'Individual 1 Bulan', price: 8000, is_active: true, stock: 200, total_sold: 12500 },
-        ]
-    },
+  {
+    id: 'ma1',
+    name: 'Gsuite x Pay',
+    description: 'Private Region UK. PSC = PaysafeCard',
+    image_url: '',
+    is_active: true,
+    stock_count: 3106,
+    sort_order: 1,
+    variants: [
+      {
+        id: 'mv1',
+        name: '3D PSC UK',
+        price: 630,
+        is_active: true,
+        stock: 2165,
+        total_sold: 18420,
+        min_qty: 1,
+        max_qty: 999,
+        qty_per_purchase: 1,
+        wholesale_tiers: [
+          { min_qty: 10, price: 500 },
+          { min_qty: 50, price: 400 },
+        ],
+      },
+      { id: 'mv2', name: '3D PSC FR', price: 650, is_active: true, stock: 941, total_sold: 11958, min_qty: 1, max_qty: 999, qty_per_purchase: 1, wholesale_tiers: [] },
+    ],
+  },
+  {
+    id: 'ma2',
+    name: 'Mail Fresh',
+    description: 'Email baru siap pakai, verified dan aman.',
+    image_url: '',
+    is_active: false,
+    stock_count: 0,
+    sort_order: 2,
+    variants: [{ id: 'mv3', name: 'Gmail Fresh', price: 1250, is_active: true, stock: 0, total_sold: 9341 }],
+  },
+  {
+    id: 'ma3',
+    name: 'Alight Motion',
+    description: 'Aplikasi edit video premium unlocked.',
+    image_url: '',
+    is_active: true,
+    stock_count: 114,
+    sort_order: 3,
+    variants: [{ id: 'mv4', name: 'Premium 1 Bulan', price: 2000, is_active: true, stock: 114, total_sold: 4210 }],
+  },
+  {
+    id: 'ma4',
+    name: 'Apple Music',
+    description: 'Jutaan lagu tanpa iklan, audio lossless.',
+    image_url: '',
+    is_active: false,
+    stock_count: 0,
+    sort_order: 4,
+    variants: [{ id: 'mv5', name: 'Individual 3 Bulan', price: 5000, is_active: false, stock: 0, total_sold: 7892 }],
+  },
+  {
+    id: 'ma5',
+    name: 'Netflix Premium',
+    description: 'Streaming film dan serial tanpa batas.',
+    image_url: '',
+    is_active: true,
+    stock_count: 57,
+    sort_order: 5,
+    variants: [
+      { id: 'mv6', name: '1 Bulan Sharing', price: 15000, is_active: true, stock: 32, total_sold: 3120 },
+      { id: 'mv7', name: '1 Bulan Private', price: 45000, is_active: true, stock: 25, total_sold: 890 },
+    ],
+  },
+  {
+    id: 'ma6',
+    name: 'Spotify Premium',
+    description: 'Musik tanpa iklan, bisa download offline.',
+    image_url: '',
+    is_active: true,
+    stock_count: 200,
+    sort_order: 6,
+    variants: [{ id: 'mv8', name: 'Individual 1 Bulan', price: 8000, is_active: true, stock: 200, total_sold: 12500 }],
+  },
 ];
 
 const telegramFallback = document.getElementById('telegram-fallback');
@@ -66,239 +113,225 @@ const adminVariantsContainer = document.getElementById('admin-variants-container
 const adminAuthToken = urlParams.get('auth') || '';
 
 function getSwalTheme() {
-    const isLight = document.documentElement.dataset.theme === 'light';
-    return {
-        background: isLight ? '#f5f3ff' : '#1e293b',
-        color: isLight ? '#1e1d35' : '#fff',
-    };
+  const isLight = document.documentElement.dataset.theme === 'light';
+  return {
+    background: isLight ? '#f5f3ff' : '#1e293b',
+    color: isLight ? '#1e1d35' : '#fff',
+  };
 }
 let adminCatalogData = [];
 let latestAdminStats = null;
 let deletedVariantIds = [];
 
 function updateVariantStatusBadge(block) {
-    const select = block.querySelector('.var-status');
-    const badge = block.querySelector('.variant-status-badge');
-    const isActive = select?.value === 'true';
+  const select = block.querySelector('.var-status');
+  const badge = block.querySelector('.variant-status-badge');
+  const isActive = select?.value === 'true';
 
-    if (!badge) return;
+  if (!badge) return;
 
-    badge.textContent = isActive ? 'Aktif' : 'Nonaktif';
-    badge.className = `variant-status-badge inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] ${
-        isActive
-            ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-300'
-            : 'border-amber-400/40 bg-amber-500/15 text-amber-200'
-    }`;
+  badge.textContent = isActive ? 'Aktif' : 'Nonaktif';
+  badge.className = `variant-status-badge inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] ${isActive ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-300' : 'border-amber-400/40 bg-amber-500/15 text-amber-200'}`;
 }
 
 export async function initAdminApp() {
-    console.log("[App] Version: 1.1.0-tenant-resolver");
-    const telegramFallback = document.getElementById('telegram-fallback');
+  console.log('[App] Version: 1.1.0-tenant-resolver');
+  const telegramFallback = document.getElementById('telegram-fallback');
 
-    // 1. Technical & Environment Check
-    const urlAuthToken  = urlParams.get('auth');
-    const isPreviewMode = urlParams.get('preview') === 'true';
+  // 1. Technical & Environment Check
+  const urlAuthToken = urlParams.get('auth');
+  const isPreviewMode = urlParams.get('preview') === 'true';
 
-    if (tg && tg.initData) {
-        if (telegramFallback) telegramFallback.classList.add('hidden');
-        tg.expand();
-        tg.ready();
-    } else if (urlAuthToken) {
-        if (telegramFallback) telegramFallback.classList.add('hidden');
-        console.log("Accessing from browser with auth token.");
-    } else if (isPreviewMode) {
-        if (telegramFallback) telegramFallback.classList.add('hidden');
-        console.log('[Admin] Preview mode active — auth bypassed');
-    } else {
-        console.log("Not in Telegram environment & no auth token.");
-        return;
-    }
+  if (tg && tg.initData) {
+    if (telegramFallback) telegramFallback.classList.add('hidden');
+    tg.expand();
+    tg.ready();
+  } else if (urlAuthToken) {
+    if (telegramFallback) telegramFallback.classList.add('hidden');
+    console.log('Accessing from browser with auth token.');
+  } else if (isPreviewMode) {
+    if (telegramFallback) telegramFallback.classList.add('hidden');
+    console.log('[Admin] Preview mode active — auth bypassed');
+  } else {
+    console.log('Not in Telegram environment & no auth token.');
+    return;
+  }
 
-    // 2. Resolve Tenant (CRITICAL)
-    // Preview mode tanpa bot_id: skip semua API, render mock data langsung
-    if (isPreviewMode && !urlParams.get('bot_id')) {
-        hideLoading();
-        if (elHeaderShopName) elHeaderShopName.textContent = 'Preview Toko';
-        adminCatalogData = MOCK_ADMIN_PRODUCTS;
-        renderAdminView(MOCK_ADMIN_STATS);
-        initAdminStock();
-        setupAdminModalListeners();
-        console.log('[Admin] Preview mode — mock data loaded');
-        return;
-    }
-
-    const tenantResolved = await initTenant();
-    if (!tenantResolved) {
-        // Preview dengan bot_id tapi gagal: tampilkan shell kosong
-        if (isPreviewMode) {
-            hideLoading();
-            if (elHeaderShopName) elHeaderShopName.textContent = 'Preview Admin';
-            console.warn('[Admin] Tenant failed in preview mode, showing empty shell');
-            return;
-        }
-        hideLoading();
-        if (telegramFallback) telegramFallback.classList.add('hidden');
-        const errorState = document.getElementById('error-state');
-        const errorTitle = document.getElementById('error-title');
-        const errorMessage = document.getElementById('error-message');
-
-        if (errorState) errorState.classList.replace('hidden', 'flex');
-        if (errorTitle) errorTitle.textContent = 'Konfigurasi Tenant Gagal';
-        if (errorMessage) {
-            const bId = urlParams.get('bot_id') || 'KOSONG';
-            errorMessage.innerHTML = `Bot ID: <b>${bId}</b>. Link Admin tidak lengkap atau bot belum terdaftar di Master DB.<br><br>Gunakan link /admin yang diberikan oleh bot.`;
-        }
-        return;
-    }
-
-    // 3. Security Gate (Token Verification - now reads from TENANT DB)
-    let dbAuthToken = null;
-    console.log("[Security] Validating token for URL:", urlAuthToken ? urlAuthToken.substring(0, 15) + "..." : "MISSING");
-
-    try {
-        const { data, error } = await supabase
-            .from('settings')
-            .select('value')
-            .eq('key', 'ADMIN_AUTH_TOKEN')
-            .maybeSingle();
-        
-        if (data) dbAuthToken = data.value;
-        console.log("[Security] Database token found:", dbAuthToken ? dbAuthToken.substring(0, 15) + "..." : "NOT FOUND");
-    } catch (e) {
-        console.error("[Security] Database fetch failed", e);
-    }
-
-    // Validate Token
-    if (!urlAuthToken || urlAuthToken !== dbAuthToken) {
-        console.error("[Security] ❌ TOKEN MISMATCH!");
-        hideLoading();
-        Swal.fire({
-            title: '🔐 Keamanan: Akses Ditolak',
-            text: 'Token keamanan tidak valid atau sudah kedaluwarsa. Silakan ambil link baru dari bot.',
-            icon: 'warning',
-            confirmButtonText: 'Kembali Ke Bot',
-            ...getSwalTheme(),
-            allowOutsideClick: false
-        }).then(() => {
-            window.location.href = `https://t.me/rnf_shopp`;
-        });
-        return;
-    }
-
-    // 4. Identity Check (Admin Role)
-    const isAdmin = await checkIsAdmin(tgUser?.id);
-    
-    // Keamanan Cerdas:
-    // Jika di Telegram: Wajib terdaftar ID-nya.
-    // Jika di Browser: Asalkan Token valid, boleh masuk (karena link token itu rahasia).
-    if (!isAdmin && tgUser?.id) {
-        hideLoading();
-        Swal.fire({
-            title: 'Akses Ditolak',
-            text: 'ID Telegram Anda (' + tgUser.id + ') tidak terdaftar sebagai Admin.',
-            icon: 'error',
-            confirmButtonText: 'Tutup',
-            ...getSwalTheme()
-        }).then(() => {
-            tg.close();
-        });
-        return;
-    }
-
-    if (!isAdmin && !tgUser?.id && !urlAuthToken) {
-        // Jika tidak ada ID dan tidak ada token (akses ilegal langsung ke URL)
-        hideLoading();
-        return; 
-    }
-
-    // 5. Fetch Live Data in Parallel (Super Irit & Cepat)
-    console.log("[Stats] Fetching data...");
-    const [_, adminData] = await Promise.all([
-        fetchShopSettings(),
-        refreshAdminData()
-    ]);
-    console.log("[Stats] Received:", adminData?.stats);
-
-    if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
-    
+  // 2. Resolve Tenant (CRITICAL)
+  // Preview mode tanpa bot_id: skip semua API, render mock data langsung
+  if (isPreviewMode && !urlParams.get('bot_id')) {
+    hideLoading();
+    if (elHeaderShopName) elHeaderShopName.textContent = 'Preview Toko';
+    adminCatalogData = MOCK_ADMIN_PRODUCTS;
+    renderAdminView(MOCK_ADMIN_STATS);
     initAdminStock();
     setupAdminModalListeners();
+    console.log('[Admin] Preview mode — mock data loaded');
+    return;
+  }
+
+  const tenantResolved = await initTenant();
+  if (!tenantResolved) {
+    // Preview dengan bot_id tapi gagal: tampilkan shell kosong
+    if (isPreviewMode) {
+      hideLoading();
+      if (elHeaderShopName) elHeaderShopName.textContent = 'Preview Admin';
+      console.warn('[Admin] Tenant failed in preview mode, showing empty shell');
+      return;
+    }
     hideLoading();
+    if (telegramFallback) telegramFallback.classList.add('hidden');
+    const errorState = document.getElementById('error-state');
+    const errorTitle = document.getElementById('error-title');
+    const errorMessage = document.getElementById('error-message');
+
+    if (errorState) errorState.classList.replace('hidden', 'flex');
+    if (errorTitle) errorTitle.textContent = 'Konfigurasi Tenant Gagal';
+    if (errorMessage) {
+      const bId = urlParams.get('bot_id') || 'KOSONG';
+      errorMessage.innerHTML = `Bot ID: <b>${bId}</b>. Link Admin tidak lengkap atau bot belum terdaftar di Master DB.<br><br>Gunakan link /admin yang diberikan oleh bot.`;
+    }
+    return;
+  }
+
+  // 3. Security Gate (Token Verification - now reads from TENANT DB)
+  let dbAuthToken = null;
+  console.log('[Security] Validating token for URL:', urlAuthToken ? urlAuthToken.substring(0, 15) + '...' : 'MISSING');
+
+  try {
+    const { data, error } = await supabase.from('settings').select('value').eq('key', 'ADMIN_AUTH_TOKEN').maybeSingle();
+
+    if (data) dbAuthToken = data.value;
+    console.log('[Security] Database token found:', dbAuthToken ? dbAuthToken.substring(0, 15) + '...' : 'NOT FOUND');
+  } catch (e) {
+    console.error('[Security] Database fetch failed', e);
+  }
+
+  // Validate Token
+  if (!urlAuthToken || urlAuthToken !== dbAuthToken) {
+    console.error('[Security] ❌ TOKEN MISMATCH!');
+    hideLoading();
+    Swal.fire({
+      title: '🔐 Keamanan: Akses Ditolak',
+      text: 'Token keamanan tidak valid atau sudah kedaluwarsa. Silakan ambil link baru dari bot.',
+      icon: 'warning',
+      confirmButtonText: 'Kembali Ke Bot',
+      ...getSwalTheme(),
+      allowOutsideClick: false,
+    }).then(() => {
+      window.location.href = `https://t.me/rnf_shopp`;
+    });
+    return;
+  }
+
+  // 4. Identity Check (Admin Role)
+  const isAdmin = await checkIsAdmin(tgUser?.id);
+
+  // Keamanan Cerdas:
+  // Jika di Telegram: Wajib terdaftar ID-nya.
+  // Jika di Browser: Asalkan Token valid, boleh masuk (karena link token itu rahasia).
+  if (!isAdmin && tgUser?.id) {
+    hideLoading();
+    Swal.fire({
+      title: 'Akses Ditolak',
+      text: 'ID Telegram Anda (' + tgUser.id + ') tidak terdaftar sebagai Admin.',
+      icon: 'error',
+      confirmButtonText: 'Tutup',
+      ...getSwalTheme(),
+    }).then(() => {
+      tg.close();
+    });
+    return;
+  }
+
+  if (!isAdmin && !tgUser?.id && !urlAuthToken) {
+    // Jika tidak ada ID dan tidak ada token (akses ilegal langsung ke URL)
+    hideLoading();
+    return;
+  }
+
+  // 5. Fetch Live Data in Parallel (Super Irit & Cepat)
+  console.log('[Stats] Fetching data...');
+  const [_, adminData] = await Promise.all([fetchShopSettings(), refreshAdminData()]);
+  console.log('[Stats] Received:', adminData?.stats);
+
+  if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
+
+  initAdminStock();
+  setupAdminModalListeners();
+  hideLoading();
 }
 
 export async function refreshAdminData() {
-    const [stats, products] = await Promise.all([
-        fetchAdminStats(),
-        fetchAdminCatalog(adminAuthToken)
-    ]);
+  const [stats, products] = await Promise.all([fetchAdminStats(), fetchAdminCatalog(adminAuthToken)]);
 
-    latestAdminStats = stats;
-    adminCatalogData = products;
-    renderAdminView(stats);
-    return { stats, products };
+  latestAdminStats = stats;
+  adminCatalogData = products;
+  renderAdminView(stats);
+  return { stats, products };
 }
 
 function renderAdminView(stats = null) {
-    stats = stats || latestAdminStats;
-    const adminView = document.getElementById('admin-view');
-    if (adminView) adminView.classList.remove('hidden');
-    
-    const products = adminCatalogData;
+  stats = stats || latestAdminStats;
+  const adminView = document.getElementById('admin-view');
+  if (adminView) adminView.classList.remove('hidden');
 
-    // Live Stats injection
-    const eProd = document.getElementById('admin-stat-products');
-    const eStock = document.getElementById('admin-stat-stock');
-    const eSold = document.getElementById('admin-stat-sold');
-    const eUsers = document.getElementById('admin-stat-users');
-    const eOrderToday = document.getElementById('admin-stat-orders-today');
-    const eRevenue = document.getElementById('admin-stat-revenue');
+  const products = adminCatalogData;
 
-    if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
-    const logo = document.getElementById('shop-logo');
-    const logoFallback = document.getElementById('shop-initial');
-    const logoUrl = stats?.logo_url || shopSettings.logoUrl || '';
-    if (logo) {
-        if (logoUrl) {
-            logo.src = logoUrl;
-            logo.classList.remove('hidden');
-            if (logoFallback) logoFallback.classList.add('hidden');
-        } else {
-            logo.removeAttribute('src');
-            logo.classList.add('hidden');
-            if (logoFallback) logoFallback.classList.remove('hidden');
-        }
+  // Live Stats injection
+  const eProd = document.getElementById('admin-stat-products');
+  const eStock = document.getElementById('admin-stat-stock');
+  const eSold = document.getElementById('admin-stat-sold');
+  const eUsers = document.getElementById('admin-stat-users');
+  const eOrderToday = document.getElementById('admin-stat-orders-today');
+  const eRevenue = document.getElementById('admin-stat-revenue');
+
+  if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
+  const logo = document.getElementById('shop-logo');
+  const logoFallback = document.getElementById('shop-initial');
+  const logoUrl = stats?.logo_url || shopSettings.logoUrl || '';
+  if (logo) {
+    if (logoUrl) {
+      logo.src = logoUrl;
+      logo.classList.remove('hidden');
+      if (logoFallback) logoFallback.classList.add('hidden');
+    } else {
+      logo.removeAttribute('src');
+      logo.classList.add('hidden');
+      if (logoFallback) logoFallback.classList.remove('hidden');
     }
+  }
 
-    if(eProd) eProd.textContent = stats?.products ?? products.length;
-    if(eStock) eStock.textContent = stats?.stock_available ?? products.reduce((sum, p) => sum + p.stock_count, 0);
-    
-    // Real Stats from Database (Highly optimized)
-    if(stats) {
-        if(eUsers) eUsers.textContent = stats.users;
-        if(eOrderToday) eOrderToday.textContent = stats.orders_today;
-        if(eRevenue) eRevenue.textContent = formatCurrency(stats.revenue_lifetime);
-        if(eSold) eSold.textContent = stats.sold_lifetime;
-    }
+  if (eProd) eProd.textContent = stats?.products ?? products.length;
+  if (eStock) eStock.textContent = stats?.stock_available ?? products.reduce((sum, p) => sum + p.stock_count, 0);
 
-    if (adminList) {
-        adminList.innerHTML = '';
-        
-        if (products.length === 0) {
-            adminList.innerHTML = `
+  // Real Stats from Database (Highly optimized)
+  if (stats) {
+    if (eUsers) eUsers.textContent = stats.users;
+    if (eOrderToday) eOrderToday.textContent = stats.orders_today;
+    if (eRevenue) eRevenue.textContent = formatCurrency(stats.revenue_lifetime);
+    if (eSold) eSold.textContent = stats.sold_lifetime;
+  }
+
+  if (adminList) {
+    adminList.innerHTML = '';
+
+    if (products.length === 0) {
+      adminList.innerHTML = `
                 <div class="glass-panel p-8 flex flex-col items-center justify-center py-10 opacity-50">
                     <i class="fa-solid fa-box-open text-4xl mb-3"></i>
                     <p class="text-sm">Belum ada produk</p>
                 </div>
             `;
-            return;
-        }
-
-        products.forEach(product => {
-            const div = createAdminProductRow(product);
-            adminList.appendChild(div);
-        });
+      return;
     }
-    observeAdminCards();
+
+    products.forEach((product) => {
+      const div = createAdminProductRow(product);
+      adminList.appendChild(div);
+    });
+  }
+  observeAdminCards();
 }
 
 // ── Scroll Observer ────────────────────────────────────────────────────────────
@@ -307,35 +340,40 @@ let _adminStaggerIdx = 0;
 let _adminStaggerReset = null;
 
 function observeAdminCards() {
-    if (!_adminObserver) {
-        _adminObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return;
-                const el = entry.target;
-                el.style.animationDelay = `${_adminStaggerIdx * 55}ms`;
-                el.classList.add('visible');
-                _adminStaggerIdx++;
-                _adminObserver.unobserve(el);
-                clearTimeout(_adminStaggerReset);
-                _adminStaggerReset = setTimeout(() => { _adminStaggerIdx = 0; }, 300);
-            });
-        }, { threshold: 0.05, rootMargin: '0px 0px -10px 0px' });
-    }
-    // Only observe cards not yet visible
-    document.querySelectorAll('.card-scroll:not(.visible)').forEach(el => _adminObserver.observe(el));
+  if (!_adminObserver) {
+    _adminObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target;
+          el.style.animationDelay = `${_adminStaggerIdx * 55}ms`;
+          el.classList.add('visible');
+          _adminStaggerIdx++;
+          _adminObserver.unobserve(el);
+          clearTimeout(_adminStaggerReset);
+          _adminStaggerReset = setTimeout(() => {
+            _adminStaggerIdx = 0;
+          }, 300);
+        });
+      },
+      { threshold: 0.05, rootMargin: '0px 0px -10px 0px' },
+    );
+  }
+  // Only observe cards not yet visible
+  document.querySelectorAll('.card-scroll:not(.visible)').forEach((el) => _adminObserver.observe(el));
 }
 
 function createAdminProductRow(product) {
-    const div = document.createElement('div');
-    div.className = 'card-scroll glass-panel p-3 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors';
-    
-    const varCount = product.variants ? product.variants.length : 0;
-    const activeVarCount = (product.variants || []).filter((variant) => variant.is_active !== false).length;
-    const compactSubText = varCount > 0 ? `${activeVarCount}/${varCount} varian aktif` : 'Belum ada varian';
-    const lowestPrice = getLowestVariantPrice((product.variants || []).filter((variant) => variant.is_active !== false));
-    const productStatus = product.is_active === false ? 'Nonaktif' : 'Aktif';
+  const div = document.createElement('div');
+  div.className = 'card-scroll glass-panel p-3 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors';
 
-    div.innerHTML = `
+  const varCount = product.variants ? product.variants.length : 0;
+  const activeVarCount = (product.variants || []).filter((variant) => variant.is_active !== false).length;
+  const compactSubText = varCount > 0 ? `${activeVarCount}/${varCount} varian aktif` : 'Belum ada varian';
+  const lowestPrice = getLowestVariantPrice((product.variants || []).filter((variant) => variant.is_active !== false));
+  const productStatus = product.is_active === false ? 'Nonaktif' : 'Aktif';
+
+  div.innerHTML = `
         <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-lg bg-white/5 overflow-hidden shrink-0">
                 <img src="${getImageFallback(product.image_url, product.name)}" class="w-full h-full object-cover">
@@ -359,24 +397,24 @@ function createAdminProductRow(product) {
         </div>
     `;
 
-    const btnStock = div.querySelector('.btn-stock');
-    if(btnStock) btnStock.onclick = () => openStockModal(product);
-    
-    const btnEdit = div.querySelector('.btn-edit');
-    if(btnEdit) btnEdit.onclick = () => openAdminModal(product);
-    
-    const btnDelete = div.querySelector('.btn-delete');
-    if(btnDelete) btnDelete.onclick = () => deleteProduct(product.id, product.name);
+  const btnStock = div.querySelector('.btn-stock');
+  if (btnStock) btnStock.onclick = () => openStockModal(product);
 
-    return div;
+  const btnEdit = div.querySelector('.btn-edit');
+  if (btnEdit) btnEdit.onclick = () => openAdminModal(product);
+
+  const btnDelete = div.querySelector('.btn-delete');
+  if (btnDelete) btnDelete.onclick = () => deleteProduct(product.id, product.name);
+
+  return div;
 }
 
 function setupAdminModalListeners() {
-    if (btnTutorialCdn) {
-        btnTutorialCdn.addEventListener('click', () => {
-            Swal.fire({
-                title: 'Katalog Gambar (CDN)',
-                html: `
+  if (btnTutorialCdn) {
+    btnTutorialCdn.addEventListener('click', () => {
+      Swal.fire({
+        title: 'Katalog Gambar (CDN)',
+        html: `
                     <div class="text-xs text-gray-300 text-left space-y-4 leading-relaxed">
                         <p>Sistem kami tidak menyimpan file original foto untuk menjaga kecepatan web. Anda wajib menggunakan <b>Direct Link (URL)</b> gambar.</p>
                         
@@ -404,36 +442,56 @@ function setupAdminModalListeners() {
                         </div>
                     </div>
                 `,
-                icon: 'info',
-                ...getSwalTheme(),
-                confirmButtonColor: '#3b82f6',
-                confirmButtonText: 'Saya Paham'
-            });
-        });
-    }
-
-    if (btnAddVariant) {
-        btnAddVariant.addEventListener('click', () => addVariantBlock());
-    }
-
-    if (btnAddProduct) btnAddProduct.addEventListener('click', () => openAdminModal());
-
-    document.getElementById('btn-back-admin-product')?.addEventListener('click', () => {
-        adminProductSlide.classList.remove('active');
+        icon: 'info',
+        ...getSwalTheme(),
+        confirmButtonColor: '#3b82f6',
+        confirmButtonText: 'Saya Paham',
+      });
     });
-    document.getElementById('btn-save-product-header')?.addEventListener('click', () => {
-        btnSaveProduct.click();
-    });
+  }
+
+  if (btnAddVariant) {
+    btnAddVariant.addEventListener('click', () => addVariantBlock());
+  }
+
+  if (btnAddProduct) btnAddProduct.addEventListener('click', () => openAdminModal());
+
+  document.getElementById('btn-back-admin-product')?.addEventListener('click', () => {
+    adminProductSlide.classList.remove('active');
+  });
+  document.getElementById('btn-save-product-header')?.addEventListener('click', () => {
+    btnSaveProduct.click();
+  });
+}
+
+function addTierRow(container, tier = null) {
+  const row = document.createElement('div');
+  row.className = 'flex items-end gap-2 tier-row';
+  row.innerHTML = `
+        <div class="flex flex-col gap-1.5 flex-1">
+            <label class="text-[9px] text-gray-400">Qty Min</label>
+            <input type="number" min="2" value="${tier?.min_qty ?? ''}" placeholder="10" class="tier-min-qty w-full bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
+        </div>
+        <div class="flex flex-col gap-1.5 flex-1">
+            <label class="text-[9px] text-gray-400">Harga/Pcs</label>
+            <input type="number" min="0" value="${tier?.price ?? ''}" placeholder="2000" class="tier-price w-full bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
+        </div>
+        <button type="button" class="btn-remove-tier w-8 h-8 shrink-0 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center" title="Hapus Tier">
+            <i class="fa-solid fa-circle-minus text-xs"></i>
+        </button>
+    `;
+  row.querySelector('.btn-remove-tier').addEventListener('click', () => row.remove());
+  container.appendChild(row);
 }
 
 function addVariantBlock(variant = null) {
-    const div = document.createElement('div');
-    div.className = 'glass-panel p-4 flex flex-col gap-3 relative overflow-hidden bg-black/20';
-    if (variant && variant.id) div.setAttribute('data-id', variant.id);
-    
-    const defaultData = variant || { name: '', price: '', fulfillment: '', description: '', min_qty: 1, max_qty: 999, qty_per_purchase: 1, snk: '', is_active: true };
-    
-    div.innerHTML = `
+  const div = document.createElement('div');
+  div.className = 'glass-panel p-4 flex flex-col gap-3 relative overflow-hidden bg-black/20';
+  if (variant && variant.id) div.setAttribute('data-id', variant.id);
+
+  const defaultData = variant || { name: '', price: '', fulfillment: '', description: '', min_qty: 1, max_qty: 999, qty_per_purchase: 1, snk: '', is_active: true };
+
+  div.innerHTML = `
         <div class="absolute top-0 right-0 left-0 h-1 bg-indigo-500/50"></div>
         <button class="absolute top-3 right-3 text-red-400 hover:text-red-300 transition-colors btn-remove-variant" title="Hapus Varian">
             <i class="fa-solid fa-circle-minus"></i>
@@ -501,6 +559,16 @@ function addVariantBlock(variant = null) {
                 <input type="number" value="${defaultData.qty_per_purchase}" min="1" class="var-qpp bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
             </div>
             <div class="flex flex-col gap-1.5 col-span-3">
+                <div class="flex items-center justify-between border-b border-white/5 pb-1">
+                    <label class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Harga Grosir (Opsional)</label>
+                    <button type="button" class="btn-tutorial-wholesale text-blue-400 hover:text-blue-300 text-[10px] flex items-center gap-1 font-bold" title="Penjelasan Harga Grosir"><i class="fa-solid fa-circle-question"></i> Penjelasan</button>
+                </div>
+                <div class="var-tiers-container flex flex-col gap-2"></div>
+                <button type="button" class="btn-add-tier text-sm bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white px-3 py-2 rounded-lg transition-colors font-bold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Tambah Harga Grosir
+                </button>
+            </div>
+            <div class="flex flex-col gap-1.5 col-span-3">
                 <label class="text-[9px] text-gray-400">Status Varian</label>
                 <select class="var-status bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-2 text-white text-xs">
                     <option value="true" ${defaultData.is_active !== false ? 'selected' : ''} class="bg-slate-900">Aktif</option>
@@ -510,12 +578,64 @@ function addVariantBlock(variant = null) {
         </div>
     `;
 
-    updateVariantStatusBadge(div);
+  updateVariantStatusBadge(div);
 
-    div.querySelector('.btn-tutorial-fulfill').addEventListener('click', () => {
-        Swal.fire({
-            title: 'Metode Pengiriman',
-            html: `
+  const tiersContainer = div.querySelector('.var-tiers-container');
+  (defaultData.wholesale_tiers || []).forEach((tier) => addTierRow(tiersContainer, tier));
+
+  div.querySelector('.btn-add-tier').addEventListener('click', () => addTierRow(tiersContainer));
+
+  div.querySelector('.btn-tutorial-wholesale').addEventListener('click', () => {
+    Swal.fire({
+      title: 'Harga Grosir',
+      width: '92%',
+      html: `
+                <div class="text-xs text-gray-300 text-left space-y-4 leading-relaxed">
+                    <p>Harga grosir membuat harga per pcs <b class="text-white">otomatis lebih murah</b> kalau buyer beli dalam jumlah banyak. Tidak perlu diskon manual, sistem yang hitung sendiri sesuai qty yang dibeli.</p>
+
+                    <div class="p-3 bg-white/5 rounded-lg border border-white/10 space-y-2">
+                        <p><b class="text-indigo-300">Qty Min</b>: mulai dari jumlah beli berapa harga tier ini berlaku.</p>
+                        <p class="text-[10px] text-gray-400 pl-3">• Minimal 2, dan harus lebih besar dari "Min Qty" pembelian di atas.</p>
+                        <p><b class="text-indigo-300">Harga/Pcs</b>: harga per pcs khusus untuk tier ini.</p>
+                        <p class="text-[10px] text-gray-400 pl-3">• Harus lebih murah dari Harga Rp normal di atas (namanya juga diskon grosir).</p>
+                    </div>
+
+                    <div class="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20 space-y-2">
+                        <p class="text-emerald-300 font-bold uppercase text-[10px] tracking-widest">Contoh Kasus</p>
+                        <p>Harga normal varian ini: <b class="text-white">Rp3.000</b>/pcs. Anda tambah 2 tier:</p>
+                        <table class="w-full text-[11px] border-collapse">
+                            <tr class="text-gray-400">
+                                <td class="py-1 pr-2 border-b border-white/10">Qty Min</td>
+                                <td class="py-1 border-b border-white/10">Harga/Pcs</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 pr-2 border-b border-white/5 text-white font-bold">10</td>
+                                <td class="py-1 border-b border-white/5 text-emerald-300 font-bold">Rp2.000</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 pr-2 text-white font-bold">50</td>
+                                <td class="py-1 text-emerald-300 font-bold">Rp1.500</td>
+                            </tr>
+                        </table>
+                        <p class="text-[10px] text-gray-400 italic pt-1">
+                            Hasilnya: buyer beli 1–9 pcs bayar Rp3.000/pcs (harga normal). Beli 10–49 pcs otomatis Rp2.000/pcs. Beli 50 pcs ke atas otomatis Rp1.500/pcs. Semua ini muncul otomatis di halaman produk & saat checkout, buyer tidak perlu kode promo apapun.
+                        </p>
+                    </div>
+
+                    <p class="text-[10px] text-gray-500">💡 Fitur ini opsional. Kalau tidak ingin pakai harga grosir, cukup jangan tambah tier apapun, harga normal tetap berlaku seperti biasa.</p>
+                </div>
+            `,
+      icon: 'info',
+      ...getSwalTheme(),
+      confirmButtonColor: '#3b82f6',
+      confirmButtonText: 'Paham',
+    });
+  });
+
+  div.querySelector('.btn-tutorial-fulfill').addEventListener('click', () => {
+    Swal.fire({
+      title: 'Metode Pengiriman',
+      html: `
                 <div class="text-xs text-gray-300 text-left space-y-4 leading-relaxed">
                     <p>Fulfillment menentukan bagaimana Bot bekerja saat pesanan dibayar.</p>
                     
@@ -535,49 +655,49 @@ function addVariantBlock(variant = null) {
                     </div>
                 </div>
             `,
-            icon: 'info',
-            ...getSwalTheme(),
-            confirmButtonColor: '#3b82f6',
-            confirmButtonText: 'Siap!'
-        });
+      icon: 'info',
+      ...getSwalTheme(),
+      confirmButtonColor: '#3b82f6',
+      confirmButtonText: 'Siap!',
     });
+  });
 
-    div.querySelector('.btn-manage-snk').addEventListener('click', () => {
-        const snkInput = div.querySelector('.var-snk');
-        const snkLabel = div.querySelector('.btn-snk-label');
-        
-        Swal.fire({
-            title: 'Atur SNK Varian',
-            text: 'Aturan main varian — dikirim Bot bersama produk.',
-            input: 'textarea',
-            inputValue: snkInput.value,
-            inputPlaceholder: 'Contoh:\n1. Garansi 30 Hari\n2. Dilarang Ganti Password...',
-            inputAttributes: {
-                'autocapitalize': 'off',
-                'autocorrect': 'off',
-                'style': 'font-size: 12px; height: 9rem; resize: vertical;',
-            },
-            width: '92%',
-            showCancelButton: true,
-            confirmButtonText: 'Simpan SNK',
-            cancelButtonText: 'Batal',
-            ...getSwalTheme(),
-            confirmButtonColor: '#3b82f6',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                snkInput.value = result.value;
-                snkLabel.textContent = result.value ? 'Edit SNK (Sudah Terisi)' : 'Tambah SNK (Kosong)';
-                if (result.value) {
-                    Swal.fire({ icon: 'success', title: 'Tersimpan', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, ...getSwalTheme() });
-                }
-            }
-        });
+  div.querySelector('.btn-manage-snk').addEventListener('click', () => {
+    const snkInput = div.querySelector('.var-snk');
+    const snkLabel = div.querySelector('.btn-snk-label');
+
+    Swal.fire({
+      title: 'Atur SNK Varian',
+      text: 'Aturan main varian — dikirim Bot bersama produk.',
+      input: 'textarea',
+      inputValue: snkInput.value,
+      inputPlaceholder: 'Contoh:\n1. Garansi 30 Hari\n2. Dilarang Ganti Password...',
+      inputAttributes: {
+        autocapitalize: 'off',
+        autocorrect: 'off',
+        style: 'font-size: 12px; height: 9rem; resize: vertical;',
+      },
+      width: '92%',
+      showCancelButton: true,
+      confirmButtonText: 'Simpan SNK',
+      cancelButtonText: 'Batal',
+      ...getSwalTheme(),
+      confirmButtonColor: '#3b82f6',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        snkInput.value = result.value;
+        snkLabel.textContent = result.value ? 'Edit SNK (Sudah Terisi)' : 'Tambah SNK (Kosong)';
+        if (result.value) {
+          Swal.fire({ icon: 'success', title: 'Tersimpan', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, ...getSwalTheme() });
+        }
+      }
     });
+  });
 
-    div.querySelector('.btn-tutorial-qty').addEventListener('click', () => {
-        Swal.fire({
-            title: 'Aturan Pembelian',
-            html: `
+  div.querySelector('.btn-tutorial-qty').addEventListener('click', () => {
+    Swal.fire({
+      title: 'Aturan Pembelian',
+      html: `
                 <div class="text-xs text-gray-300 text-left space-y-4 leading-relaxed">
                     <div class="p-3 bg-white/5 rounded-lg border border-white/10">
                         <div class="mb-3">
@@ -602,202 +722,233 @@ function addVariantBlock(variant = null) {
                     </div>
                 </div>
             `,
-            icon: 'info',
-            ...getSwalTheme(),
-            confirmButtonColor: '#3b82f6',
-            confirmButtonText: 'Mantap'
-        });
+      icon: 'info',
+      ...getSwalTheme(),
+      confirmButtonColor: '#3b82f6',
+      confirmButtonText: 'Mantap',
     });
+  });
 
-    div.querySelector('.var-status').addEventListener('change', () => {
-        updateVariantStatusBadge(div);
-    });
+  div.querySelector('.var-status').addEventListener('change', () => {
+    updateVariantStatusBadge(div);
+  });
 
-    div.querySelector('.btn-remove-variant').addEventListener('click', () => {
-        if (adminVariantsContainer.children.length > 1) {
-            Swal.fire({
-                title: 'Hapus Varian?',
-                text: 'Data varian yang belum disimpan akan hilang.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#3b82f6',
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal',
-                ...getSwalTheme()
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const variantId = div.getAttribute('data-id');
-                    if (variantId && !deletedVariantIds.includes(variantId)) {
-                        deletedVariantIds.push(variantId);
-                    }
-                    div.remove();
-                }
-            });
-        } else {
-            Swal.fire({ icon: 'warning', title: 'Eiits!', text: 'Minimal harus ada 1 varian.', ...getSwalTheme() });
-        }
-    });
-
-    adminVariantsContainer.appendChild(div);
-}
-
-function openAdminModal(product = null) {
-    const title = document.getElementById('admin-modal-title');
-    const subtitle = document.getElementById('admin-product-subtitle');
-    const inputName = document.getElementById('admin-input-name');
-    const inputImage = document.getElementById('admin-input-image');
-    const inputDesc = document.getElementById('admin-input-desc');
-
-    adminVariantsContainer.innerHTML = '';
-    deletedVariantIds = [];
-
-    if (product) {
-        title.textContent = 'Edit Produk';
-        if (subtitle) { subtitle.textContent = product.name; subtitle.classList.remove('hidden'); }
-        inputName.value = product.name;
-        inputImage.value = product.image_url || '';
-        inputDesc.value = product.description || '';
-        
-        if (product.variants && product.variants.length > 0) {
-            product.variants.forEach(v => addVariantBlock(v));
-        } else {
-            addVariantBlock();
-        }
-        
-        btnSaveProduct.onclick = () => saveProduct(product.id, product.name);
-    } else {
-        title.textContent = 'Tambah Produk Baru';
-        if (subtitle) subtitle.classList.add('hidden');
-        inputName.value = '';
-        inputImage.value = '';
-        inputDesc.value = '';
-        
-        addVariantBlock();
-        btnSaveProduct.onclick = () => saveProduct(null, null);
-    }
-
-    adminProductSlide.classList.add('active');
-}
-
-async function saveProduct(pid, oldName) {
-    const name = document.getElementById('admin-input-name').value.trim();
-    const image = document.getElementById('admin-input-image').value.trim();
-    const desc = document.getElementById('admin-input-desc').value.trim();
-    const variantBlocks = document.querySelectorAll('#admin-variants-container > div');
-    
-    if (!name) return Swal.fire({ icon: 'error', title: 'Data Tidak Lengkap', text: 'Nama Produk wajib diisi!', ...getSwalTheme() });
-
-    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...getSwalTheme() });
-
-    try {
-        const normalizedImage = image ? normalizeImageUrl(image) : '';
-        if (image && !normalizedImage) {
-            throw new Error('URL gambar tidak valid. Gunakan direct image URL. Link halaman seperti ibb.co/ImgBB preview tidak didukung.');
-        }
-
-        // 1. Upsert Product
-        const productToSave = { 
-            name, 
-            image_url: normalizedImage || '', 
-            description: desc,
-            is_active: true
-        };
-        if (pid) productToSave.id = pid;
-
-        const variantsToSave = [];
-        variantBlocks.forEach((block) => {
-            const vid = block.getAttribute('data-id');
-            const vname = block.querySelector('.var-name').value.trim();
-            const price = parseInt(block.querySelector('.var-price').value);
-            const fulfillment = block.querySelector('.var-fulfillment').value;
-            
-            const variantData = {
-                name: vname,
-                price: price,
-                fulfillment: fulfillment,
-                description: block.querySelector('.var-desc').value.trim(),
-                min_qty: parseInt(block.querySelector('.var-min').value),
-                max_qty: parseInt(block.querySelector('.var-max').value),
-                qty_per_purchase: parseInt(block.querySelector('.var-qpp').value),
-                is_active: block.querySelector('.var-status').value === 'true',
-                snk: block.querySelector('.var-snk').value.trim()
-            };
-            if (vid) variantData.id = vid;
-            variantsToSave.push(variantData);
-        });
-
-        const response = await fetch('/api/webapp/admin-products', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                bot_id: currentBotId,
-                auth: adminAuthToken,
-                product: productToSave,
-                variants: variantsToSave,
-                deleted_variant_ids: deletedVariantIds
-            })
-        });
-
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.error || 'Gagal menyimpan produk');
-
-        await refreshAdminData();
-        
-        Swal.fire({
-            icon: 'success',
-            title: 'Tersimpan!',
-            text: 'Data produk berhasil diperbarui.',
-            ...getSwalTheme(),
-            showConfirmButton: false,
-            timer: 1500
-        });
-
-        adminProductSlide.classList.remove('active');
-    } catch (e) {
-        console.error(e);
-        Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: e.message, ...getSwalTheme() });
-    }
-}
-
-async function deleteProduct(id, name) {
-    const { isConfirmed } = await Swal.fire({
-        title: 'Hapus Produk?',
-        text: `Anda akan menghapus "${name}" secara permanen.`,
+  div.querySelector('.btn-remove-variant').addEventListener('click', () => {
+    if (adminVariantsContainer.children.length > 1) {
+      Swal.fire({
+        title: 'Hapus Varian?',
+        text: 'Data varian yang belum disimpan akan hilang.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#3b82f6',
         confirmButtonText: 'Ya, Hapus!',
         cancelButtonText: 'Batal',
-        ...getSwalTheme()
+        ...getSwalTheme(),
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const variantId = div.getAttribute('data-id');
+          if (variantId && !deletedVariantIds.includes(variantId)) {
+            deletedVariantIds.push(variantId);
+          }
+          div.remove();
+        }
+      });
+    } else {
+      Swal.fire({ icon: 'warning', title: 'Eiits!', text: 'Minimal harus ada 1 varian.', ...getSwalTheme() });
+    }
+  });
+
+  adminVariantsContainer.appendChild(div);
+}
+
+function openAdminModal(product = null) {
+  const title = document.getElementById('admin-modal-title');
+  const subtitle = document.getElementById('admin-product-subtitle');
+  const inputName = document.getElementById('admin-input-name');
+  const inputImage = document.getElementById('admin-input-image');
+  const inputDesc = document.getElementById('admin-input-desc');
+
+  adminVariantsContainer.innerHTML = '';
+  deletedVariantIds = [];
+
+  if (product) {
+    title.textContent = 'Edit Produk';
+    if (subtitle) {
+      subtitle.textContent = product.name;
+      subtitle.classList.remove('hidden');
+    }
+    inputName.value = product.name;
+    inputImage.value = product.image_url || '';
+    inputDesc.value = product.description || '';
+
+    if (product.variants && product.variants.length > 0) {
+      product.variants.forEach((v) => addVariantBlock(v));
+    } else {
+      addVariantBlock();
+    }
+
+    btnSaveProduct.onclick = () => saveProduct(product.id, product.name);
+  } else {
+    title.textContent = 'Tambah Produk Baru';
+    if (subtitle) subtitle.classList.add('hidden');
+    inputName.value = '';
+    inputImage.value = '';
+    inputDesc.value = '';
+
+    addVariantBlock();
+    btnSaveProduct.onclick = () => saveProduct(null, null);
+  }
+
+  adminProductSlide.classList.add('active');
+}
+
+async function saveProduct(pid, oldName) {
+  const name = document.getElementById('admin-input-name').value.trim();
+  const image = document.getElementById('admin-input-image').value.trim();
+  const desc = document.getElementById('admin-input-desc').value.trim();
+  const variantBlocks = document.querySelectorAll('#admin-variants-container > div');
+
+  if (!name) return Swal.fire({ icon: 'error', title: 'Data Tidak Lengkap', text: 'Nama Produk wajib diisi!', ...getSwalTheme() });
+
+  Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...getSwalTheme() });
+
+  try {
+    const normalizedImage = image ? normalizeImageUrl(image) : '';
+    if (image && !normalizedImage) {
+      throw new Error('URL gambar tidak valid. Gunakan direct image URL. Link halaman seperti ibb.co/ImgBB preview tidak didukung.');
+    }
+
+    // 1. Upsert Product
+    const productToSave = {
+      name,
+      image_url: normalizedImage || '',
+      description: desc,
+      is_active: true,
+    };
+    if (pid) productToSave.id = pid;
+
+    const variantsToSave = [];
+    for (const block of variantBlocks) {
+      const vid = block.getAttribute('data-id');
+      const vname = block.querySelector('.var-name').value.trim();
+      const price = parseInt(block.querySelector('.var-price').value);
+      const fulfillment = block.querySelector('.var-fulfillment').value;
+      const minQty = parseInt(block.querySelector('.var-min').value);
+
+      const tierRows = [...block.querySelectorAll('.tier-row')];
+      const tiers = tierRows
+        .map((row) => ({
+          min_qty: parseInt(row.querySelector('.tier-min-qty').value),
+          price: parseInt(row.querySelector('.tier-price').value),
+        }))
+        .filter((tier) => Number.isFinite(tier.min_qty) && Number.isFinite(tier.price));
+
+      if (tierRows.length > 0 && tiers.length !== tierRows.length) {
+        throw new Error(`Ada baris Harga Grosir di varian "${vname || '(tanpa nama)'}" yang belum terisi lengkap.`);
+      }
+      for (const tier of tiers) {
+        if (tier.min_qty < 2 || tier.min_qty <= minQty) {
+          throw new Error(`Qty Min Harga Grosir di varian "${vname}" harus lebih besar dari Min Qty (${minQty}).`);
+        }
+        if (tier.price < 0 || tier.price > price) {
+          throw new Error(`Harga Grosir di varian "${vname}" harus lebih murah dari Harga Rp normal (${price}).`);
+        }
+      }
+      tiers.sort((a, b) => a.min_qty - b.min_qty);
+      for (let i = 1; i < tiers.length; i++) {
+        if (tiers[i].min_qty === tiers[i - 1].min_qty) {
+          throw new Error(`Ada Qty Min Harga Grosir yang duplikat di varian "${vname}".`);
+        }
+      }
+
+      const variantData = {
+        name: vname,
+        price: price,
+        wholesale_tiers: tiers,
+        fulfillment: fulfillment,
+        description: block.querySelector('.var-desc').value.trim(),
+        min_qty: minQty,
+        max_qty: parseInt(block.querySelector('.var-max').value),
+        qty_per_purchase: parseInt(block.querySelector('.var-qpp').value),
+        is_active: block.querySelector('.var-status').value === 'true',
+        snk: block.querySelector('.var-snk').value.trim(),
+      };
+      if (vid) variantData.id = vid;
+      variantsToSave.push(variantData);
+    }
+
+    const response = await fetch('/api/webapp/admin-products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        bot_id: currentBotId,
+        auth: adminAuthToken,
+        product: productToSave,
+        variants: variantsToSave,
+        deleted_variant_ids: deletedVariantIds,
+      }),
     });
 
-    if (isConfirmed) {
-        try {
-            Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...getSwalTheme() });
-            
-            const response = await fetch(`/api/webapp/admin-products?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&id=${encodeURIComponent(id)}`, {
-                method: 'DELETE'
-            });
-            const result = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(result.error || 'Gagal menghapus produk');
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Gagal menyimpan produk');
 
-            await refreshAdminData();
-            
-            Swal.fire({
-                title: 'Terhapus!',
-                text: 'Produk berhasil dihapus.',
-                icon: 'success',
-                ...getSwalTheme(),
-                showConfirmButton: false,
-                timer: 1500
-            });
-        } catch (e) {
-            Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, ...getSwalTheme() });
-        }
+    await refreshAdminData();
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Tersimpan!',
+      text: 'Data produk berhasil diperbarui.',
+      ...getSwalTheme(),
+      showConfirmButton: false,
+      timer: 1500,
+    });
+
+    adminProductSlide.classList.remove('active');
+  } catch (e) {
+    console.error(e);
+    Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: e.message, ...getSwalTheme() });
+  }
+}
+
+async function deleteProduct(id, name) {
+  const { isConfirmed } = await Swal.fire({
+    title: 'Hapus Produk?',
+    text: `Anda akan menghapus "${name}" secara permanen.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#3b82f6',
+    confirmButtonText: 'Ya, Hapus!',
+    cancelButtonText: 'Batal',
+    ...getSwalTheme(),
+  });
+
+  if (isConfirmed) {
+    try {
+      Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...getSwalTheme() });
+
+      const response = await fetch(`/api/webapp/admin-products?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Gagal menghapus produk');
+
+      await refreshAdminData();
+
+      Swal.fire({
+        title: 'Terhapus!',
+        text: 'Produk berhasil dihapus.',
+        icon: 'success',
+        ...getSwalTheme(),
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, ...getSwalTheme() });
     }
+  }
 }
 export { renderAdminView };

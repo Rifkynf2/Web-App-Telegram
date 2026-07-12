@@ -56,6 +56,20 @@ export const getImageFallback = (url, name = 'Product') => {
     return `https://placehold.co/400x400/1e293b/white?text=${encodedName}`;
 };
 
+// Client-side preview only — mirrors resolveUnitPrice() in
+// RNFBOT TELE/src/utils/pricing.js. The server always recomputes this from
+// scratch at checkout time, so this copy can never be exploited to get a
+// wrong price; it only affects what's shown before the buyer taps "Beli".
+export const resolveTierPrice = (variant, qty) => {
+    const tiers = Array.isArray(variant?.wholesale_tiers) ? variant.wholesale_tiers : [];
+    let unitPrice = parseInt(variant?.price, 10) || 0;
+    for (const tier of tiers) {
+        if (qty >= tier.min_qty) unitPrice = tier.price;
+        else break;
+    }
+    return unitPrice;
+};
+
 export const formatRestockDate = (isoString) => {
     if (!isoString) return '-';
     return new Date(isoString).toLocaleDateString('id-ID', {

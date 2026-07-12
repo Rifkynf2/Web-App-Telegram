@@ -124,14 +124,6 @@ module.exports = async function handler(req, res) {
             console.log(`[API/tenant/register] New tenant: ${username} (Trial 1 Day)`);
         }
 
-        // 5. Audit log
-        await masterDb.from('audit_logs').insert({
-            bot_id: botId,
-            actor: 'bot',
-            action: isNew ? 'TENANT_REGISTERED' : 'TENANT_UPDATED',
-            entity: 'tenants',
-            detail: { username, shop_name }
-        });
 
         return success(res, {
             registered: true,
