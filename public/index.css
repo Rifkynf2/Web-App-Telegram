@@ -9,6 +9,28 @@ body {
   @apply bg-[#111111] text-gray-100 min-h-screen text-sm font-sans antialiased selection:bg-primary selection:text-white;
 }
 
+/* Loading state — full-screen overlay while initial data is still being
+   fetched, so nothing underneath can be clicked/double-clicked. */
+#loading-state {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(17, 17, 17, 0.85);
+  backdrop-filter: blur(2px);
+  cursor: not-allowed;
+}
+html[data-theme="light"] #loading-state {
+  background: rgba(242, 240, 255, 0.9);
+}
+
+/* Any disabled control should look and behave visibly locked. */
+button:disabled,
+button[disabled],
+[disabled] {
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
 .glass-panel {
   @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl;
 }

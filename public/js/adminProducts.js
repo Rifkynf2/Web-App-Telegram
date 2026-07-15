@@ -404,7 +404,7 @@ function createAdminProductRow(product) {
   if (btnEdit) btnEdit.onclick = () => openAdminModal(product);
 
   const btnDelete = div.querySelector('.btn-delete');
-  if (btnDelete) btnDelete.onclick = () => deleteProduct(product.id, product.name);
+  if (btnDelete) btnDelete.onclick = () => deleteProduct(product.id, product.name, btnDelete);
 
   return div;
 }
@@ -803,13 +803,22 @@ function openAdminModal(product = null) {
   adminProductSlide.classList.add('active');
 }
 
+let isSavingProduct = false;
+
 async function saveProduct(pid, oldName) {
+  if (isSavingProduct) return;
+
   const name = document.getElementById('admin-input-name').value.trim();
   const image = document.getElementById('admin-input-image').value.trim();
   const desc = document.getElementById('admin-input-desc').value.trim();
   const variantBlocks = document.querySelectorAll('#admin-variants-container > div');
 
   if (!name) return Swal.fire({ icon: 'error', title: 'Data Tidak Lengkap', text: 'Nama Produk wajib diisi!', ...getSwalTheme() });
+
+  isSavingProduct = true;
+  btnSaveProduct.disabled = true;
+  const btnSaveProductHeader = document.getElementById('btn-save-product-header');
+  if (btnSaveProductHeader) btnSaveProductHeader.disabled = true;
 
   Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...getSwalTheme() });
 
@@ -910,10 +919,16 @@ async function saveProduct(pid, oldName) {
   } catch (e) {
     console.error(e);
     Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: e.message, ...getSwalTheme() });
+  } finally {
+    isSavingProduct = false;
+    btnSaveProduct.disabled = false;
+    if (btnSaveProductHeader) btnSaveProductHeader.disabled = false;
   }
 }
 
-async function deleteProduct(id, name) {
+async function deleteProduct(id, name, btn) {
+  if (btn?.disabled) return;
+
   const { isConfirmed } = await Swal.fire({
     title: 'Hapus Produk?',
     text: `Anda akan menghapus "${name}" secara permanen.`,
@@ -927,6 +942,7 @@ async function deleteProduct(id, name) {
   });
 
   if (isConfirmed) {
+    if (btn) btn.disabled = true;
     try {
       Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...getSwalTheme() });
 
@@ -948,6 +964,7 @@ async function deleteProduct(id, name) {
       });
     } catch (e) {
       Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, ...getSwalTheme() });
+      if (btn) btn.disabled = false;
     }
   }
 }

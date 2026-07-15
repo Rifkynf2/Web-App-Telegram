@@ -72,12 +72,32 @@ module.exports = async function handler(req, res) {
             }
         }
 
-        // 2. Check tenant exists and is active
-        const { data: tenant, error: tErr } = await masterDb
-            .from('tenants')
-            .select('status, shop_name, username, bot_token')
-            .eq('bot_id', botId)
-            .single();
+        // 2-4. Tenant, subscription and config are each keyed only by bot_id
+        // (none depend on another's result), so fetch them concurrently
+        // instead of one-by-one to cut round-trip latency.
+        const [
+            { data: tenant, error: tErr },
+            { data: sub },
+            { data: config, error: cErr }
+        ] = await Promise.all([
+            masterDb
+                .from('tenants')
+                .select('status, shop_name, username, bot_token')
+                .eq('bot_id', botId)
+                .single(),
+            masterDb
+                .from('subscriptions')
+                .select('expiry_date')
+                .eq('bot_id', botId)
+                .order('expiry_date', { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+            masterDb
+                .from('tenant_configs')
+                .select('supabase_url, supabase_anon_key')
+                .eq('bot_id', botId)
+                .single()
+        ]);
 
         if (tErr || !tenant) {
             return notFound(res, 'Toko tidak ditemukan');
@@ -92,25 +112,9 @@ module.exports = async function handler(req, res) {
             return forbidden(res, messages[tenant.status] || 'Toko tidak aktif');
         }
 
-        // 3. Check subscription is still valid
-        const { data: sub } = await masterDb
-            .from('subscriptions')
-            .select('expiry_date')
-            .eq('bot_id', botId)
-            .order('expiry_date', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
         if (sub && new Date(sub.expiry_date) < new Date()) {
             return forbidden(res, 'Masa sewa toko telah habis. Hubungi pemilik toko.');
         }
-
-        // 4. Get tenant DB credentials (anon_key ONLY)
-        const { data: config, error: cErr } = await masterDb
-            .from('tenant_configs')
-            .select('supabase_url, supabase_anon_key')
-            .eq('bot_id', botId)
-            .single();
 
         if (cErr || !config) {
             return notFound(res, 'Konfigurasi toko tidak ditemukan');

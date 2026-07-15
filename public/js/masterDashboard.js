@@ -157,7 +157,7 @@ async function loadTenants() {
                 <td>
                     <div class="actions">
                         <button class="btn btn-sm" onclick="showRenewModal('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-calendar-plus"></i></button>
-                        <button class="btn btn-sm btn-warning" onclick="updateTenantStatus('${t.bot_id}', '${t.status === 'ACTIVE' ? 'suspend' : 'activate'}')">
+                        <button class="btn btn-sm btn-warning" onclick="updateTenantStatus('${t.bot_id}', '${t.status === 'ACTIVE' ? 'suspend' : 'activate'}', this)">
                             <i class="fa-solid fa-${t.status === 'ACTIVE' ? 'pause' : 'play'}"></i>
                         </button>
                         <button class="btn btn-sm btn-danger" onclick="confirmDelete('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-trash"></i></button>
@@ -174,21 +174,28 @@ async function loadTenants() {
 }
 
 /**
- * Tenant Actions 
+ * Tenant Actions
  */
-async function updateTenantStatus(botId, action) {
+// Prevents a rapid double-click from firing two mutating requests (suspend/
+// activate/delete/renew) for the same tenant before the table re-renders.
+let isMutatingTenant = false;
+
+async function updateTenantStatus(botId, action, btn) {
+    if (isMutatingTenant) return;
     if (!confirm(`Are you sure you want to ${action} bot ${botId}?`)) return;
 
+    isMutatingTenant = true;
+    if (btn) btn.disabled = true;
     try {
         const res = await fetch(`${API_BASE}/tenants`, {
             method: 'PUT',
-            headers: { 
+            headers: {
                 'X-Admin-Secret': adminSecret,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ bot_id: botId, action })
         });
-        
+
         const data = await res.json();
         if (!data.success) throw new Error(data.error);
 
@@ -197,6 +204,9 @@ async function updateTenantStatus(botId, action) {
         loadStats();
     } catch (err) {
         showToast(err.message, 'error');
+        if (btn) btn.disabled = false;
+    } finally {
+        isMutatingTenant = false;
     }
 }
 
@@ -222,13 +232,15 @@ function confirmDelete(botId, username) {
 }
 
 async function executeDelete(botId) {
+    if (isMutatingTenant) return;
+    isMutatingTenant = true;
     closeModal();
     try {
         const res = await fetch(`${API_BASE}/tenants?bot_id=${botId}`, {
             method: 'DELETE',
             headers: { 'X-Admin-Secret': adminSecret }
         });
-        
+
         const data = await res.json();
         if (!data.success) throw new Error(data.error);
 
@@ -237,6 +249,8 @@ async function executeDelete(botId) {
         loadStats();
     } catch (err) {
         showToast(err.message, 'error');
+    } finally {
+        isMutatingTenant = false;
     }
 }
 
@@ -263,19 +277,22 @@ function showRenewModal(botId, username) {
 }
 
 async function executeRenew(botId) {
+    if (isMutatingTenant) return;
+    isMutatingTenant = true;
+
     const days = parseInt(document.getElementById('manualDays').value) || 31;
     closeModal();
-    
+
     try {
         const res = await fetch(`${API_BASE}/subscriptions`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'X-Admin-Secret': adminSecret,
-                'Content-Type': 'application/json' 
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ bot_id: botId, days })
         });
-        
+
         const data = await res.json();
         if (!data.success) throw new Error(data.error);
 
@@ -284,6 +301,8 @@ async function executeRenew(botId) {
         loadStats();
     } catch (err) {
         showToast(err.message, 'error');
+    } finally {
+        isMutatingTenant = false;
     }
 }
 

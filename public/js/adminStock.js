@@ -17,6 +17,9 @@ const btnDeleteAllStock = document.getElementById('btn-delete-all-stock');
 const stockListContainer = document.getElementById('stock-list-container');
 const adminAuthToken = urlParams.get('auth') || '';
 let currentSnapshot = null;
+let currentSnapshotVariantId = null;
+let isFetchingVariantStats = false;
+let isSavingStock = false;
 let currentStockPage = 1;
 const STOCK_PAGE_SIZE = 10;
 
@@ -123,7 +126,10 @@ export function initAdminStock() {
     }
 
     if (btnDeleteAllStock) {
+        let isDeletingAllStock = false;
         btnDeleteAllStock.addEventListener('click', async () => {
+            if (isDeletingAllStock) return;
+
             const selectedVal = stockInputVariant.value;
             if (!selectedVal) return;
 
@@ -139,7 +145,9 @@ export function initAdminStock() {
                 ...getSwalTheme()
             });
 
-if (isConfirmed) {
+            if (isConfirmed) {
+                isDeletingAllStock = true;
+                btnDeleteAllStock.disabled = true;
                 try {
                     const response = await fetch(`/api/webapp/admin-stock?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&variant_id=${encodeURIComponent(selectedVal)}`, {
                         method: 'DELETE'
@@ -153,6 +161,9 @@ if (isConfirmed) {
                     updateStockStats();
                 } catch (e) {
                     Swal.fire({ icon: 'error', title: 'Gagal Menghapus', text: e.message, ...getSwalTheme() });
+                } finally {
+                    isDeletingAllStock = false;
+                    btnDeleteAllStock.disabled = false;
                 }
             }
         });
@@ -213,8 +224,10 @@ export function openStockModal(product) {
 
 async function updateStockStats(product) {
     const selectedId = stockInputVariant.value;
-    
+
     if (!selectedId) {
+        currentSnapshot = null;
+        currentSnapshotVariantId = null;
         document.getElementById('stock-stat-ready').textContent = "0";
         document.getElementById('stock-stat-reserved').textContent = "0";
         document.getElementById('stock-stat-sold').textContent = "0";
@@ -224,11 +237,19 @@ async function updateStockStats(product) {
         return;
     }
 
+    // Lock the save button while variant stats are still being fetched —
+    // otherwise "Simpan" can be clicked while currentSnapshot still holds
+    // the previously selected variant's data, causing dup-checks to run
+    // against the wrong variant.
+    isFetchingVariantStats = true;
+    btnSaveStock.disabled = true;
+
     try {
         const snapshot = await fetchStockSnapshot(selectedId);
         currentSnapshot = snapshot;
+        currentSnapshotVariantId = String(selectedId);
         const stats = snapshot.stats || { AVAILABLE: 0, RESERVED: 0, SOLD: 0 };
-        
+
         // Find variant to get correct sold count
         const variant = product?.variants?.find(v => String(v.id) === String(selectedId));
         const variantSold = variant ? parseInt(variant.total_sold || 0, 10) : 0;
@@ -243,6 +264,9 @@ async function updateStockStats(product) {
         }
     } catch (e) {
         console.error("Error fetching stats:", e);
+    } finally {
+        isFetchingVariantStats = false;
+        if (!isSavingStock) btnSaveStock.disabled = false;
     }
 }
 
@@ -287,7 +311,7 @@ async function renderStockItems() {
                     <i class="fa-solid fa-trash-can text-[10px]"></i>
                 </button>
             `;
-            row.querySelector('.btn-del-item').onclick = () => deleteStockItem(item.id);
+            row.querySelector('.btn-del-item').onclick = (e) => deleteStockItem(item.id, e.currentTarget);
             stockListContainer.appendChild(row);
         });
 
@@ -306,7 +330,9 @@ async function renderStockItems() {
     }
 }
 
-async function deleteStockItem(id) {
+async function deleteStockItem(id, btn) {
+    if (btn?.disabled) return;
+
     const { isConfirmed } = await Swal.fire({
         title: 'Hapus Item?',
         text: 'Data stok ini akan dihapus permanen.',
@@ -320,28 +346,44 @@ async function deleteStockItem(id) {
     });
 
     if (isConfirmed) {
+        if (btn) btn.disabled = true;
         try {
             const response = await fetch(`/api/webapp/admin-stock?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(adminAuthToken)}&id=${encodeURIComponent(id)}`, {
                 method: 'DELETE'
             });
             const result = await response.json().catch(() => ({}));
             if (!response.ok) throw new Error(result.error || 'Gagal menghapus item stok');
-            
+
             Swal.fire({ icon: 'success', title: 'Terhapus', ...getSwalTheme(), timer: 1000, showConfirmButton: false });
             await refreshAdminData();
             updateStockStats();
         } catch (e) {
             Swal.fire({ icon: 'error', title: 'Gagal', text: e.message, ...getSwalTheme() });
+            if (btn) btn.disabled = false;
         }
     }
 }
 
 async function saveStockAction(product) {
+    if (isSavingStock || isFetchingVariantStats) return;
+
     const selectedVal = stockInputVariant.value;
     if (!selectedVal) {
         return Swal.fire({ icon: 'error', title: 'Pilih Varian', text: 'Anda harus memilih varian produk sebelum memasukkan stok!', ...getSwalTheme() });
     }
 
+    isSavingStock = true;
+    btnSaveStock.disabled = true;
+
+    try {
+        await saveStockActionInner(product, selectedVal);
+    } finally {
+        isSavingStock = false;
+        if (!isFetchingVariantStats) btnSaveStock.disabled = false;
+    }
+}
+
+async function saveStockActionInner(product, selectedVal) {
     const selectedVariantId = String(selectedVal);
     const variant = product.variants.find(v => String(v.id) === selectedVariantId);
     if (!variant) {
@@ -393,8 +435,11 @@ async function saveStockAction(product) {
         });
     }
 
-    const snapshot = currentSnapshot || await fetchStockSnapshot(selectedVal);
+    const snapshot = (currentSnapshot && currentSnapshotVariantId === selectedVariantId)
+        ? currentSnapshot
+        : await fetchStockSnapshot(selectedVal);
     currentSnapshot = snapshot;
+    currentSnapshotVariantId = selectedVariantId;
     const availablePayloads = Array.isArray(snapshot.available_payloads)
         ? snapshot.available_payloads.map(normalizeStockLine).filter(Boolean)
         : [];
@@ -449,18 +494,18 @@ async function saveStockAction(product) {
 
         if (isConfirmed) {
             const confirmed = await showStockConfirmation(variant, fulfillment, rawLines.length);
-            if (confirmed) finalizeStockSave(rawLines, selectedVal);
+            if (confirmed) await finalizeStockSave(rawLines, selectedVal);
         } else if (isDenied) {
             const uniqueLines = uniqueInInput.filter((line) => !dbPayloadSet.has(line));
             if (uniqueLines.length === 0) {
                 return Swal.fire({ icon: 'warning', title: 'Tidak Ada Data Unik', text: 'Semua baris sudah ada di stok atau terduplikasi.', ...getSwalTheme() });
             }
             const confirmed = await showStockConfirmation(variant, fulfillment, uniqueLines.length);
-            if (confirmed) finalizeStockSave(uniqueLines, selectedVal, totalDups);
+            if (confirmed) await finalizeStockSave(uniqueLines, selectedVal, totalDups);
         }
     } else {
         const confirmed = await showStockConfirmation(variant, fulfillment, rawLines.length);
-        if (confirmed) finalizeStockSave(rawLines, selectedVal);
+        if (confirmed) await finalizeStockSave(rawLines, selectedVal);
     }
 }
 
