@@ -228,7 +228,7 @@ function renderTenants(tenants) {
         `;
 
         tr.querySelector('.btn-action-renew').onclick = () => showRenewModal(t.bot_id, t.username);
-        tr.querySelector('.btn-action-toggle').onclick = (e) => updateTenantStatus(t.bot_id, t.status === 'ACTIVE' ? 'suspend' : 'activate', e.currentTarget);
+        tr.querySelector('.btn-action-toggle').onclick = (e) => confirmToggleStatus(t.bot_id, t.username, t.status === 'ACTIVE' ? 'suspend' : 'activate', e.currentTarget);
         tr.querySelector('.btn-action-delete').onclick = () => confirmDelete(t.bot_id, t.username);
 
         tbody.appendChild(tr);
@@ -267,10 +267,39 @@ async function loadTenants() {
 // activate/delete/renew) for the same tenant before the table re-renders.
 let isMutatingTenant = false;
 
+function confirmToggleStatus(botId, username, action, btn) {
+    if (isPreviewMode) return showToast('Preview mode — actions are disabled', 'error');
+    if (isMutatingTenant) return;
+
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const modalFooter = document.getElementById('modalFooter');
+
+    const isSuspend = action === 'suspend';
+    const icon = isSuspend ? 'fa-pause' : 'fa-play';
+    const verb = isSuspend ? 'Suspend' : 'Activate';
+
+    modalTitle.innerHTML = `<i class="fa-solid ${icon}" style="color: var(--warning-color)"></i> ${verb} Tenant`;
+    modalBody.innerHTML = `
+        <p>Are you sure you want to <b>${verb.toLowerCase()}</b> the tenant <b>@${escapeHtml(username)}</b> (${escapeHtml(botId)})?</p>
+    `;
+
+    modalFooter.innerHTML = `
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn ${isSuspend ? 'btn-warning' : 'btn-success'}" id="confirmToggleBtn">Yes, ${verb}</button>
+    `;
+
+    document.getElementById('confirmToggleBtn').onclick = () => {
+        closeModal();
+        updateTenantStatus(botId, action, btn);
+    };
+
+    openModal();
+}
+
 async function updateTenantStatus(botId, action, btn) {
     if (isPreviewMode) return showToast('Preview mode — actions are disabled', 'error');
     if (isMutatingTenant) return;
-    if (!confirm(`Are you sure you want to ${action} bot ${botId}?`)) return;
 
     isMutatingTenant = true;
     if (btn) btn.disabled = true;
