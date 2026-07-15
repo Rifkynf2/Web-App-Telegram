@@ -5,6 +5,42 @@
 const API_BASE = '/api/admin';
 let adminSecret = localStorage.getItem('master_secret') || '';
 
+// ── Mock Data (preview mode) ────────────────────────────────────────────────
+// Open master-dashboard.html?preview=true to see the UI with fake data,
+// no secret/API call needed — handy for reviewing layout/style changes
+// without a redeploy. Mirrors the same convention used in adminProducts.js.
+const isPreviewMode = new URLSearchParams(window.location.search).get('preview') === 'true';
+
+const MOCK_STATS = {
+    total_tenants: 12,
+    active_tenants: 9,
+    expiring_soon: 2,
+    total_revenue: 4850000,
+};
+
+const MOCK_TENANTS = [
+    {
+        bot_id: '8774012156', username: 'majakartaap78_bot', shop_name: 'MAJAKARTA APP [AUTO ORDER]', status: 'ACTIVE',
+        subscription: { plan: 'Premium', status: 'ACTIVE', expiryDate: '2026-08-03T00:00:00Z', isExpired: false, remainingDays: 19 },
+    },
+    {
+        bot_id: '8750095348', username: 'terserahstore1_bot', shop_name: 'terserah store', status: 'ACTIVE',
+        subscription: { plan: 'Trial', status: 'TRIAL', expiryDate: '2026-07-18T00:00:00Z', isExpired: false, remainingDays: 3 },
+    },
+    {
+        bot_id: '8701921315', username: 'rogerfams_bot', shop_name: 'ROGERFAMS', status: 'SUSPENDED',
+        subscription: { plan: 'Premium', status: 'ACTIVE', expiryDate: '2026-07-18T00:00:00Z', isExpired: false, remainingDays: 4 },
+    },
+    {
+        bot_id: '8611234098', username: 'bannedshop_bot', shop_name: 'Banned Example Shop', status: 'BANNED',
+        subscription: { plan: 'Premium', status: 'ACTIVE', expiryDate: '2026-05-01T00:00:00Z', isExpired: true, remainingDays: -75 },
+    },
+    {
+        bot_id: '8599123456', username: 'expiredstore_bot', shop_name: 'Expired Store Example', status: 'EXPIRED',
+        subscription: { plan: 'Premium', status: 'ACTIVE', expiryDate: '2026-06-10T00:00:00Z', isExpired: true, remainingDays: -35 },
+    },
+];
+
 // DOM Elements
 const loginOverlay = document.getElementById('loginOverlay');
 const mainApp = document.getElementById('mainApp');
@@ -14,10 +50,19 @@ const btnRefresh = document.getElementById('btnRefresh');
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
+    if (isPreviewMode) {
+        console.log('[MasterDashboard] Preview mode — mock data loaded');
+        loadStats();
+        loginForm.addEventListener('submit', (e) => e.preventDefault());
+        btnLogout.addEventListener('click', () => location.reload());
+        btnRefresh.addEventListener('click', () => { loadStats(); loadTenants(); });
+        return;
+    }
+
     // Auto-login via URL parameter ?secret=...
     const urlParams = new URLSearchParams(window.location.search);
     const secretParam = urlParams.get('secret');
-    
+
     if (secretParam) {
         adminSecret = secretParam;
         localStorage.setItem('master_secret', secretParam);
@@ -67,12 +112,30 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Fetch and update stats
  */
+function renderStats(s) {
+    document.getElementById('statTotalTenants').innerText = s.total_tenants;
+    document.getElementById('statActiveTenants').innerText = `${s.active_tenants} / ${s.total_tenants}`;
+    document.getElementById('statExpiring').innerText = s.expiring_soon;
+    // Format Rp
+    document.getElementById('statRevenue').innerText = `Rp ${(s.total_revenue || 0).toLocaleString('id-ID')}`;
+}
+
 async function loadStats() {
+    if (isPreviewMode) {
+        if (loginOverlay.style.display !== 'none') {
+            loginOverlay.style.display = 'none';
+            mainApp.style.display = 'block';
+            loadTenants();
+        }
+        renderStats(MOCK_STATS);
+        return true;
+    }
+
     try {
         const res = await fetch(`${API_BASE}/stats`, {
             headers: { 'X-Admin-Secret': adminSecret }
         });
-        
+
         const data = await res.json();
         if (!data.success) throw new Error(data.error);
 
@@ -83,13 +146,7 @@ async function loadStats() {
             loadTenants();
         }
 
-        const s = data.stats;
-        document.getElementById('statTotalTenants').innerText = s.total_tenants;
-        document.getElementById('statActiveTenants').innerText = `${s.active_tenants} / ${s.total_tenants}`;
-        document.getElementById('statExpiring').innerText = s.expiring_soon;
-        // Format Rp
-        document.getElementById('statRevenue').innerText = `Rp ${(s.total_revenue || 0).toLocaleString('id-ID')}`;
-
+        renderStats(data.stats);
         return true;
     } catch (err) {
         console.error('Stats error:', err);
@@ -100,8 +157,72 @@ async function loadStats() {
 /**
  * Fetch and render tenants table
  */
+function renderTenants(tenants) {
+    const tbody = document.getElementById('tenantsTableBody');
+
+    if (tenants.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-box-open"></i><br>No tenants found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = '';
+    tenants.forEach(t => {
+        const tr = document.createElement('tr');
+
+        // Format dates
+        const expiry = t.subscription.expiryDate ? new Date(t.subscription.expiryDate).toLocaleDateString('id-ID') : '-';
+
+        // Badges
+        let subBadgeClass = 'badge-active';
+        let subBadgeText = t.subscription.status;
+        if (t.subscription.isExpired) {
+            subBadgeClass = 'badge-suspended';
+            subBadgeText = 'EXPIRED';
+        } else if (t.subscription.status === 'TRIAL') {
+            subBadgeClass = 'badge-trial';
+        }
+
+        const tenantStatusClass = t.status === 'ACTIVE' ? 'badge-active' : (t.status === 'BANNED' ? 'badge-banned' : 'badge-suspended');
+
+        tr.innerHTML = `
+            <td><code>${t.bot_id}</code></td>
+            <td>
+                <b>${t.shop_name}</b><br>
+                <small style="color:var(--text-muted)">@${t.username}</small>
+            </td>
+            <td><span class="badge ${tenantStatusClass}">${t.status}</span></td>
+            <td>
+                <span class="badge ${subBadgeClass}">${subBadgeText}</span><br>
+                <small>${t.subscription.plan}</small>
+            </td>
+            <td>
+                ${expiry}<br>
+                <small style="color:${t.subscription.isExpired ? 'var(--danger-color)' : 'var(--text-muted)'}">
+                    ${t.subscription.isExpired ? `Minus ${Math.abs(t.subscription.remainingDays)} days` : `${t.subscription.remainingDays} days left`}
+                </small>
+            </td>
+            <td>
+                <div class="actions">
+                    <button class="icon-btn icon-btn-primary" title="Extend rent" onclick="showRenewModal('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-calendar-plus"></i></button>
+                    <button class="icon-btn ${t.status === 'ACTIVE' ? 'icon-btn-warning' : 'icon-btn-success'}" title="${t.status === 'ACTIVE' ? 'Suspend' : 'Activate'}" onclick="updateTenantStatus('${t.bot_id}', '${t.status === 'ACTIVE' ? 'suspend' : 'activate'}', this)">
+                        <i class="fa-solid fa-${t.status === 'ACTIVE' ? 'pause' : 'play'}"></i>
+                    </button>
+                    <button class="icon-btn icon-btn-danger" title="Delete tenant" onclick="confirmDelete('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
 async function loadTenants() {
     const tbody = document.getElementById('tenantsTableBody');
+
+    if (isPreviewMode) {
+        renderTenants(MOCK_TENANTS);
+        return;
+    }
+
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><br>Loading data...</td></tr>';
 
     try {
@@ -109,64 +230,10 @@ async function loadTenants() {
             headers: { 'X-Admin-Secret': adminSecret }
         });
         const data = await res.json();
-        
+
         if (!data.success) throw new Error(data.error);
 
-        const tenants = data.tenants;
-        if (tenants.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-box-open"></i><br>No tenants found.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = '';
-        tenants.forEach(t => {
-            const tr = document.createElement('tr');
-            
-            // Format dates
-            const expiry = t.subscription.expiryDate ? new Date(t.subscription.expiryDate).toLocaleDateString('id-ID') : '-';
-            
-            // Badges
-            let subBadgeClass = 'badge-active';
-            let subBadgeText = t.subscription.status;
-            if (t.subscription.isExpired) {
-                subBadgeClass = 'badge-suspended';
-                subBadgeText = 'EXPIRED';
-            } else if (t.subscription.status === 'TRIAL') {
-                subBadgeClass = 'badge-trial';
-            }
-            
-            const tenantStatusClass = t.status === 'ACTIVE' ? 'badge-active' : (t.status === 'BANNED' ? 'badge-banned' : 'badge-suspended');
-
-            tr.innerHTML = `
-                <td><code>${t.bot_id}</code></td>
-                <td>
-                    <b>${t.shop_name}</b><br>
-                    <small style="color:var(--text-muted)">@${t.username}</small>
-                </td>
-                <td><span class="badge ${tenantStatusClass}">${t.status}</span></td>
-                <td>
-                    <span class="badge ${subBadgeClass}">${subBadgeText}</span><br>
-                    <small>${t.subscription.plan}</small>
-                </td>
-                <td>
-                    ${expiry}<br>
-                    <small style="color:${t.subscription.isExpired ? 'var(--danger-color)' : 'var(--text-muted)'}">
-                        ${t.subscription.isExpired ? `Minus ${Math.abs(t.subscription.remainingDays)} days` : `${t.subscription.remainingDays} days left`}
-                    </small>
-                </td>
-                <td>
-                    <div class="actions">
-                        <button class="icon-btn icon-btn-primary" title="Extend rent" onclick="showRenewModal('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-calendar-plus"></i></button>
-                        <button class="icon-btn ${t.status === 'ACTIVE' ? 'icon-btn-warning' : 'icon-btn-success'}" title="${t.status === 'ACTIVE' ? 'Suspend' : 'Activate'}" onclick="updateTenantStatus('${t.bot_id}', '${t.status === 'ACTIVE' ? 'suspend' : 'activate'}', this)">
-                            <i class="fa-solid fa-${t.status === 'ACTIVE' ? 'pause' : 'play'}"></i>
-                        </button>
-                        <button class="icon-btn icon-btn-danger" title="Delete tenant" onclick="confirmDelete('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
+        renderTenants(data.tenants);
     } catch (err) {
         showToast(err.message, 'error');
         tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--danger-color)"><i class="fa-solid fa-triangle-exclamation"></i><br>Failed to load data</td></tr>`;
@@ -181,6 +248,7 @@ async function loadTenants() {
 let isMutatingTenant = false;
 
 async function updateTenantStatus(botId, action, btn) {
+    if (isPreviewMode) return showToast('Preview mode — actions are disabled', 'error');
     if (isMutatingTenant) return;
     if (!confirm(`Are you sure you want to ${action} bot ${botId}?`)) return;
 
@@ -232,6 +300,7 @@ function confirmDelete(botId, username) {
 }
 
 async function executeDelete(botId) {
+    if (isPreviewMode) { closeModal(); return showToast('Preview mode — actions are disabled', 'error'); }
     if (isMutatingTenant) return;
     isMutatingTenant = true;
     closeModal();
@@ -277,6 +346,7 @@ function showRenewModal(botId, username) {
 }
 
 async function executeRenew(botId) {
+    if (isPreviewMode) { closeModal(); return showToast('Preview mode — actions are disabled', 'error'); }
     if (isMutatingTenant) return;
     isMutatingTenant = true;
 
