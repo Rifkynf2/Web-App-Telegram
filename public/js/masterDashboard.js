@@ -157,6 +157,16 @@ async function loadStats() {
 /**
  * Fetch and render tenants table
  */
+// Tenant username/shop_name are free text set by the tenant's own bot owner
+// (api/tenant/register.js does not sanitize them) — escape before ever
+// putting them into innerHTML so a malicious tenant can't inject markup/JS
+// that runs in the SaaS owner's authenticated dashboard session.
+function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[ch]));
+}
+
 function renderTenants(tenants) {
     const tbody = document.getElementById('tenantsTableBody');
 
@@ -184,16 +194,21 @@ function renderTenants(tenants) {
 
         const tenantStatusClass = t.status === 'ACTIVE' ? 'badge-active' : (t.status === 'BANNED' ? 'badge-banned' : 'badge-suspended');
 
+        // Action buttons are wired via .onclick below (real JS closures over
+        // t.bot_id/t.username), never by interpolating tenant-controlled
+        // strings into an inline onclick="..." attribute — a single quote in
+        // shop_name/username there would otherwise break out of the JS
+        // string literal and execute arbitrary code in the admin's session.
         tr.innerHTML = `
-            <td><code>${t.bot_id}</code></td>
+            <td><code>${escapeHtml(t.bot_id)}</code></td>
             <td>
-                <b>${t.shop_name}</b><br>
-                <small style="color:var(--text-muted)">@${t.username}</small>
+                <b>${escapeHtml(t.shop_name)}</b><br>
+                <small style="color:var(--text-muted)">@${escapeHtml(t.username)}</small>
             </td>
-            <td><span class="badge ${tenantStatusClass}">${t.status}</span></td>
+            <td><span class="badge ${tenantStatusClass}">${escapeHtml(t.status)}</span></td>
             <td>
-                <span class="badge ${subBadgeClass}">${subBadgeText}</span><br>
-                <small>${t.subscription.plan}</small>
+                <span class="badge ${subBadgeClass}">${escapeHtml(subBadgeText)}</span><br>
+                <small>${escapeHtml(t.subscription.plan)}</small>
             </td>
             <td>
                 ${expiry}<br>
@@ -203,14 +218,19 @@ function renderTenants(tenants) {
             </td>
             <td>
                 <div class="actions">
-                    <button class="icon-btn icon-btn-primary" title="Extend rent" onclick="showRenewModal('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-calendar-plus"></i></button>
-                    <button class="icon-btn ${t.status === 'ACTIVE' ? 'icon-btn-warning' : 'icon-btn-success'}" title="${t.status === 'ACTIVE' ? 'Suspend' : 'Activate'}" onclick="updateTenantStatus('${t.bot_id}', '${t.status === 'ACTIVE' ? 'suspend' : 'activate'}', this)">
+                    <button class="icon-btn icon-btn-primary btn-action-renew" title="Extend rent"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                    <button class="icon-btn ${t.status === 'ACTIVE' ? 'icon-btn-warning' : 'icon-btn-success'} btn-action-toggle" title="${t.status === 'ACTIVE' ? 'Suspend' : 'Activate'}">
                         <i class="fa-solid fa-${t.status === 'ACTIVE' ? 'pause' : 'play'}"></i>
                     </button>
-                    <button class="icon-btn icon-btn-danger" title="Delete tenant" onclick="confirmDelete('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-trash-can"></i></button>
+                    <button class="icon-btn icon-btn-danger btn-action-delete" title="Delete tenant"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             </td>
         `;
+
+        tr.querySelector('.btn-action-renew').onclick = () => showRenewModal(t.bot_id, t.username);
+        tr.querySelector('.btn-action-toggle').onclick = (e) => updateTenantStatus(t.bot_id, t.status === 'ACTIVE' ? 'suspend' : 'activate', e.currentTarget);
+        tr.querySelector('.btn-action-delete').onclick = () => confirmDelete(t.bot_id, t.username);
+
         tbody.appendChild(tr);
     });
 }
@@ -285,7 +305,7 @@ function confirmDelete(botId, username) {
 
     modalTitle.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger-color)"></i> Delete Tenant`;
     modalBody.innerHTML = `
-        <p>You are about to permanently delete the tenant <b>@${username}</b> (${botId}).</p>
+        <p>You are about to permanently delete the tenant <b>@${escapeHtml(username)}</b> (${escapeHtml(botId)}).</p>
         <p style="color: var(--danger-color); margin-top: 10px; font-weight: bold;">
             This action CANNOT be undone. All database records, API keys, and configs for this tenant will be destroyed.
         </p>
@@ -328,9 +348,9 @@ function showRenewModal(botId, username) {
     const modalBody = document.getElementById('modalBody');
     const modalFooter = document.getElementById('modalFooter');
 
-    modalTitle.innerHTML = `<i class="fa-solid fa-calendar-plus" style="color: var(--primary-color)"></i> Extend Rent`;
+    modalTitle.innerHTML = `<i class="fa-solid fa-clock-rotate-left" style="color: var(--primary-color)"></i> Extend Rent`;
     modalBody.innerHTML = `
-        <p style="margin-bottom: 1rem;">Manually inject rent duration for <b>@${username}</b>.</p>
+        <p style="margin-bottom: 1rem;">Manually inject rent duration for <b>@${escapeHtml(username)}</b>.</p>
         <div class="input-group">
             <label style="display:block; margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem;">Adding Days</label>
             <input type="number" id="manualDays" value="31" min="1" max="365">
@@ -396,7 +416,7 @@ function showToast(message, type = 'success') {
     const icon = type === 'success' ? 'fa-check-circle' : 'fa-circle-xmark';
     const color = type === 'success' ? 'var(--success-color)' : 'var(--danger-color)';
     
-    toast.innerHTML = `<i class="fa-solid ${icon}" style="color: ${color}; font-size: 1.25rem;"></i> <span>${message}</span>`;
+    toast.innerHTML = `<i class="fa-solid ${icon}" style="color: ${color}; font-size: 1.25rem;"></i> <span>${escapeHtml(message)}</span>`;
     
     container.appendChild(toast);
     

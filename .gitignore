@@ -4,6 +4,9 @@ dist/
 .env
 .env.local
 .vercel
+.vscode
+.claude
+.mcp.json
 
 # Generated files (no longer needed)
 public/js/config.js

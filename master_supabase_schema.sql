@@ -344,7 +344,21 @@ DECLARE
 BEGIN
   SELECT json_build_object(
     'total_tenants', (SELECT COUNT(*) FROM public.tenants),
-    'active_tenants', (SELECT COUNT(*) FROM public.tenants WHERE status = 'ACTIVE'),
+    -- Tenants.status is only flipped manually by an admin (suspend/ban/
+    -- activate) — nothing auto-transitions it to EXPIRED once a subscription
+    -- lapses (real access is always gated live via subscriptions.expiry_date
+    -- in api/tenant/validate.js and api/webapp/tenant-config.js, so this is
+    -- safe security-wise). This count therefore also requires an unexpired
+    -- subscription, so the dashboard stat doesn't over-count tenants whose
+    -- status column says ACTIVE but who are actually locked out already.
+    'active_tenants', (
+      SELECT COUNT(*) FROM public.tenants t
+      WHERE t.status = 'ACTIVE'
+      AND EXISTS (
+        SELECT 1 FROM public.subscriptions s
+        WHERE s.bot_id = t.bot_id AND s.expiry_date > NOW()
+      )
+    ),
     'expired_tenants', (
       SELECT COUNT(*) FROM public.subscriptions s
       JOIN public.tenants t ON t.bot_id = s.bot_id
@@ -362,9 +376,46 @@ BEGIN
     'total_sessions', (SELECT COUNT(*) FROM public.miniapp_sessions WHERE expires_at > NOW()),
     'total_telegram_users', (SELECT COUNT(*) FROM public.telegram_users)
   ) INTO result;
-  
+
   RETURN result;
 END $$;
+
+-- =========================================================
+-- 12b) RPC: sync_expired_tenants — Auto-flip stale ACTIVE tenants
+-- =========================================================
+-- Called once a day by a Vercel Cron (api/admin/[resource].js,
+-- resource=cron-expire). tenants.status is otherwise only changed by an
+-- admin action (suspend/ban/activate/renew) — nothing else keeps it in
+-- sync with subscriptions.expiry_date. Real access is already gated live
+-- via expiry_date in api/tenant/validate.js regardless of this column, so
+-- this RPC exists mainly to keep the "Status (Tenant)" badge in the master
+-- dashboard from staying stuck on ACTIVE forever after a subscription lapses.
+-- Returns the flipped bot_ids (not just a count) so the caller can push a
+-- cache-invalidation notification to each tenant's bot server, same as every
+-- other status-changing admin action.
+CREATE OR REPLACE FUNCTION public.sync_expired_tenants()
+RETURNS TABLE(bot_id BIGINT)
+LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
+  WITH latest_sub AS (
+    SELECT DISTINCT ON (s.bot_id) s.bot_id, s.expiry_date
+    FROM public.subscriptions s
+    ORDER BY s.bot_id, s.expiry_date DESC
+  ),
+  updated AS (
+    UPDATE public.tenants t
+    SET status = 'EXPIRED'
+    FROM latest_sub ls
+    WHERE t.bot_id = ls.bot_id
+      AND t.status = 'ACTIVE'
+      AND ls.expiry_date < NOW()
+    RETURNING t.bot_id
+  )
+  SELECT updated.bot_id FROM updated;
+END $$;
+
+GRANT EXECUTE ON FUNCTION public.sync_expired_tenants() TO service_role;
 
 -- =========================================================
 -- 13) RPC: process_renewal_payment — Atomic Payment Finalization

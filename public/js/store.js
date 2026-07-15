@@ -171,15 +171,49 @@ export async function fetchAdminCatalog(authToken) {
     return result.products || result.data?.products || [];
 }
 
+// Buyer balance/transaction count used to be fetched by querying the tenant
+// DB's `users`/`transactions` tables directly from the browser with the
+// anon key. Those tables' RLS only restricted by row *type* (is_active,
+// status), not by "is this the requesting buyer's own row" — so any client
+// could read every buyer's balance/history, not just their own. Now relayed
+// through a server endpoint that validates Telegram initData first (see
+// api/webapp/checkout.js GET handler). Both accessors share one in-flight
+// fetch/cache since they're always called together on the profile view.
+let buyerProfileCache = null;
+let buyerProfileInFlight = null;
+
+async function fetchBuyerProfile() {
+    if (buyerProfileCache) return buyerProfileCache;
+    if (buyerProfileInFlight) return buyerProfileInFlight;
+
+    buyerProfileInFlight = (async () => {
+        try {
+            const response = await fetch(`/api/webapp/checkout?bot_id=${encodeURIComponent(currentBotId)}`, {
+                headers: { 'X-Telegram-Init-Data': tg?.initData || '' },
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.success) throw new Error(result.error || 'Gagal memuat profil');
+
+            buyerProfileCache = {
+                balance: result.balance || 0,
+                transactionCount: result.transaction_count || 0,
+            };
+            return buyerProfileCache;
+        } catch (e) {
+            console.error('[Store] fetchBuyerProfile error:', e.message);
+            return { balance: 0, transactionCount: 0 };
+        } finally {
+            buyerProfileInFlight = null;
+        }
+    })();
+
+    return buyerProfileInFlight;
+}
+
 export async function fetchUserBalance(chatId) {
-    if (!supabase || !chatId) return 0;
-    const { data, error } = await supabase
-        .from('users')
-        .select('balance')
-        .eq('chat_id', chatId)
-        .single();
-    
-    return error ? 0 : (data?.balance || 0);
+    if (!chatId) return 0;
+    const profile = await fetchBuyerProfile();
+    return profile.balance;
 }
 
 export async function checkIsAdmin(chatId) {
@@ -226,13 +260,9 @@ export async function fetchAdminStats() {
 }
 
 export async function fetchUserTransactionCount(chatId) {
-    if (!supabase || !chatId) return 0;
-    const { count, error } = await supabase
-        .from('transactions')
-        .select('id', { count: 'exact', head: true })
-        .eq('chat_id', chatId)
-        .eq('status', 'FULFILLED');
-    return error ? 0 : (count || 0);
+    if (!chatId) return 0;
+    const profile = await fetchBuyerProfile();
+    return profile.transactionCount;
 }
 
 export function subscribeToInventoryChanges(onUpdate) {

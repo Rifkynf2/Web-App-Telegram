@@ -25,5 +25,8 @@
         { "key": "Cache-Control", "value": "no-store" }
       ]
     }
+  ],
+  "crons": [
+    { "path": "/api/admin/cron-expire", "schedule": "0 1 * * *" }
   ]
 }

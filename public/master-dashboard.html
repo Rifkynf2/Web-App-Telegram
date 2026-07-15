@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SaaS Master Dashboard</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0f172a;
-            --surface-color: #1e293b;
             --text-color: #f8fafc;
             --text-muted: #94a3b8;
             --primary-color: #3b82f6;
@@ -19,8 +17,6 @@
             --danger-color: #ef4444;
             --warning-color: #f59e0b;
             --border-color: #334155;
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --border-radius: 12px;
         }
 
         * {
@@ -94,6 +90,7 @@
         }
 
         .login-box h2 {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
             margin-bottom: 1.5rem;
             color: var(--text-color);
         }
@@ -151,8 +148,6 @@
         .btn-warning { background: var(--warning-color); color: #fff; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25); }
         .btn-warning:hover { background: #b45309; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35); }
 
-        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.875rem; width: auto; box-shadow: none; }
-
         .btn-ghost {
             background: transparent;
             border: 1px solid var(--border-color);
@@ -163,35 +158,40 @@
             box-shadow: none;
         }
 
-        /* Circular tinted icon buttons for table row actions — softer,
+        /* Circular tinted glass icon buttons for table row actions — softer,
            more modern than solid filled squares. */
         .icon-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            line-height: 1;
+            border-radius: 11px;
             border: 1px solid transparent;
-            background: transparent;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
             transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
         }
+        .icon-btn i { line-height: 1; }
         .icon-btn:hover { transform: translateY(-2px); }
         .icon-btn:active { transform: translateY(0); }
 
-        .icon-btn-primary { background: rgba(59, 130, 246, 0.12); color: var(--primary-color); border-color: rgba(59, 130, 246, 0.22); }
-        .icon-btn-primary:hover { background: var(--primary-color); color: #fff; box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35); }
+        .icon-btn-primary { background: rgba(59, 130, 246, 0.14); color: #60a5fa; border-color: rgba(59, 130, 246, 0.25); }
+        .icon-btn-primary:hover { background: var(--primary-color); color: #fff; box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
 
-        .icon-btn-warning { background: rgba(245, 158, 11, 0.12); color: var(--warning-color); border-color: rgba(245, 158, 11, 0.22); }
-        .icon-btn-warning:hover { background: var(--warning-color); color: #fff; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35); }
+        .icon-btn-warning { background: rgba(245, 158, 11, 0.14); color: #fbbf24; border-color: rgba(245, 158, 11, 0.25); }
+        .icon-btn-warning:hover { background: var(--warning-color); color: #fff; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4); }
 
-        .icon-btn-success { background: rgba(16, 185, 129, 0.12); color: var(--success-color); border-color: rgba(16, 185, 129, 0.22); }
-        .icon-btn-success:hover { background: var(--success-color); color: #fff; box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35); }
+        .icon-btn-success { background: rgba(16, 185, 129, 0.14); color: #34d399; border-color: rgba(16, 185, 129, 0.25); }
+        .icon-btn-success:hover { background: var(--success-color); color: #fff; box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4); }
 
-        .icon-btn-danger { background: rgba(239, 68, 68, 0.12); color: var(--danger-color); border-color: rgba(239, 68, 68, 0.22); }
-        .icon-btn-danger:hover { background: var(--danger-color); color: #fff; box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35); }
+        .icon-btn-danger { background: rgba(239, 68, 68, 0.14); color: #f87171; border-color: rgba(239, 68, 68, 0.25); }
+        .icon-btn-danger:hover { background: var(--danger-color); color: #fff; box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4); }
 
         /* Main Layout */
         .app-container {
@@ -217,14 +217,42 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.07);
         }
 
-        header h1 {
-            font-size: 1.5rem;
+        .header-brand {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.9rem;
         }
 
-        header h1 i { color: var(--primary-color); }
+        .header-icon-badge {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        }
+
+        .header-title-group h1 {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .header-subtitle {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
 
         /* Stats Grid */
         .stats-grid {
@@ -276,6 +304,7 @@
         }
 
         .stat-card .value {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
             font-size: 2rem;
             font-weight: 700;
             color: var(--text-color);
@@ -396,7 +425,7 @@
             margin-bottom: 1.5rem;
         }
 
-        .modal-title { font-size: 1.25rem; font-weight: 600; }
+        .modal-title { font-family: 'Space Grotesk', 'Inter', sans-serif; font-size: 1.25rem; font-weight: 600; }
         .close-btn {
             background: none;
             border: none;
@@ -493,7 +522,6 @@
             text-align: center;
             margin-top: 3rem;
             padding-top: 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
             color: var(--text-muted);
             font-size: 0.8rem;
         }
@@ -523,7 +551,13 @@
     <!-- Main Dashboard -->
     <div class="app-container" id="mainApp">
         <header>
-            <h1><i class="fa-solid fa-gauge-high"></i> Master Dashboard</h1>
+            <div class="header-brand">
+                <span class="header-icon-badge"><i class="fa-solid fa-layer-group"></i></span>
+                <div class="header-title-group">
+                    <h1>Master Dashboard</h1>
+                    <span class="header-subtitle">RNFBOT · SaaS Control Panel</span>
+                </div>
+            </div>
             <div style="display: flex; gap: 1rem;">
                 <button class="refresh-btn" id="btnRefresh">
                     <i class="fa-solid fa-arrows-rotate"></i> Refresh
@@ -560,7 +594,7 @@
             <div class="stat-card">
                 <div class="stat-card-top">
                     <h3>Total Revenue</h3>
-                    <span class="stat-card-icon" style="background: rgba(16,185,129,0.12); color: var(--success-color);"><i class="fa-solid fa-sack-dollar"></i></span>
+                    <span class="stat-card-icon" style="background: rgba(16,185,129,0.12); color: var(--success-color);"><i class="fa-solid fa-money-bill-wave"></i></span>
                 </div>
                 <div class="value" id="statRevenue" style="color: var(--success-color);">-</div>
             </div>

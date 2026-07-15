@@ -2,18 +2,28 @@ const crypto = require('crypto');
 
 /**
  * HMAC-SHA256 Authentication for Bot Tenant → API Gateway
- * 
+ *
  * Protocol:
- *   Bot signs: HMAC-SHA256(timestamp + "." + body, INTERNAL_API_SECRET)
+ *   Bot signs: HMAC-SHA256(timestamp + "." + botId + "." + body, INTERNAL_API_SECRET)
  *   Headers:
  *     X-Bot-Id:    <bot_id>
  *     X-Timestamp: <unix_ms>
  *     X-Signature: <hex_signature>
- * 
+ *
  * Security features:
  *   - Replay attack protection (5 minute window)
  *   - Timing-safe comparison
  *   - Shared secret between API and all bots
+ *   - botId is part of the signed payload, so a request signed by one
+ *     tenant's bot can't be replayed with a different X-Bot-Id to
+ *     impersonate another tenant (the shared secret alone used to be
+ *     enough to do this, since only timestamp+body were signed before)
+ *
+ * TEMPORARY ROLLOUT NOTE: also accepts the legacy pre-fix payload
+ * (timestamp + "." + body, no botId) so bot instances still running the
+ * old signer keep working during the deploy window. Remove the legacy
+ * candidate below once every tenant bot has deployed the updated signer
+ * in RNFBOT TELE's masterDbService.js (_signRequest).
  */
 
 /**
@@ -43,28 +53,28 @@ function verifyHMAC(headers, body) {
         return { valid: false, error: 'Request expired or invalid timestamp' };
     }
 
-    // Compute expected signature
-    const payload = `${timestamp}.${body}`;
-    const expected = crypto
-        .createHmac('sha256', secret)
-        .update(payload)
-        .digest('hex');
+    // botId-bound payload (current signer) tried first; legacy payload
+    // (no botId — see rollout note above) accepted as a fallback only.
+    const candidatePayloads = [
+        `${timestamp}.${botId}.${body}`,
+        `${timestamp}.${body}`,
+    ];
 
-    // Timing-safe comparison to prevent timing attacks
+    let sigBuf;
     try {
-        const sigBuf = Buffer.from(signature, 'hex');
-        const expBuf = Buffer.from(expected, 'hex');
-        
-        if (sigBuf.length !== expBuf.length) {
-            return { valid: false, error: 'Invalid signature' };
-        }
-
-        const isValid = crypto.timingSafeEqual(sigBuf, expBuf);
-        if (!isValid) {
-            return { valid: false, error: 'Invalid signature' };
-        }
+        sigBuf = Buffer.from(signature, 'hex');
     } catch (err) {
         return { valid: false, error: 'Invalid signature format' };
+    }
+
+    const signatureIsValid = candidatePayloads.some((payload) => {
+        const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+        const expBuf = Buffer.from(expected, 'hex');
+        return sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf);
+    });
+
+    if (!signatureIsValid) {
+        return { valid: false, error: 'Invalid signature' };
     }
 
     return { valid: true, botId };

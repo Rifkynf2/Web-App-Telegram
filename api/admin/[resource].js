@@ -49,12 +49,17 @@ async function getBotApiBaseUrl(botId) {
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
+    const resource = Array.isArray(req.query.resource) ? req.query.resource[0] : req.query.resource;
+
+    // Triggered by Vercel Cron (see vercel.json "crons"), which authenticates
+    // via `Authorization: Bearer $CRON_SECRET` — not the X-Admin-Secret header
+    // the dashboard uses — so it's routed before that gate below.
+    if (resource === 'cron-expire') return handleCronExpire(req, res);
+
     const adminSecret = req.headers['x-admin-secret'];
     if (!adminSecret || adminSecret !== process.env.ADMIN_DASHBOARD_SECRET) {
         return unauthorized(res, 'Invalid admin credentials');
     }
-
-    const resource = Array.isArray(req.query.resource) ? req.query.resource[0] : req.query.resource;
 
     switch (resource) {
         case 'stats':         return handleStats(req, res);
@@ -63,6 +68,43 @@ module.exports = async function handler(req, res) {
         default:              return error(res, `Unknown resource: ${resource}`, 404);
     }
 };
+
+// ── CRON: EXPIRE STALE TENANTS ──────────────────────────────────────────────
+
+async function handleCronExpire(req, res) {
+    const expectedSecret = process.env.CRON_SECRET;
+    if (!expectedSecret) {
+        console.error('[API/admin/cron-expire] FATAL: CRON_SECRET not configured.');
+        return serverError(res, 'Server misconfiguration');
+    }
+    if (req.headers['authorization'] !== `Bearer ${expectedSecret}`) {
+        return unauthorized(res, 'Invalid cron credentials');
+    }
+
+    try {
+        const { data, error: rpcError } = await getMasterSupabase().rpc('sync_expired_tenants');
+        if (rpcError) {
+            console.error('[API/admin/cron-expire] RPC error:', rpcError.message);
+            return serverError(res);
+        }
+
+        const flippedBotIds = (data || []).map((row) => row.bot_id);
+
+        // Same as every other status-changing action: push a cache
+        // invalidation to each affected tenant's bot server so it stops
+        // responding immediately instead of waiting out its own cache TTL.
+        await Promise.all(flippedBotIds.map(async (botId) => {
+            const botApiBaseUrl = await getBotApiBaseUrl(botId);
+            await notifyBotCacheInvalidate(botId, botApiBaseUrl);
+        }));
+
+        console.log(`[API/admin/cron-expire] Flipped ${flippedBotIds.length} tenant(s) to EXPIRED.`);
+        return success(res, { updated: flippedBotIds.length, bot_ids: flippedBotIds });
+    } catch (err) {
+        console.error('[API/admin/cron-expire] Error:', err.message);
+        return serverError(res);
+    }
+}
 
 // ── STATS ────────────────────────────────────────────────────────────────────
 
@@ -260,7 +302,13 @@ async function listTenants(req, res) {
             .range(offset, offset + parseInt(limit) - 1);
 
         if (status) query = query.eq('status', status);
-        if (search) query = query.or(`username.ilike.%${search}%,shop_name.ilike.%${search}%`);
+        if (search) {
+            // Strip characters with special meaning in PostgREST's .or() filter
+            // syntax (comma separates conditions, parens group them) so a
+            // crafted search string can't inject extra filter clauses.
+            const safeSearch = String(search).replace(/[,()]/g, '');
+            if (safeSearch) query = query.or(`username.ilike.%${safeSearch}%,shop_name.ilike.%${safeSearch}%`);
+        }
 
         const { data, count, error: dbError } = await query;
         if (dbError) {
