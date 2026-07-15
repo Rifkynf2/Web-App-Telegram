@@ -156,11 +156,11 @@ async function loadTenants() {
                 </td>
                 <td>
                     <div class="actions">
-                        <button class="btn btn-sm" onclick="showRenewModal('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-calendar-plus"></i></button>
-                        <button class="btn btn-sm btn-warning" onclick="updateTenantStatus('${t.bot_id}', '${t.status === 'ACTIVE' ? 'suspend' : 'activate'}', this)">
+                        <button class="icon-btn icon-btn-primary" title="Extend rent" onclick="showRenewModal('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-calendar-plus"></i></button>
+                        <button class="icon-btn ${t.status === 'ACTIVE' ? 'icon-btn-warning' : 'icon-btn-success'}" title="${t.status === 'ACTIVE' ? 'Suspend' : 'Activate'}" onclick="updateTenantStatus('${t.bot_id}', '${t.status === 'ACTIVE' ? 'suspend' : 'activate'}', this)">
                             <i class="fa-solid fa-${t.status === 'ACTIVE' ? 'pause' : 'play'}"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="confirmDelete('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-trash"></i></button>
+                        <button class="icon-btn icon-btn-danger" title="Delete tenant" onclick="confirmDelete('${t.bot_id}', '${t.username}')"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 </td>
             `;
@@ -224,7 +224,7 @@ function confirmDelete(botId, username) {
     `;
     
     modalFooter.innerHTML = `
-        <button class="btn" style="background: transparent; border: 1px solid var(--border-color);" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
         <button class="btn btn-danger" onclick="executeDelete('${botId}')">Yes, Delete Forever</button>
     `;
 
@@ -269,7 +269,7 @@ function showRenewModal(botId, username) {
     `;
     
     modalFooter.innerHTML = `
-        <button class="btn" style="background: transparent; border: 1px solid var(--border-color);" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
         <button class="btn btn-success" onclick="executeRenew('${botId}')">Confirm Extend</button>
     `;
 

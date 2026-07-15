@@ -8,6 +8,44 @@ const { success, error, unauthorized, notFound, serverError, handleCors } = requ
  * Handles: stats, subscriptions, tenants
  * Auth: X-Admin-Secret header
  */
+
+// Best-effort push notification to the tenant's own bot server so it drops
+// its cached subscription/status check immediately, instead of the tenant
+// staying suspended/renewed-but-stale for up to an hour (masterDbService's
+// CACHE_DURATION on the bot side). Mirrors the callback used by
+// api/webhook/pakasir-renewal.js for automatic payments — this covers the
+// manual admin actions (suspend/activate/ban/expire/delete/renew) that
+// webhook doesn't touch.
+async function notifyBotCacheInvalidate(botId, botApiBaseUrl) {
+    const baseUrl = String(botApiBaseUrl || '').replace(/\/+$/, '');
+    if (!baseUrl) return;
+
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        await fetch(`${baseUrl}/api/internal/renewal-callback`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Internal-Api-Secret': process.env.INTERNAL_API_SECRET || '',
+            },
+            body: JSON.stringify({ action: 'invalidate_cache', bot_id: botId }),
+            signal: controller.signal,
+        }).finally(() => clearTimeout(timeout));
+    } catch (err) {
+        console.error(`[API/admin] Cache invalidation notify failed for bot ${botId}:`, err.message);
+    }
+}
+
+async function getBotApiBaseUrl(botId) {
+    const { data: tenant } = await getMasterSupabase()
+        .from('tenants')
+        .select('metadata')
+        .eq('bot_id', botId)
+        .single();
+    return tenant?.metadata?.bot_api_base_url || null;
+}
+
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
@@ -180,6 +218,9 @@ async function manualRenew(req, res) {
 
         await masterDb.from('tenants').update({ status: 'ACTIVE' }).eq('bot_id', bot_id);
 
+        const botApiBaseUrl = await getBotApiBaseUrl(bot_id);
+        await notifyBotCacheInvalidate(bot_id, botApiBaseUrl);
+
         return success(res, {
             subscription: data,
             message: `Subscription extended by ${days} days until ${newExpiry.toLocaleDateString('id-ID')}`
@@ -273,6 +314,9 @@ async function updateTenant(req, res) {
 
         if (dbError || !data) return notFound(res, 'Tenant not found');
 
+        const botApiBaseUrl = await getBotApiBaseUrl(bot_id);
+        await notifyBotCacheInvalidate(bot_id, botApiBaseUrl);
+
         return success(res, { tenant: data, message: `Tenant ${data.username || bot_id} has been ${action}d` });
     } catch (err) {
         console.error('[API/admin/tenants] Update error:', err.message);
@@ -287,7 +331,7 @@ async function deleteTenant(req, res) {
     try {
         const masterDb = getMasterSupabase();
         const { data: tenant } = await masterDb
-            .from('tenants').select('username, shop_name').eq('bot_id', bot_id).single();
+            .from('tenants').select('username, shop_name, metadata').eq('bot_id', bot_id).single();
 
         if (!tenant) return notFound(res, 'Tenant not found');
 
@@ -296,6 +340,8 @@ async function deleteTenant(req, res) {
             console.error('[API/admin/tenants] Delete error:', delError.message);
             return serverError(res, 'Failed to delete tenant');
         }
+
+        await notifyBotCacheInvalidate(bot_id, tenant.metadata?.bot_api_base_url);
 
         return success(res, { deleted: true, message: `Tenant ${tenant.username || bot_id} (${tenant.shop_name}) has been deleted` });
     } catch (err) {
