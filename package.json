@@ -4,7 +4,7 @@
   "description": "RNF SaaS Multi-Tenant Web App + API Gateway",
   "main": "index.js",
   "scripts": {
-    "build": "tailwindcss -i ./public/index.css -o ./public/style/style.css",
+    "build": "tailwindcss -i ./public/index.css -o ./public/style/style.css --minify",
     "dev": "tailwindcss -i ./public/index.css -o ./public/style/style.css --watch"
   },
   "keywords": [],
