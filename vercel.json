@@ -5,10 +5,9 @@
     { "source": "/master-dashboard.html", "destination": "/master", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/master", "destination": "/public/master-dashboard.html" },
     { "source": "/admin", "destination": "/public/admin.html" },
-    { "source": "/(.*)", "destination": "/public/$1" }
+    { "source": "/((?!api/).*)", "destination": "/public/$1" }
   ],
   "headers": [
     {
