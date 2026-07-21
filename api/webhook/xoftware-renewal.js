@@ -85,7 +85,10 @@ async function getXoftwareTransactionStatus(orderId) {
         },
         timeout: 10000,
     });
-    return response.data;
+    // Every Xoftware response is wrapped in a standard envelope
+    // { code, error, message, data } — the actual payload is one level
+    // deeper than it looks from the (unwrapped) examples in their docs.
+    return response.data?.data;
 }
 
 module.exports = async function handler(req, res) {
