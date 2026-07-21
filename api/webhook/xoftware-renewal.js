@@ -1,33 +1,93 @@
+const crypto = require('crypto');
+const axios = require('axios');
 const { getMasterSupabase } = require('../_lib/masterSupabase');
 const { success, error, serverError, handleCors } = require('../_lib/response');
-const axios = require('axios');
 
 /**
- * POST /api/webhook/pakasir-renewal?token=SAAS_WEBHOOK_SECRET
- * 
- * Centralized Pakasir callback for SaaS subscription renewals.
- * 
+ * POST /api/webhook/xoftware-renewal?token=SAAS_WEBHOOK_SECRET
+ *
+ * Centralized Xoftware Pay callback for SaaS subscription renewals.
+ * Uses a dedicated Xoftware merchant account (XOFTWARE_MERCHANT_ID/API_KEY),
+ * separate from any tenant's own shop account.
+ *
  * SECURITY: FAIL-CLOSED
  *   All env vars mandatory. Missing = 500, not skip.
- * 
+ *
  * IDEMPOTENCY: ATOMIC DATABASE TRANSACTION (RPC)
  *   All finalization runs inside process_renewal_payment() RPC.
  *   If any step fails → full rollback → invoice stays PENDING → retry works.
- * 
+ *
  * NOTIFICATION DELIVERY: TRACKED + RETRIABLE
  *   notification_sent and qris_deleted booleans track delivery state.
  *   Duplicate callbacks retry notification/deletion if not yet completed.
  *   Both 'success' and 'already_processed' paths share the same delivery logic.
- * 
+ *
  * NOTIFICATION TARGET: QRIS_CHAT_ID PRIORITY
  *   Notification sent to qris_chat_id first, fallback to owner_chat_id.
- * 
+ *
  * ENV required on Vercel (ALL MANDATORY):
  *   - SAAS_WEBHOOK_SECRET
- *   - MASTER_PAKASIR_PROJECT
- *   - MASTER_PAKASIR_API_KEY
+ *   - SAAS_XOFTWARE_WEBHOOK_SECRET
+ *   - XOFTWARE_MERCHANT_ID
+ *   - XOFTWARE_API_KEY
+ *   - XOFTWARE_BASE_URL
  *   - MASTER_SUPABASE_URL + MASTER_SUPABASE_SERVICE_KEY
  */
+
+// Vercel auto-parses JSON bodies by default, which discards the exact raw
+// bytes received. HMAC verification below needs those exact bytes — a
+// re-serialized JSON.stringify(req.body) can differ byte-for-byte from what
+// Xoftware actually sent (key order, spacing, number formatting), which
+// would make a genuinely valid signature look invalid.
+module.exports.config = { api: { bodyParser: false } };
+
+function readRawBody(req) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        req.on('data', (chunk) => chunks.push(chunk));
+        req.on('end', () => resolve(Buffer.concat(chunks)));
+        req.on('error', reject);
+    });
+}
+
+function verifyWebhookSignature(rawBody, signature, webhookSecret) {
+    if (!signature || !webhookSecret) return false;
+    const expected = crypto.createHmac('sha256', webhookSecret).update(rawBody, 'utf8').digest('hex');
+    const sigBuf = Buffer.from(signature, 'utf8');
+    const expBuf = Buffer.from(expected, 'utf8');
+    if (sigBuf.length !== expBuf.length) return false;
+    return crypto.timingSafeEqual(sigBuf, expBuf);
+}
+
+/**
+ * HMAC-SHA256 request signing per Xoftware "Authentication & Signature" docs.
+ */
+function signRequest(apiKey, method, path, bodyString) {
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const message = `${timestamp}\n${method.toUpperCase()}\n${path}\n${bodyString}`;
+    const signature = crypto.createHmac('sha256', apiKey).update(message, 'utf8').digest('base64');
+    return { timestamp, signature };
+}
+
+async function getXoftwareTransactionStatus(orderId) {
+    const baseUrl = process.env.XOFTWARE_BASE_URL;
+    const apiKey = process.env.XOFTWARE_API_KEY;
+    const path = '/v1/api/transactions/status';
+    const bodyString = JSON.stringify({ ref_id: orderId });
+    const { timestamp, signature } = signRequest(apiKey, 'POST', path, bodyString);
+
+    const response = await axios.post(`${baseUrl}${path}`, bodyString, {
+        headers: {
+            'X-API-Key': apiKey,
+            'X-Timestamp': timestamp,
+            'X-Signature': signature,
+            'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+    });
+    return response.data;
+}
+
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
@@ -38,15 +98,26 @@ module.exports = async function handler(req, res) {
     try {
         // ========== LAYER 0: Fail-Closed Env Guard ==========
         const expectedToken = process.env.SAAS_WEBHOOK_SECRET;
-        const pakasirProject = process.env.MASTER_PAKASIR_PROJECT;
-        const pakasirApiKey = process.env.MASTER_PAKASIR_API_KEY;
+        // Xoftware's dashboard hasn't surfaced this account's Webhook Secret (HMAC)
+        // yet (field is read-only and empty — provisioning gap on their side, still
+        // being chased with support). Left unset, LAYER 2 below is skipped rather
+        // than failing closed, so the webhook stays usable via the URL token +
+        // reverse-verification layers alone. Once Xoftware provides the real
+        // secret, set SAAS_XOFTWARE_WEBHOOK_SECRET and this layer re-activates
+        // automatically — no code change needed.
+        const webhookHmacSecret = process.env.SAAS_XOFTWARE_WEBHOOK_SECRET;
+        const xoftwareMerchantId = process.env.XOFTWARE_MERCHANT_ID;
+        const xoftwareApiKey = process.env.XOFTWARE_API_KEY;
 
         if (!expectedToken) {
             console.error('[Renewal-Webhook] FATAL: SAAS_WEBHOOK_SECRET not configured. Refusing to process.');
             return serverError(res, 'Server misconfiguration');
         }
-        if (!pakasirProject || !pakasirApiKey) {
-            console.error('[Renewal-Webhook] FATAL: MASTER_PAKASIR_PROJECT or MASTER_PAKASIR_API_KEY not configured. Refusing to process.');
+        if (!webhookHmacSecret) {
+            console.warn('[Renewal-Webhook] SAAS_XOFTWARE_WEBHOOK_SECRET not configured — skipping X-Signature verification (relying on URL token + reverse-verification only).');
+        }
+        if (!xoftwareMerchantId || !xoftwareApiKey) {
+            console.error('[Renewal-Webhook] FATAL: XOFTWARE_MERCHANT_ID or XOFTWARE_API_KEY not configured. Refusing to process.');
             return serverError(res, 'Server misconfiguration');
         }
 
@@ -56,35 +127,41 @@ module.exports = async function handler(req, res) {
             return error(res, 'Forbidden', 403);
         }
 
-        console.log('[Renewal-Webhook] Callback received from Pakasir');
+        const rawBody = await readRawBody(req);
+        const signature = req.headers['x-signature'];
 
-        const body = req.body;
+        // ========== LAYER 2: HMAC Signature (skipped if not yet configured — see note above) ==========
+        if (webhookHmacSecret && !verifyWebhookSignature(rawBody, signature, webhookHmacSecret)) {
+            console.error('[Renewal-Webhook] Invalid X-Signature');
+            return error(res, 'Invalid signature', 403);
+        }
+
+        let body;
+        try {
+            body = JSON.parse(rawBody.toString('utf8') || '{}');
+        } catch (parseErr) {
+            return error(res, 'Invalid JSON body');
+        }
+
+        console.log('[Renewal-Webhook] Callback received from Xoftware');
+
+        const eventId = req.headers['x-event-id'] || body.event_id;
         const orderId = body.order_id;
         const amount = parseInt(body.amount);
-        const status = body.status;
+        const status = body.status; // "SUCCESS" / "FAILED"
 
         if (!orderId || !amount || isNaN(amount)) {
             return error(res, 'Missing or invalid order_id / amount');
         }
 
-        if (status !== 'completed') {
-            return success(res, { message: 'Status not completed, ignored' });
+        if (status !== 'SUCCESS') {
+            return success(res, { message: `Status ${status}, ignored` });
         }
 
-        // ========== LAYER 2: Reverse Verification with Pakasir API (MANDATORY) ==========
+        // ========== LAYER 3: Reverse Verification with Xoftware API (MANDATORY) ==========
         try {
-            const verifyResp = await axios.get('https://app.pakasir.com/api/transactiondetail', {
-                params: {
-                    project: pakasirProject,
-                    order_id: orderId,
-                    amount: amount,
-                    api_key: pakasirApiKey,
-                },
-                timeout: 10000,
-            });
-
-            const txDetail = verifyResp.data?.transaction;
-            if (!txDetail || txDetail.status !== 'completed') {
+            const txDetail = await getXoftwareTransactionStatus(orderId);
+            if (!txDetail || txDetail.status !== 'SUCCESS') {
                 console.error(`[Renewal-Webhook] Reverse verification FAILED for ${orderId}: status=${txDetail?.status}`);
                 return error(res, 'Verification failed', 400);
             }
@@ -94,7 +171,7 @@ module.exports = async function handler(req, res) {
             return error(res, 'Verification error', 400);
         }
 
-        // ========== LAYER 3: Atomic Payment Finalization (Single Transaction) ==========
+        // ========== LAYER 4: Atomic Payment Finalization (Single Transaction) ==========
         const masterDb = getMasterSupabase();
 
         const { data: rpcResult, error: rpcErr } = await masterDb
@@ -120,7 +197,7 @@ module.exports = async function handler(req, res) {
             return error(res, `Invoice not in PENDING state (current: ${result.current_status})`, 409);
         }
 
-        // ========== LAYER 4: Notification & QRIS Cleanup (Tracked + Retriable) ==========
+        // ========== LAYER 5: Notification & QRIS Cleanup (Tracked + Retriable) ==========
         // Both 'success' and 'already_processed' enter this path.
         // The tracking booleans determine what still needs to be done.
         //
@@ -271,7 +348,7 @@ module.exports = async function handler(req, res) {
             }
         }
 
-        // ========== LAYER 5: Notify Bot Instance to Invalidate Cache ==========
+        // ========== LAYER 6: Notify Bot Instance to Invalidate Cache ==========
         // Best-effort, only on first successful finalization
         if (bot_api_base_url && (result.status === 'success' || needsQrisDeletion)) {
             try {

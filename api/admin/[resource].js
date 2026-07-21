@@ -13,7 +13,7 @@ const { success, error, unauthorized, notFound, serverError, handleCors } = requ
 // its cached subscription/status check immediately, instead of the tenant
 // staying suspended/renewed-but-stale for up to an hour (masterDbService's
 // CACHE_DURATION on the bot side). Mirrors the callback used by
-// api/webhook/pakasir-renewal.js for automatic payments — this covers the
+// api/webhook/xoftware-renewal.js for automatic payments — this covers the
 // manual admin actions (suspend/activate/ban/expire/delete/renew) that
 // webhook doesn't touch.
 async function notifyBotCacheInvalidate(botId, botApiBaseUrl) {
