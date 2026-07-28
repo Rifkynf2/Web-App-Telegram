@@ -200,23 +200,23 @@ function renderTenants(tenants) {
         // shop_name/username there would otherwise break out of the JS
         // string literal and execute arbitrary code in the admin's session.
         tr.innerHTML = `
-            <td><code>${escapeHtml(t.bot_id)}</code></td>
-            <td>
+            <td data-label="Bot ID"><code>${escapeHtml(t.bot_id)}</code></td>
+            <td data-label="Shop">
                 <b>${escapeHtml(t.shop_name)}</b><br>
                 <small style="color:var(--text-muted)">@${escapeHtml(t.username)}</small>
             </td>
-            <td><span class="badge ${tenantStatusClass}">${escapeHtml(t.status)}</span></td>
-            <td>
+            <td data-label="Status"><span class="badge ${tenantStatusClass}">${escapeHtml(t.status)}</span></td>
+            <td data-label="Rental">
                 <span class="badge ${subBadgeClass}">${escapeHtml(subBadgeText)}</span><br>
                 <small>${escapeHtml(t.subscription.plan)}</small>
             </td>
-            <td>
+            <td data-label="Expiry">
                 ${expiry}<br>
                 <small style="color:${t.subscription.isExpired ? 'var(--danger-color)' : 'var(--text-muted)'}">
                     ${t.subscription.isExpired ? `Minus ${Math.abs(t.subscription.remainingDays)} days` : `${t.subscription.remainingDays} days left`}
                 </small>
             </td>
-            <td>
+            <td data-label="Actions">
                 <div class="actions">
                     <button class="icon-btn icon-btn-primary btn-action-renew" title="Extend rent"><i class="fa-solid fa-clock-rotate-left"></i></button>
                     <button class="icon-btn ${t.status === 'ACTIVE' ? 'icon-btn-warning' : 'icon-btn-success'} btn-action-toggle" title="${t.status === 'ACTIVE' ? 'Suspend' : 'Activate'}">

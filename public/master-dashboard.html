@@ -522,6 +522,103 @@
             color: var(--text-muted);
             font-size: 0.8rem;
         }
+
+        /* =========================================================
+           Responsive breakpoints
+           ========================================================= */
+
+        /* Tablet and small laptops */
+        @media (max-width: 900px) {
+            .app-container { padding: 1.5rem; }
+            .stats-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; }
+        }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+            .app-container { padding: 1rem; }
+
+            header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            .header-brand { justify-content: center; text-align: center; }
+            header > div:last-child { display: flex; gap: 0.6rem; }
+            header > div:last-child .refresh-btn { flex: 1; justify-content: center; font-size: 0.85rem; padding: 0.6rem 0.5rem; }
+            .header-title-group h1 { font-size: 1.1rem; }
+
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+            .stat-card { padding: 1rem; }
+            .stat-card h3 { font-size: 0.7rem; }
+            .stat-card .value { font-size: 1.4rem; }
+            .stat-card-icon { font-size: 1.1rem; }
+
+            .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .tab-btn { padding: 0.6rem 1rem; white-space: nowrap; }
+
+            /* Card-ified table: header row hidden, each <tr> becomes a
+               stacked card, each <td> gets a label pulled from its
+               matching <th> via a data-label attribute set in JS. */
+            .table-container { background: none; backdrop-filter: none; border: none; box-shadow: none; overflow: visible; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }
+
+            tbody#tenantsTableBody tr {
+                background: rgba(30, 41, 59, 0.4);
+                backdrop-filter: blur(20px) saturate(180%);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 16px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+                margin-bottom: 1rem;
+                padding: 0.25rem 0;
+                overflow: hidden;
+            }
+            tbody#tenantsTableBody tr.empty-row { background: none; border: none; box-shadow: none; }
+
+            tbody#tenantsTableBody td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 1rem;
+                padding: 0.65rem 1rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                text-align: right;
+            }
+            tbody#tenantsTableBody td:last-child { border-bottom: none; }
+            tbody#tenantsTableBody td::before {
+                content: attr(data-label);
+                color: var(--text-muted);
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                text-align: left;
+                flex-shrink: 0;
+            }
+            tbody#tenantsTableBody td:not([data-label]) { display: block; text-align: center; }
+            tbody#tenantsTableBody td:not([data-label])::before { content: none; }
+
+            .actions { justify-content: flex-end; flex-wrap: wrap; }
+
+            .empty-state { padding: 2rem 1rem; }
+
+            .modal-content { padding: 1.5rem; width: 94%; border-radius: 18px; }
+            .modal-footer { flex-wrap: wrap; }
+            .modal-footer .btn { flex: 1 1 auto; min-width: 120px; }
+
+            .toast-container { left: 1rem; right: 1rem; bottom: 1rem; }
+            .toast { width: 100%; }
+
+            .login-box { padding: 1.75rem 1.5rem; }
+        }
+
+        /* Very small phones */
+        @media (max-width: 380px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .stat-card .value { font-size: 1.2rem; }
+        }
     </style>
 </head>
 <body>
