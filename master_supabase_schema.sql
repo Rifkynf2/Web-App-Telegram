@@ -424,6 +424,16 @@ GRANT EXECUTE ON FUNCTION public.sync_expired_tenants() TO service_role;
 --   invoice claim + subscription extend + tenant activate + audit log
 -- If ANY step fails → full rollback → invoice stays PENDING → retry works.
 -- On already_processed: returns full tenant data so webhook can retry notification.
+--
+-- Claims from PENDING *or* EXPIRED: api/tenant/subscription.js expires a
+-- stale (>10min) PENDING invoice locally, purely on a timestamp, without
+-- checking Xoftware first. If the tenant's payment lands right as that local
+-- expiry fires, the webhook's reverse-verification (Xoftware confirms
+-- SUCCESS) would otherwise hit a claim guarded by `status = 'PENDING'` only
+-- and dead-end as 'invalid_status' — money received, subscription never
+-- extended, no recovery path. Allowing EXPIRED here closes that race the
+-- same way the WA-bot-payment-xoftware sibling project already does
+-- (`.in('status', ['pending','expired'])` in supabase/payments.js).
 CREATE OR REPLACE FUNCTION public.process_renewal_payment(
     p_invoice_id UUID,
     p_amount INT
@@ -443,44 +453,51 @@ DECLARE
     v_bot_id BIGINT;
     v_tenant RECORD;
     v_now TIMESTAMPTZ := NOW();
+    v_recovered_from_expired BOOLEAN := FALSE;
 BEGIN
-    -- Step 1: Atomic claim with row-level lock (PENDING → PAID)
-    UPDATE rental_invoices 
-    SET status = 'PAID', paid_at = v_now
-    WHERE id = p_invoice_id AND status = 'PENDING'
-    RETURNING * INTO v_inv;
+    -- Step 1: Lock the row first so we can tell PENDING from EXPIRED before
+    -- claiming it — RETURNING only exposes the post-update row (already
+    -- 'PAID' by then), not the prior status, so the old status has to be
+    -- read explicitly. FOR UPDATE keeps this atomic: a concurrent caller
+    -- blocks here until this transaction commits/rolls back, so two webhook
+    -- deliveries for the same invoice can never both claim it.
+    SELECT status INTO v_existing_status
+    FROM rental_invoices WHERE id = p_invoice_id
+    FOR UPDATE;
 
-    IF NOT FOUND THEN
-        SELECT ri.status INTO v_existing_status
-        FROM rental_invoices ri WHERE ri.id = p_invoice_id;
+    IF v_existing_status IN ('PENDING', 'EXPIRED') THEN
+        v_recovered_from_expired := (v_existing_status = 'EXPIRED');
 
-        IF v_existing_status = 'PAID' THEN
-            -- Return full data so webhook handler can retry notification/deletion
-            RETURN (
-                SELECT jsonb_build_object(
-                    'status',             'already_processed',
-                    'bot_id',             ri.bot_id,
-                    'new_expiry',         s.expiry_date,
-                    'duration_days',      COALESCE(pl.duration_days, 31),
-                    'notification_sent',  ri.notification_sent,
-                    'qris_deleted',       ri.qris_deleted,
-                    'qris_chat_id',       ri.qris_chat_id,
-                    'qris_message_id',    ri.qris_message_id,
-                    'bot_token',          t.bot_token,
-                    'owner_chat_id',      t.owner_chat_id,
-                    'bot_api_base_url',   t.metadata->>'bot_api_base_url'
-                )
-                FROM rental_invoices ri
-                LEFT JOIN tenants t ON t.bot_id = ri.bot_id
-                LEFT JOIN subscriptions s ON s.bot_id = ri.bot_id
-                LEFT JOIN plans pl ON pl.id = ri.plan_id
-                WHERE ri.id = p_invoice_id
-            );
-        ELSIF v_existing_status IS NOT NULL THEN
-            RETURN jsonb_build_object('status', 'invalid_status', 'current_status', v_existing_status);
-        ELSE
-            RETURN jsonb_build_object('status', 'not_found');
-        END IF;
+        UPDATE rental_invoices
+        SET status = 'PAID', paid_at = v_now
+        WHERE id = p_invoice_id
+        RETURNING * INTO v_inv;
+    ELSIF v_existing_status = 'PAID' THEN
+        -- Return full data so webhook handler can retry notification/deletion
+        RETURN (
+            SELECT jsonb_build_object(
+                'status',             'already_processed',
+                'bot_id',             ri.bot_id,
+                'new_expiry',         s.expiry_date,
+                'duration_days',      COALESCE(pl.duration_days, 31),
+                'notification_sent',  ri.notification_sent,
+                'qris_deleted',       ri.qris_deleted,
+                'qris_chat_id',       ri.qris_chat_id,
+                'qris_message_id',    ri.qris_message_id,
+                'bot_token',          t.bot_token,
+                'owner_chat_id',      t.owner_chat_id,
+                'bot_api_base_url',   t.metadata->>'bot_api_base_url'
+            )
+            FROM rental_invoices ri
+            LEFT JOIN tenants t ON t.bot_id = ri.bot_id
+            LEFT JOIN subscriptions s ON s.bot_id = ri.bot_id
+            LEFT JOIN plans pl ON pl.id = ri.plan_id
+            WHERE ri.id = p_invoice_id
+        );
+    ELSIF v_existing_status IS NOT NULL THEN
+        RETURN jsonb_build_object('status', 'invalid_status', 'current_status', v_existing_status);
+    ELSE
+        RETURN jsonb_build_object('status', 'not_found');
     END IF;
 
     v_bot_id := v_inv.bot_id;
@@ -519,17 +536,18 @@ BEGIN
 
     -- Return with notification_sent=false, qris_deleted=false (just finalized)
     RETURN jsonb_build_object(
-        'status',             'success',
-        'bot_id',             v_bot_id,
-        'new_expiry',         v_new_expiry,
-        'duration_days',      v_duration_days,
-        'notification_sent',  FALSE,
-        'qris_deleted',       FALSE,
-        'qris_chat_id',       v_inv.qris_chat_id,
-        'qris_message_id',    v_inv.qris_message_id,
-        'bot_token',          v_tenant.bot_token,
-        'owner_chat_id',      v_tenant.owner_chat_id,
-        'bot_api_base_url',   v_tenant.metadata->>'bot_api_base_url'
+        'status',                  'success',
+        'bot_id',                  v_bot_id,
+        'new_expiry',              v_new_expiry,
+        'duration_days',           v_duration_days,
+        'notification_sent',       FALSE,
+        'qris_deleted',            FALSE,
+        'qris_chat_id',            v_inv.qris_chat_id,
+        'qris_message_id',         v_inv.qris_message_id,
+        'bot_token',               v_tenant.bot_token,
+        'owner_chat_id',           v_tenant.owner_chat_id,
+        'bot_api_base_url',        v_tenant.metadata->>'bot_api_base_url',
+        'recovered_from_expired',  v_recovered_from_expired
     );
 END;
 $$;

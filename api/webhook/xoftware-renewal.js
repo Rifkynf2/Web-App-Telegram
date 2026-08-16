@@ -211,6 +211,17 @@ module.exports = async function handler(req, res) {
 
         if (result.status === 'success') {
             console.log(`[Renewal-Webhook] ✅ Invoice ${orderId} PAID atomically. Bot ${result.bot_id} extended to ${result.new_expiry}`);
+            if (result.recovered_from_expired) {
+                // api/tenant/subscription.js expires a stale PENDING invoice locally
+                // (>10min, timestamp-only) without checking Xoftware first. This means
+                // the tenant's payment landed in that race window — genuinely paid, but
+                // the invoice had already been flipped to EXPIRED before this webhook's
+                // reverse-verification ran. process_renewal_payment() now also claims
+                // from EXPIRED, so it still got finalized correctly — this log line just
+                // makes the race visible instead of silent, in case the frequency of
+                // 10-minute-stale invoices needs revisiting.
+                console.warn(`[Renewal-Webhook] ⏱️ Invoice ${orderId} was EXPIRED locally before this payment was recognized — recovered via reverse-verification, subscription extended normally.`);
+            }
         } else if (result.status === 'already_processed') {
             if (result.notification_sent && result.qris_deleted) {
                 console.log(`[Renewal-Webhook] Invoice ${orderId} fully completed (duplicate callback), no-op`);
