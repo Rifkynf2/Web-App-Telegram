@@ -363,24 +363,40 @@ module.exports = async function handler(req, res) {
         }
 
         // ========== LAYER 6: Notify Bot Instance to Invalidate Cache ==========
-        // Best-effort, only on first successful finalization
+        // Best-effort, only on first successful finalization. Retries a couple
+        // times before giving up — the bot's own INACTIVE_CACHE_DURATION (2 min)
+        // is the ultimate safety net if all attempts fail.
         if (bot_api_base_url && (result.status === 'success' || needsQrisDeletion)) {
-            try {
-                const callbackResp = await axios.post(`${bot_api_base_url}/api/internal/renewal-callback`, {
-                    action: 'invalidate_cache',
-                    bot_id: bot_id,
-                    invoice_id: orderId,
-                    new_expiry: new_expiry,
-                    qris_chat_id: qris_chat_id,
-                    qris_message_id: qris_message_id,
-                    qris_deleted: result.qris_deleted || false,
-                }, {
-                    headers: {
-                        'X-Internal-Api-Secret': process.env.INTERNAL_API_SECRET || '',
-                        'Content-Type': 'application/json',
-                    },
-                    timeout: 5000,
-                });
+            const CALLBACK_ATTEMPTS = [0, 2000, 5000]; // delay before each attempt
+            let callbackResp = null;
+            let lastCallbackErr = null;
+
+            for (const delayMs of CALLBACK_ATTEMPTS) {
+                if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
+                try {
+                    callbackResp = await axios.post(`${bot_api_base_url}/api/internal/renewal-callback`, {
+                        action: 'invalidate_cache',
+                        bot_id: bot_id,
+                        invoice_id: orderId,
+                        new_expiry: new_expiry,
+                        qris_chat_id: qris_chat_id,
+                        qris_message_id: qris_message_id,
+                        qris_deleted: result.qris_deleted || false,
+                    }, {
+                        headers: {
+                            'X-Internal-Api-Secret': process.env.INTERNAL_API_SECRET || '',
+                            'Content-Type': 'application/json',
+                        },
+                        timeout: 5000,
+                    });
+                    lastCallbackErr = null;
+                    break;
+                } catch (cacheErr) {
+                    lastCallbackErr = cacheErr;
+                }
+            }
+
+            if (callbackResp) {
                 console.log(`[Renewal-Webhook] 🔄 Cache invalidation sent to ${bot_api_base_url}`);
                 const fallbackDeleted = callbackResp.data?.qris_deleted === true;
 
@@ -390,8 +406,8 @@ module.exports = async function handler(req, res) {
                         .eq('id', orderId);
                     if (fallbackFlagErr) console.error('[Renewal-Webhook] Failed to persist fallback qris_deleted flag:', fallbackFlagErr.message);
                 }
-            } catch (cacheErr) {
-                console.log(`[Renewal-Webhook] Cache invalidation to bot failed (non-fatal): ${cacheErr.message}`);
+            } else {
+                console.error(`[Renewal-Webhook] Cache invalidation to bot failed after ${CALLBACK_ATTEMPTS.length} attempts (non-fatal, bot will self-heal via its own cache TTL): ${lastCallbackErr?.message}`);
             }
         }
 
