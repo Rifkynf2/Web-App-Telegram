@@ -456,16 +456,6 @@
             contain: paint; /* Fix Chrome/Safari rendering bug where background bleeds */
         }
         
-        /* Desktop Theme Glow for Table Container */
-        #tab-telegram .table-container {
-            border-top: 2px solid rgba(59, 130, 246, 0.85);
-            box-shadow: 0 -4px 15px -4px rgba(59, 130, 246, 0.35), 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        }
-        #tab-whatsapp .table-container {
-            border-top: 2px solid rgba(16, 185, 129, 0.85);
-            box-shadow: 0 -4px 15px -4px rgba(16, 185, 129, 0.35), 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        }
-
         /* Lapisan Kaca (Glassmorphism) yang menyebar (sekarang menggunakan opacity untuk mencegah blink) */
         .glass-bg {
             position: absolute;
@@ -519,7 +509,8 @@
             word-wrap: break-word;
             word-break: break-word;
             white-space: normal;
-            min-width: 200px; /* Ensure name has space */
+            min-width: 150px; 
+            max-width: 250px; /* Force long text to break instead of stretching table */
         }
 
         th {
