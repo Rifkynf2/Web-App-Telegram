@@ -1,8 +1,8 @@
-const { getWaSupabase } = require('../_lib/waSupabase');
-const { success, error, unauthorized, notFound, serverError, handleCors } = require('../_lib/response');
+const { getWaSupabase } = require('./waSupabase');
+const { success, error, unauthorized, notFound, serverError, handleCors } = require('./response');
 
 /**
- * /api/admin/wa-groups
+ * /api/admin/wa-groups handler
  * Admin management API for WhatsApp Bot Rental Groups.
  * Auth: X-Admin-Secret header
  */
@@ -33,11 +33,6 @@ function calcRenewalDays(currentPaidUntil, days = 31) {
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
-
-    const adminSecret = req.headers['x-admin-secret'];
-    if (!adminSecret || adminSecret !== process.env.ADMIN_DASHBOARD_SECRET) {
-        return unauthorized(res, 'Invalid admin secret');
-    }
 
     try {
         const supa = getWaSupabase();
@@ -198,7 +193,7 @@ module.exports = async function handler(req, res) {
 
         return error(res, 'Method not allowed', 405);
     } catch (err) {
-        console.error('[api/admin/wa-groups] Error:', err);
+        console.error('[api/_lib/wa-groups-handler] Error:', err);
         return serverError(res, err.message || 'Internal server error');
     }
 };
