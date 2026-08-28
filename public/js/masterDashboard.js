@@ -7,7 +7,20 @@ const API_BASE = '/api/admin';
 let adminSecret = localStorage.getItem('master_secret') || '';
 let activeTab = 'telegram'; // 'telegram' or 'whatsapp'
 
-// ── Mock Data (preview mode) ────────────────────────────────────────────────
+// ── Stats Cache (5-minute TTL + Smart Invalidation) ──────────────────────────
+// Cache mencegah query ulang ke DB saat user bolak-balik tab.
+// Cache dikosongkan secara paksa setelah setiap aksi mutasi (renew, suspend, delete).
+const STATS_CACHE_TTL = 5 * 60 * 1000; // 5 menit
+const _statsCache = { telegram: null, whatsapp: null };
+const _statsCacheTime = { telegram: 0, whatsapp: 0 };
+
+function invalidateStatsCache() {
+    _statsCache.telegram = null;
+    _statsCache.whatsapp = null;
+    _statsCacheTime.telegram = 0;
+    _statsCacheTime.whatsapp = 0;
+    console.log('[Cache] Stats cache invalidated.');
+}
 const isPreviewMode = new URLSearchParams(window.location.search).get('preview') === 'true';
 
 const MOCK_STATS = {
@@ -132,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnRefresh.addEventListener('click', () => {
+        invalidateStatsCache(); // Force fresh data on manual refresh
         loadStats();
         loadActiveTab();
     });
@@ -297,14 +311,29 @@ async function loadStats() {
         return true;
     }
 
+    const tab = activeTab;
+    const now = Date.now();
+
+    // Serve from cache if still valid (5 min TTL)
+    if (_statsCache[tab] && (now - _statsCacheTime[tab]) < STATS_CACHE_TTL) {
+        console.log(`[Cache] Stats cache hit for tab: ${tab}`);
+        renderStats(_statsCache[tab]);
+        return true;
+    }
+
     try {
-        const endpoint = activeTab === 'whatsapp' ? `${API_BASE}/wa-groups?action=stats` : `${API_BASE}/stats`;
+        const endpoint = tab === 'whatsapp' ? `${API_BASE}/wa-groups?action=stats` : `${API_BASE}/stats`;
         const res = await fetch(endpoint, {
             headers: { 'X-Admin-Secret': adminSecret }
         });
 
         const data = await res.json();
         if (!data.success) throw new Error(data.error);
+
+        // Store in cache
+        _statsCache[tab] = data.stats;
+        _statsCacheTime[tab] = Date.now();
+        console.log(`[Cache] Stats cache refreshed for tab: ${tab}`);
 
         if (loginOverlay.style.display !== 'none') {
             loginOverlay.style.display = 'none';
@@ -589,6 +618,7 @@ async function updateTenantStatus(botId, action, btn) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        invalidateStatsCache(); // Data changed — bust the cache
         loadTenants();
         loadStats();
     } catch (err) {
@@ -635,6 +665,7 @@ async function executeDelete(botId) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        invalidateStatsCache(); // Data changed — bust the cache
         loadTenants();
         loadStats();
     } catch (err) {
@@ -688,6 +719,7 @@ async function executeRenew(botId) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        invalidateStatsCache(); // Data changed — bust the cache
         loadTenants();
         loadStats();
     } catch (err) {
@@ -745,6 +777,7 @@ async function executeWaExtend(groupId) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        invalidateStatsCache(); // Data changed — bust the cache
         loadWaGroups();
         loadStats();
     } catch (err) {
@@ -805,6 +838,7 @@ async function executeWaToggle(groupId, targetActive, btn) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        invalidateStatsCache(); // Data changed — bust the cache
         loadWaGroups();
         loadStats();
     } catch (err) {
@@ -856,6 +890,7 @@ async function executeWaDelete(groupId) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        invalidateStatsCache(); // Data changed — bust the cache
         loadWaGroups();
         loadStats();
     } catch (err) {

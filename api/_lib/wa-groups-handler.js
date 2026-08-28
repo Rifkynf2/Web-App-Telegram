@@ -44,46 +44,45 @@ module.exports = async function handler(req, res) {
                 const today = getTodayWIB();
                 const threeDaysLater = addDaysToDate(today, 3);
 
-                const { data: groups, error: groupsErr } = await supa
-                    .from('managed_groups')
-                    .select('id, is_active, paid_until');
+                // Run 4 parallel COUNT queries — no rows transferred, only numbers
+                const [
+                    { count: totalGroups,   error: totalErr },
+                    { count: activeGroups,  error: activeErr },
+                    { count: expiringSoon,  error: expiringErr },
+                    { count: totalPayments, error: paysErr }
+                ] = await Promise.all([
+                    supa.from('managed_groups')
+                        .select('id', { count: 'exact', head: true }),
+                    supa.from('managed_groups')
+                        .select('id', { count: 'exact', head: true })
+                        .eq('is_active', true).gte('paid_until', today),
+                    supa.from('managed_groups')
+                        .select('id', { count: 'exact', head: true })
+                        .eq('is_active', true).gte('paid_until', today).lte('paid_until', threeDaysLater),
+                    supa.from('payments')
+                        .select('id', { count: 'exact', head: true })
+                        .eq('status', 'approved')
+                ]);
 
-                if (groupsErr) throw groupsErr;
-
-                const totalGroups = groups ? groups.length : 0;
-                let activeGroups = 0;
-                let expiringSoon = 0;
-
-                for (const g of (groups || [])) {
-                    if (g.is_active && g.paid_until && g.paid_until >= today) {
-                        activeGroups++;
-                        if (g.paid_until <= threeDaysLater) {
-                            expiringSoon++;
-                        }
-                    }
-                }
-
-                const { count: totalPayments, error: paysErr } = await supa
-                    .from('payments')
-                    .select('id', { count: 'exact', head: true })
-                    .eq('status', 'approved');
-
+                if (totalErr) throw totalErr;
+                if (activeErr) throw activeErr;
+                if (expiringErr) throw expiringErr;
                 if (paysErr) throw paysErr;
 
                 return success(res, {
                     stats: {
-                        total_groups: totalGroups,
-                        active_groups: activeGroups,
-                        expiring_soon: expiringSoon,
+                        total_groups:   totalGroups   || 0,
+                        active_groups:  activeGroups  || 0,
+                        expiring_soon:  expiringSoon  || 0,
                         total_payments: totalPayments || 0
                     }
                 });
             }
 
-            // Default GET: List all groups
+            // Default GET: List groups with only columns needed by the dashboard
             const { data: groups, error: listErr } = await supa
                 .from('managed_groups')
-                .select('*')
+                .select('id, store_group_id, group_name, renter_name, is_active, paid_until, joined_at')
                 .order('id', { ascending: false });
 
             if (listErr) throw listErr;
