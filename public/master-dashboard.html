@@ -504,7 +504,6 @@
         th, td {
             padding: 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            white-space: nowrap;
         }
 
         th {
@@ -756,6 +755,11 @@
             .app-container { padding: 1.5rem; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
         }
+        
+        /* Desktop & Tablet Table rule */
+        @media (min-width: 641px) {
+            table { min-width: 900px; }
+        }
 
         @media (max-width: 640px) {
             .app-container { padding: 1rem; }
@@ -857,7 +861,6 @@
                 padding: 0.65rem 1rem;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.06);
                 text-align: right !important;
-                white-space: normal; /* Reset for mobile */
             }
             tbody#tenantsTableBody td .cell-value, tbody#waGroupsTableBody td .cell-value {
                 display: block;
