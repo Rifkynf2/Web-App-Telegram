@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SaaS Master Dashboard</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <!-- Performance: preconnect to cut DNS resolution time (fixes LCP) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -290,7 +294,8 @@
         /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            /* Fixed 4-col on desktop prevents auto-fit reflow that causes CLS */
+            grid-template-columns: repeat(4, 1fr);
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -456,7 +461,35 @@
             contain: paint; /* Fix Chrome/Safari rendering bug where background bleeds */
         }
         
-        /* Lapisan Kaca (Glassmorphism) yang menyebar (sekarang menggunakan opacity untuk mencegah blink) */
+        /* =================================================
+         * DESKTOP & TABLET ONLY: Safe glowing top border
+         * Menggunakan ::before pseudo-element agar tidak
+         * mengganggu GPU layer dari backdrop-filter/overflow
+         * ================================================= */
+        @media (min-width: 641px) {
+            #tab-telegram .table-container::before,
+            #tab-whatsapp .table-container::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                z-index: 10;
+                pointer-events: none;
+                border-radius: 18px 18px 0 0;
+            }
+            #tab-telegram .table-container::before {
+                background: rgba(59, 130, 246, 0.9); /* Biru Telegram */
+                box-shadow: 0 0 14px 3px rgba(59, 130, 246, 0.45);
+            }
+            #tab-whatsapp .table-container::before {
+                background: rgba(16, 185, 129, 0.9); /* Hijau WhatsApp */
+                box-shadow: 0 0 14px 3px rgba(16, 185, 129, 0.45);
+            }
+        }
+
+        /* Lapisan Kaca (Glassmorphism) */
         .glass-bg {
             position: absolute;
             inset: 0;
@@ -465,14 +498,7 @@
             -webkit-backdrop-filter: blur(24px) saturate(180%);
             z-index: 0;
             pointer-events: none;
-            /* Paksa GPU rendering untuk mencegah flash */
-            will-change: opacity;
-            opacity: 0;
-            transition: opacity 1.2s ease-in-out;
-        }
-
-        /* Saat di-trigger, kaca memudar masuk (fade in) dengan sangat smooth */
-        .glass-bg.reveal {
+            /* opacity: 1 from start prevents CLS layout shift detected by Chrome */
             opacity: 1;
         }
 
