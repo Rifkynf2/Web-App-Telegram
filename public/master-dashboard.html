@@ -446,11 +446,14 @@
         /* Table Container - Solid Base */
         .table-container {
             position: relative;
+            width: 100%;
+            max-width: 100%;
             background: rgba(15, 23, 42, 0.85); /* Solid fallback selalu ada di bawah */
             border-radius: 18px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
             overflow: hidden;
+            contain: paint; /* Fix Chrome/Safari rendering bug where background bleeds */
         }
         
         /* Desktop Theme Glow for Table Container */
@@ -501,6 +504,22 @@
         th, td {
             padding: 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Prevent specific columns from squishing, allow name column to break */
+        th:nth-child(1), td:nth-child(1), /* ID */
+        th:nth-child(3), td:nth-child(3), /* Renter */
+        th:nth-child(4), td:nth-child(4), /* Status */
+        th:nth-child(5), td:nth-child(5), /* Expiry */
+        th:nth-child(6), td:nth-child(6)  /* Actions */ {
+            white-space: nowrap;
+        }
+
+        th:nth-child(2), td:nth-child(2) { /* Group Name / Shop Name */
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            min-width: 200px; /* Ensure name has space */
         }
 
         th {
@@ -858,6 +877,8 @@
                 padding: 0.65rem 1rem;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.06);
                 text-align: right !important;
+                white-space: normal !important; /* Force reset for mobile */
+                word-break: break-word;
             }
             tbody#tenantsTableBody td .cell-value, tbody#waGroupsTableBody td .cell-value {
                 display: block;
