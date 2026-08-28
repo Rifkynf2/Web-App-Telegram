@@ -174,7 +174,7 @@ async function listSubscriptions(req, res) {
             const expiry = new Date(s.expiry_date);
             return {
                 ...s,
-                remainingDays: Math.max(0, Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24))),
+                remainingDays: expiry ? Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24)) : 0,
                 isExpired: expiry < new Date(),
                 tenant: s.tenants,
                 plan: s.plans
@@ -326,7 +326,7 @@ async function listTenants(req, res) {
                 subscription: {
                     plan: sub?.plans?.name || 'None', expiryDate: sub?.expiry_date,
                     isExpired: expiry ? expiry < new Date() : true,
-                    remainingDays: expiry ? Math.max(0, Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24))) : 0,
+                    remainingDays: expiry ? Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24)) : 0,
                     status: sub?.status
                 },
                 created_at: t.created_at
