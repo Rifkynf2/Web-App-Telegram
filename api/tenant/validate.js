@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
         // 2. Fetch subscription with tenant status
         const { data, error: dbError } = await masterDb
             .from('subscriptions')
-            .select('expiry_date, status, plan_id, plans(name), tenants!inner(status, shop_name)')
+            .select('expiry_date, status, plan_id, plans(name), tenants!inner(status, shop_name, created_at)')
             .eq('bot_id', botId)
             .order('expiry_date', { ascending: false })
             .limit(1)
@@ -62,25 +62,29 @@ module.exports = async function handler(req, res) {
             active: true,
             expiryDate: data.expiry_date,
             planName: data.plans?.name || 'Unknown',
-            shopName: data.tenants?.shop_name
+            shopName: data.tenants?.shop_name,
+            createdAt: data.tenants?.created_at
         };
 
         if (tenantStatus === 'BANNED') {
             result = {
                 active: false,
                 expiryDate: data.expiry_date,
+                createdAt: data.tenants?.created_at,
                 message: 'Bot ini telah DIBLOKIR oleh Administrator.'
             };
         } else if (tenantStatus === 'SUSPENDED') {
             result = {
                 active: false,
                 expiryDate: data.expiry_date,
+                createdAt: data.tenants?.created_at,
                 message: 'Bot ini telah dinonaktifkan oleh Developer.'
             };
         } else if (now > expiryDate) {
             result = {
                 active: false,
                 expiryDate: data.expiry_date,
+                createdAt: data.tenants?.created_at,
                 message: 'Masa sewa habis, silahkan hubungi Developer bot untuk perpanjang masa sewa.'
             };
         }
