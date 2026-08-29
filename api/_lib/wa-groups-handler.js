@@ -82,7 +82,7 @@ module.exports = async function handler(req, res) {
             // Default GET: List groups with only columns needed by the dashboard
             const { data: groups, error: listErr } = await supa
                 .from('managed_groups')
-                .select('id, store_group_id, group_name, renter_name, is_active, paid_until, joined_at')
+                .select('id, store_group_id, target_group_id, group_name, renter_name, is_active, paid_until, joined_at')
                 .order('id', { ascending: false });
 
             if (listErr) throw listErr;

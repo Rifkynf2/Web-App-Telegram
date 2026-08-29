@@ -62,15 +62,15 @@ const MOCK_WA_STATS = {
 
 const MOCK_WA_GROUPS = [
     {
-        id: 1, store_group_id: '120363000000000001@g.us', group_name: 'VIP Reseller Group',
+        id: 1, store_group_id: '120363422100732509@g.us', target_group_id: '120363000000000001@g.us', group_name: 'VIP Reseller Group',
         renter_name: 'Ahmad Rizki', is_active: true, paid_until: '2026-09-15', joined_at: '2025-01-15'
     },
     {
-        id: 2, store_group_id: '120363000000000002@g.us', group_name: 'Diamond Member Community',
+        id: 2, store_group_id: '120363422100732509@g.us', target_group_id: '120363000000000002@g.us', group_name: 'Diamond Member Community',
         renter_name: 'Siti Sarah', is_active: true, paid_until: '2026-08-30', joined_at: '2025-06-10'
     },
     {
-        id: 3, store_group_id: '120363000000000003@g.us', group_name: 'Crypto Signal & Discussion',
+        id: 3, store_group_id: '120363422100732509@g.us', target_group_id: '120363000000000003@g.us', group_name: 'Crypto Signal & Discussion',
         renter_name: 'Budi Santoso', is_active: false, paid_until: '2026-07-01', joined_at: null
     }
 ];
@@ -374,7 +374,8 @@ function renderTenants(tenants) {
             subBadgeClass = 'badge-trial';
         }
 
-        const tenantStatusClass = t.status === 'ACTIVE' ? 'badge-active' : (t.status === 'BANNED' ? 'badge-banned' : 'badge-suspended');
+        const tenantStatusClass = (t.status === 'ACTIVE' && !t.subscription?.isExpired) ? 'badge-active' : (t.status === 'BANNED' ? 'badge-banned' : 'badge-suspended');
+        const displayStatus = (t.status === 'EXPIRED' || t.subscription?.isExpired) ? 'INACTIVE' : t.status;
 
         tr.innerHTML = `
             <td data-label="Bot ID"><div class="cell-value"><code>${escapeHtml(t.bot_id)}</code></div></td>
@@ -386,7 +387,7 @@ function renderTenants(tenants) {
             </td>
             <td data-label="STATUS JOINED" style="text-align: center;">
                 <div class="cell-value">
-                    <span class="badge ${tenantStatusClass}">${escapeHtml(t.status)}</span>
+                    <span class="badge ${tenantStatusClass}">${escapeHtml(displayStatus)}</span>
                     ${memberSinceHtml ? `<br>${memberSinceHtml}` : ''}
                 </div>
             </td>
@@ -463,11 +464,9 @@ function renderWaGroups(groups) {
     groups.forEach(g => {
         const tr = document.createElement('tr');
 
-        const displayGroupId = g.store_group_id || g.target_group_id || g.id;
+        const displayGroupId = g.target_group_id || g.store_group_id || g.id;
         const memberSinceHtml = formatMemberSinceHtml(g.joined_at);
         const isActive = Boolean(g.is_active);
-        const statusBadgeClass = isActive ? 'badge-active' : 'badge-suspended';
-        const statusBadgeText = isActive ? 'ACTIVE' : 'INACTIVE';
 
         let expiryDisplay = '-';
         let remainingText = '';
@@ -494,6 +493,12 @@ function renderWaGroups(groups) {
                 remainingText = `${diffDays} days left`;
             }
         }
+
+        let statusBadgeText = isActive ? 'ACTIVE' : 'INACTIVE';
+        if (isExpired) {
+            statusBadgeText = 'EXPIRED';
+        }
+        const statusBadgeClass = (!isExpired && isActive) ? 'badge-active' : 'badge-suspended';
 
         tr.innerHTML = `
             <td data-label="Group ID"><div class="cell-value"><code>${escapeHtml(displayGroupId)}</code></div></td>
