@@ -463,6 +463,7 @@ async function loadStats() {
 // ── Telegram Bot Tenants ─────────────────────────────────────────────────────
 function renderTenants(tenants) {
     const tbody = document.getElementById('tenantsTableBody');
+    tbody.classList.remove('fade-in');
 
     if (tenants.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-box-open"></i><br>No tenants found.</td></tr>';
@@ -533,6 +534,10 @@ function renderTenants(tenants) {
 
         tbody.appendChild(tr);
     });
+
+    requestAnimationFrame(() => {
+        tbody.classList.add('fade-in');
+    });
 }
 
 // ── Auto-Sort & Filtering Logic (Client-Side, 0 DB queries) ───────────────────
@@ -588,21 +593,27 @@ function applyFilterAndSortWaGroups() {
     renderWaGroups(sortWaGroupsByExpiry(list));
 }
 
+const minDelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 async function loadTenants() {
     const tbody = document.getElementById('tenantsTableBody');
+    tbody.classList.remove('fade-in');
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${SVG_SPINNER}<br><span class="loading-text">Loading data...</span></td></tr>`;
 
     if (isPreviewMode) {
+        await minDelay(3000);
         _currentTenants = MOCK_TENANTS;
         applyFilterAndSortTenants();
         return;
     }
 
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${SVG_SPINNER}<br>Loading data...</td></tr>`;
-
     try {
-        const res = await fetch(`${API_BASE}/tenants?limit=100`, {
-            headers: { 'X-Admin-Secret': adminSecret }
-        });
+        const [res] = await Promise.all([
+            fetch(`${API_BASE}/tenants?limit=100`, {
+                headers: { 'X-Admin-Secret': adminSecret }
+            }),
+            minDelay(3000)
+        ]);
         const data = await res.json();
 
         if (!data.success) throw new Error(data.error);
@@ -618,6 +629,7 @@ async function loadTenants() {
 // ── WhatsApp Bot Groups ──────────────────────────────────────────────────────
 function renderWaGroups(groups) {
     const tbody = document.getElementById('waGroupsTableBody');
+    tbody.classList.remove('fade-in');
 
     if (groups.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-box-open"></i><br>No WhatsApp groups found.</td></tr>';
@@ -709,23 +721,31 @@ function renderWaGroups(groups) {
 
         tbody.appendChild(tr);
     });
+
+    requestAnimationFrame(() => {
+        tbody.classList.add('fade-in');
+    });
 }
 
 async function loadWaGroups() {
     const tbody = document.getElementById('waGroupsTableBody');
+    tbody.classList.remove('fade-in');
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${SVG_SPINNER}<br><span class="loading-text">Loading data...</span></td></tr>`;
 
     if (isPreviewMode) {
+        await minDelay(3000);
         _currentWaGroups = MOCK_WA_GROUPS;
         applyFilterAndSortWaGroups();
         return;
     }
 
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${SVG_SPINNER}<br>Loading data...</td></tr>`;
-
     try {
-        const res = await fetch(`${API_BASE}/wa-groups?action=list`, {
-            headers: { 'X-Admin-Secret': adminSecret }
-        });
+        const [res] = await Promise.all([
+            fetch(`${API_BASE}/wa-groups?action=list`, {
+                headers: { 'X-Admin-Secret': adminSecret }
+            }),
+            minDelay(3000)
+        ]);
         const data = await res.json();
 
         if (!data.success) throw new Error(data.error);
