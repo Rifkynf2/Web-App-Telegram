@@ -353,6 +353,31 @@ function loadActiveTab() {
     }
 }
 
+// ── WIB (Asia/Jakarta, UTC+7) Timezone & Grammar Date Helpers ───────────────
+function getTodayWibString() {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
+}
+
+function calculateRemainingDaysWib(targetDateStr) {
+    if (!targetDateStr) return null;
+    const cleanDateStr = targetDateStr.split('T')[0];
+    const todayWibStr = getTodayWibString();
+
+    const targetDate = new Date(`${cleanDateStr}T00:00:00Z`);
+    const todayWibDate = new Date(`${todayWibStr}T00:00:00Z`);
+
+    return Math.round((targetDate - todayWibDate) / (1000 * 60 * 60 * 24));
+}
+
+function formatRemainingDaysText(days, isExpired = false) {
+    if (days === null || days === undefined || isNaN(days)) return '-';
+    if (days === 0) return 'Expires today';
+    if (days === 1) return '1 day left';
+    if (days > 1) return `${days} days left`;
+    if (days === -1 || (isExpired && Math.abs(days) === 1)) return 'Minus 1 day';
+    return `Minus ${Math.abs(days)} days`;
+}
+
 // ── Member Since Formatter (2 Baris) ───────────────────────────────────────
 function formatMemberSinceHtml(dateStr) {
     if (!dateStr) return '';
@@ -474,20 +499,26 @@ function renderTenants(tenants) {
     tenants.forEach(t => {
         const tr = document.createElement('tr');
 
-        const expiry = t.subscription.expiryDate ? new Date(t.subscription.expiryDate).toLocaleDateString('id-ID') : '-';
+        const expiry = t.subscription?.expiryDate ? new Date(t.subscription.expiryDate).toLocaleDateString('id-ID') : '-';
         const memberSinceHtml = formatMemberSinceHtml(t.created_at || t.createdAt);
 
+        const remainingDays = t.subscription?.expiryDate 
+            ? calculateRemainingDaysWib(t.subscription.expiryDate) 
+            : (t.subscription?.remainingDays ?? 0);
+        const isExpired = Boolean(t.subscription?.isExpired || (remainingDays !== null && remainingDays < 0));
+        const remainingText = formatRemainingDaysText(remainingDays, isExpired);
+
         let subBadgeClass = 'badge-active';
-        let subBadgeText = t.subscription.status;
-        if (t.subscription.isExpired) {
+        let subBadgeText = t.subscription?.status || 'ACTIVE';
+        if (isExpired) {
             subBadgeClass = 'badge-suspended';
             subBadgeText = 'EXPIRED';
-        } else if (t.subscription.status === 'TRIAL') {
+        } else if (t.subscription?.status === 'TRIAL') {
             subBadgeClass = 'badge-trial';
         }
 
-        const tenantStatusClass = (t.status === 'ACTIVE' && !t.subscription?.isExpired) ? 'badge-active' : (t.status === 'BANNED' ? 'badge-banned' : 'badge-suspended');
-        const displayStatus = (t.status === 'EXPIRED' || t.subscription?.isExpired) ? 'INACTIVE' : t.status;
+        const tenantStatusClass = (t.status === 'ACTIVE' && !isExpired) ? 'badge-active' : (t.status === 'BANNED' ? 'badge-banned' : 'badge-suspended');
+        const displayStatus = (t.status === 'EXPIRED' || isExpired) ? 'INACTIVE' : t.status;
 
         tr.innerHTML = `
             <td data-label="Bot ID"><div class="cell-value"><code>${escapeHtml(t.bot_id)}</code></div></td>
@@ -506,14 +537,14 @@ function renderTenants(tenants) {
             <td data-label="Rental" style="text-align: center;">
                 <div class="cell-value">
                     <span class="badge ${subBadgeClass}">${escapeHtml(subBadgeText)}</span><br>
-                    <small>${escapeHtml(t.subscription.plan)}</small>
+                    <small>${escapeHtml(t.subscription?.plan || 'Standard')}</small>
                 </div>
             </td>
             <td data-label="Expiry" style="text-align: center;">
                 <div class="cell-value">
                     ${expiry}<br>
-                    <small style="color:${t.subscription.isExpired ? 'var(--danger-color)' : 'var(--text-muted)'}">
-                        ${t.subscription.isExpired ? `Minus ${Math.abs(t.subscription.remainingDays)} days` : `${t.subscription.remainingDays} days left`}
+                    <small style="color:${isExpired ? 'var(--danger-color)' : 'var(--text-muted)'}">
+                        ${escapeHtml(remainingText)}
                     </small>
                 </div>
             </td>
@@ -543,20 +574,17 @@ function renderTenants(tenants) {
 // ── Auto-Sort & Filtering Logic (Client-Side, 0 DB queries) ───────────────────
 function sortTenantsByExpiry(list) {
     return [...list].sort((a, b) => {
-        const dA = a.subscription?.remainingDays ?? 9999;
-        const dB = b.subscription?.remainingDays ?? 9999;
-        return dA - dB;
+        const dA = a.subscription?.expiryDate ? calculateRemainingDaysWib(a.subscription.expiryDate) : (a.subscription?.remainingDays ?? 9999);
+        const dB = b.subscription?.expiryDate ? calculateRemainingDaysWib(b.subscription.expiryDate) : (b.subscription?.remainingDays ?? 9999);
+        return (dA ?? 9999) - (dB ?? 9999);
     });
 }
 
 function sortWaGroupsByExpiry(list) {
-    const today = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00Z');
     return [...list].sort((a, b) => {
-        const getDiff = (g) => {
-            if (!g.paid_until) return 9999;
-            return Math.round((new Date(g.paid_until + 'T00:00:00Z') - today) / (1000 * 60 * 60 * 24));
-        };
-        return getDiff(a) - getDiff(b);
+        const dA = a.paid_until ? calculateRemainingDaysWib(a.paid_until) : 9999;
+        const dB = b.paid_until ? calculateRemainingDaysWib(b.paid_until) : 9999;
+        return (dA ?? 9999) - (dB ?? 9999);
     });
 }
 
@@ -637,7 +665,6 @@ function renderWaGroups(groups) {
     }
 
     tbody.innerHTML = '';
-    const today = new Date().toISOString().split('T')[0];
 
     groups.forEach(g => {
         const tr = document.createElement('tr');
@@ -658,17 +685,10 @@ function renderWaGroups(groups) {
                 expiryDisplay = g.paid_until;
             }
 
-            const paidUntilDate = new Date(g.paid_until + 'T00:00:00Z');
-            const todayDate = new Date(today + 'T00:00:00Z');
-            const diffDays = Math.round((paidUntilDate - todayDate) / (1000 * 60 * 60 * 24));
-
-            if (diffDays < 0) {
-                isExpired = true;
-                remainingText = `Minus ${Math.abs(diffDays)} days`;
-            } else if (diffDays === 0) {
-                remainingText = 'Expires today';
-            } else {
-                remainingText = `${diffDays} days left`;
+            const diffDays = calculateRemainingDaysWib(g.paid_until);
+            if (diffDays !== null) {
+                if (diffDays < 0) isExpired = true;
+                remainingText = formatRemainingDaysText(diffDays, isExpired);
             }
         }
 
