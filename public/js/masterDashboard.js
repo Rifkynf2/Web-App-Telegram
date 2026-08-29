@@ -156,11 +156,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchTgInput) initTypingPlaceholder(searchTgInput, ["Cari Bot ID...", "Cari Shop Name...", "Cari @username..."]);
     if (searchWaInput) initTypingPlaceholder(searchWaInput, ["Cari Group ID...", "Cari Group Name...", "Cari Renter Name..."]);
 
-    // Inisialisasi: pastikan glass-bg untuk tab yang aktif saat load sudah terlihat
-    const activePane = document.querySelector(`.tab-pane.active`);
-    if (activePane) {
-        const glassBg = activePane.querySelector('.glass-bg');
-        if (glassBg) glassBg.classList.add('reveal');
+
+
+    async function handleRefresh() {
+        const icon = btnRefresh?.querySelector('i');
+        if (icon) icon.classList.add('fa-spin');
+        if (btnRefresh) btnRefresh.disabled = true;
+
+        invalidateStatsCache(); // Force fresh data on manual refresh
+
+        try {
+            await Promise.all([loadStats(), loadActiveTab()]);
+            showToast('Dashboard data refreshed', 'success');
+        } catch (err) {
+            console.error('Refresh error:', err);
+            showToast('Failed to refresh data', 'error');
+        } finally {
+            setTimeout(() => {
+                if (icon) icon.classList.remove('fa-spin');
+                if (btnRefresh) btnRefresh.disabled = false;
+            }, 600);
+        }
     }
 
     if (isPreviewMode) {
@@ -168,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadStats();
         loginForm.addEventListener('submit', (e) => e.preventDefault());
         btnLogout.addEventListener('click', () => location.reload());
-        btnRefresh.addEventListener('click', () => { loadStats(); loadActiveTab(); });
+        btnRefresh.addEventListener('click', handleRefresh);
         return;
     }
 
@@ -214,11 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         location.reload();
     });
 
-    btnRefresh.addEventListener('click', () => {
-        invalidateStatsCache(); // Force fresh data on manual refresh
-        loadStats();
-        loadActiveTab();
-    });
+    btnRefresh.addEventListener('click', handleRefresh);
 });
 
 // ── Typing Animation Logic ──────────────────────────────────────────────────
@@ -283,23 +295,15 @@ function setupTabListeners() {
 
             document.querySelectorAll('.tab-pane').forEach(pane => {
                 pane.classList.remove('slide-in-right', 'slide-in-left');
-                const glassBg = pane.querySelector('.glass-bg');
-                
                 const isActive = pane.id === `tab-${activeTab}`;
                 pane.classList.toggle('active', isActive);
                 
                 if (isActive) {
-                    if (glassBg) glassBg.classList.remove('reveal');
-                    void pane.offsetWidth; // Force reflow
                     pane.classList.add(animClass);
-                    
                     pane.addEventListener('animationend', function handler() {
                         pane.classList.remove(animClass);
-                        if (glassBg) glassBg.classList.add('reveal'); // Trigger circular glass spread
                         pane.removeEventListener('animationend', handler);
-                    });
-                } else {
-                    if (glassBg) glassBg.classList.remove('reveal');
+                    }, { once: true });
                 }
             });
 

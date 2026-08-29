@@ -258,7 +258,8 @@
                 rgba(255, 255, 255, 0.05) 100%
             );
             background-size: 200% 100%;
-            animation: slideBorder 5s linear infinite;
+            /* Durasi 10 detik untuk desktop agar terlihat lebih pelan dan elegan */
+            animation: slideBorder 10s linear infinite;
             
             /* CSS Mask to only show the gradient on the 1px border */
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -337,6 +338,11 @@
         }
 
         .stat-card {
+            /* Flex layout to balance spacing vertically */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            
             /* Liquid Glass base layer */
             background: linear-gradient(
                 145deg,
@@ -393,7 +399,7 @@
 
         .stat-card-top {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
             gap: 0.5rem;
             margin-bottom: 0.5rem;
@@ -501,17 +507,23 @@
         .tab-pane.active { display: block; }
 
         @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(30px); }
+            from { opacity: 0; transform: translateX(15px); }
             to { opacity: 1; transform: translateX(0); }
         }
 
         @keyframes slideInLeft {
-            from { opacity: 0; transform: translateX(-30px); }
+            from { opacity: 0; transform: translateX(-15px); }
             to { opacity: 1; transform: translateX(0); }
         }
 
-        .tab-pane.slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .tab-pane.slide-in-left { animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .tab-pane.slide-in-right { 
+            animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+            will-change: transform, opacity;
+        }
+        .tab-pane.slide-in-left { 
+            animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+            will-change: transform, opacity;
+        }
 
         /* Table Container - Solid Base */
         .table-container {
@@ -563,8 +575,13 @@
             -webkit-backdrop-filter: blur(24px) saturate(180%);
             z-index: 0;
             pointer-events: none;
-            /* opacity: 1 from start prevents CLS layout shift detected by Chrome */
             opacity: 1;
+            /* GPU Hardware Acceleration HACKS untuk mencegah lag saat tab berpindah */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            will-change: transform;
         }
 
         /* Wrapper untuk scroll tabel di atas lapisan kaca */
@@ -773,13 +790,25 @@
             flex-wrap: wrap;
             gap: 0.75rem;
             position: relative;
-            /* Subtle glass tray under header */
-            background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.07);
+            /* Liquid Glass with solid dark fallback base to eliminate transparent glitch */
+            background: linear-gradient(
+                145deg,
+                rgba(255, 255, 255, 0.06) 0%,
+                rgba(30, 41, 59, 0.55) 40%,
+                rgba(15, 23, 42, 0.6) 100%
+            );
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-left: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 18px;
             padding: 1.25rem 1.25rem 1rem;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
         .tab-header-title-group {
             display: flex;
@@ -880,8 +909,8 @@
             border-radius: 9999px; /* Pill shape */
             transition: all 0.3s ease;
             
-            /* Liquid Glass Effect */
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%);
+            /* Liquid Glass Effect with dark base fallback */
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(15, 23, 42, 0.6) 100%);
             backdrop-filter: blur(16px) saturate(180%);
             -webkit-backdrop-filter: blur(16px) saturate(180%);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -891,7 +920,10 @@
         }
 
         .search-box svg {
-            color: rgba(255, 255, 255, 0.6) !important;
+            color: rgba(255, 255, 255, 0.5) !important;
+            /* Engraved glass effect */
+            filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.25));
+            transition: all 0.3s ease;
         }
 
         .search-box input {
@@ -906,19 +938,47 @@
         .search-box input::placeholder {
             color: rgba(255, 255, 255, 0.4);
             font-size: 0.9rem;
+            font-weight: 500;
+            /* Engraved glass effect */
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
         }
 
-        /* Focus states (Slightly tinted liquid glass) */
+        /* Focus states (Tinted liquid glass) */
         #tab-telegram .search-box:focus-within {
-            border-color: rgba(59, 130, 246, 0.4);
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(255, 255, 255, 0.01) 100%);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(59, 130, 246, 0.15);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border-color: rgba(59, 130, 246, 0.25);
+            border-top-color: rgba(59, 130, 246, 0.5);
+            border-left-color: rgba(59, 130, 246, 0.35);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), 
+                        0 0 24px rgba(59, 130, 246, 0.2), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+        #tab-telegram .search-box:focus-within svg {
+            color: #60a5fa !important;
+            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+        }
+        #tab-telegram .search-box:focus-within input::placeholder {
+            color: rgba(96, 165, 250, 0.6);
+            text-shadow: none;
         }
 
         #tab-whatsapp .search-box:focus-within {
-            border-color: rgba(16, 185, 129, 0.4);
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(255, 255, 255, 0.01) 100%);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(16, 185, 129, 0.15);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border-color: rgba(16, 185, 129, 0.25);
+            border-top-color: rgba(16, 185, 129, 0.5);
+            border-left-color: rgba(16, 185, 129, 0.35);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), 
+                        0 0 24px rgba(16, 185, 129, 0.2), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+        #tab-whatsapp .search-box:focus-within svg {
+            color: #34d399 !important;
+            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+        }
+        #tab-whatsapp .search-box:focus-within input::placeholder {
+            color: rgba(52, 211, 153, 0.6);
+            text-shadow: none;
         }
 
         @media (max-width: 640px) {
@@ -1028,6 +1088,11 @@
                 width: 100%;
                 justify-content: center;
                 text-align: center;
+            }
+
+            /* Percepat animasi border header khusus untuk mobile agar tidak terasa laggy */
+            header::before {
+                animation-duration: 5s;
             }
 
             .table-container,
