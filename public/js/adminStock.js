@@ -78,7 +78,11 @@ export function initAdminStock() {
     }
 
     if (btnUploadStockFile && stockInputFile) {
-        btnUploadStockFile.addEventListener('click', () => stockInputFile.click());
+        btnUploadStockFile.addEventListener('click', () => {
+            btnUploadStockFile.classList.add('scale-95');
+            setTimeout(() => btnUploadStockFile.classList.remove('scale-95'), 150);
+            stockInputFile.click();
+        });
         stockInputFile.addEventListener('change', async () => {
             const file = stockInputFile.files?.[0];
             stockInputFile.value = '';
@@ -93,7 +97,12 @@ export function initAdminStock() {
                 stockInputBulk.value = text;
                 const lineCount = text.split('\n').map(normalizeStockLine).filter(Boolean).length;
                 if (stockFileLoadedInfo) {
-                    stockFileLoadedInfo.textContent = `✓ ${lineCount} baris dimuat dari ${file.name}`;
+                    stockFileLoadedInfo.innerHTML = `
+                        <div class="flex items-center gap-2 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
+                            <i class="fa-solid fa-circle-check text-xs"></i>
+                            <span><b>${lineCount} baris stok</b> berhasil dimuat dari file <code>${file.name}</code></span>
+                        </div>
+                    `;
                     stockFileLoadedInfo.classList.remove('hidden');
                 }
             } catch (e) {
@@ -111,16 +120,29 @@ export function initAdminStock() {
 
     if (btnToggleStockList) {
         btnToggleStockList.addEventListener('click', () => {
+            const selectedVal = stockInputVariant?.value;
+            if (!selectedVal) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Pilih Varian Terlebih Dahulu',
+                    text: 'Silakan tentukan varian produk di atas untuk melihat daftar stok yang tersedia.',
+                    confirmButtonColor: '#3b82f6',
+                    confirmButtonText: 'Oke, Paham',
+                    ...getSwalTheme()
+                });
+                return;
+            }
+
             const isHidden = stockListContainer.classList.contains('hidden');
             if (isHidden) {
                 stockListContainer.classList.replace('hidden', 'flex');
                 if (btnDeleteAllStock) btnDeleteAllStock.classList.remove('hidden');
-                btnToggleStockList.innerHTML = '<i class="fa-solid fa-eye-slash mr-1"></i> Sembunyikan Daftar Stok';
+                btnToggleStockList.innerHTML = '<i class="fa-solid fa-eye-slash text-sm"></i> <span>Tutup Daftar Stok</span>';
                 renderStockItems();
             } else {
                 stockListContainer.classList.replace('flex', 'hidden');
                 if (btnDeleteAllStock) btnDeleteAllStock.classList.add('hidden');
-                btnToggleStockList.innerHTML = '<i class="fa-solid fa-list-check mr-1"></i> Lihat Daftar Stok Tersedia';
+                btnToggleStockList.innerHTML = '<i class="fa-solid fa-list-check text-sm"></i> <span>Lihat Daftar Stok Tersedia</span>';
             }
         });
     }
@@ -301,7 +323,7 @@ export function openStockModal(product) {
     // Reset stock list view
     stockListContainer.classList.replace('flex', 'hidden');
     if (btnDeleteAllStock) btnDeleteAllStock.classList.add('hidden');
-    btnToggleStockList.innerHTML = '<i class="fa-solid fa-list-check mr-1"></i> Lihat Daftar Stok Tersedia';
+    btnToggleStockList.innerHTML = '<i class="fa-solid fa-list-check text-sm"></i> <span>Lihat Daftar Stok Tersedia</span>';
 
     // Reset page saat ganti produk
     currentStockPage = 1;
@@ -328,7 +350,7 @@ async function updateStockStats(product) {
         document.getElementById('stock-stat-reserved').textContent = "0";
         document.getElementById('stock-stat-sold').textContent = "0";
         if (!stockListContainer.classList.contains('hidden')) {
-            stockListContainer.innerHTML = '<p class="text-[10px] text-gray-500 italic py-2 text-center uppercase tracking-widest">Pilih varian dulu</p>';
+            stockListContainer.innerHTML = '<p class="text-[11px] text-gray-500 italic py-3 text-center uppercase tracking-widest font-semibold">Pilih varian produk terlebih dahulu</p>';
         }
         return;
     }
@@ -371,7 +393,16 @@ async function renderStockItems() {
     const variantId = stockInputVariant.value;
     if (!variantId) return;
 
-    stockListContainer.innerHTML = '<p class="text-[10px] text-gray-500 italic animate-pulse">Memuat data...</p>';
+    // Animated SVG Spinner Loading
+    stockListContainer.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-6 gap-2 text-indigo-400">
+            <svg class="w-6 h-6 animate-spin text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-[11px] font-semibold text-gray-400">Memuat data stok...</span>
+        </div>
+    `;
 
     const paginationEl = document.getElementById('stock-pagination');
     const pageInfoEl   = document.getElementById('stock-page-info');
@@ -385,7 +416,12 @@ async function renderStockItems() {
 
         stockListContainer.innerHTML = '';
         if (items.length === 0) {
-            stockListContainer.innerHTML = '<p class="text-[10px] text-gray-500 italic py-2">Stok kosong</p>';
+            stockListContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-6 text-gray-500 gap-1.5 opacity-70">
+                    <i class="fa-solid fa-box-open text-2xl"></i>
+                    <p class="text-xs font-semibold">Stok varian ini masih kosong</p>
+                </div>
+            `;
             if (paginationEl) paginationEl.classList.replace('flex', 'hidden');
             return;
         }
@@ -398,13 +434,17 @@ async function renderStockItems() {
             currentStockPage * STOCK_PAGE_SIZE
         );
 
-        pageItems.forEach(item => {
+        pageItems.forEach((item, idx) => {
+            const itemNumber = (currentStockPage - 1) * STOCK_PAGE_SIZE + idx + 1;
             const row = document.createElement('div');
-            row.className = 'flex items-center justify-between gap-3 p-2 bg-white/5 rounded-lg border border-white/5 hover:border-white/10 transition-colors group';
+            row.className = 'flex items-center justify-between gap-3 p-2.5 bg-white/5 rounded-xl border border-white/10 hover:border-indigo-500/30 hover:bg-white/[0.08] transition-all group';
             row.innerHTML = `
-                <code class="text-[10px] text-gray-300 truncate flex-1">${item.payload}</code>
-                <button class="w-6 h-6 rounded-md bg-red-500/10 text-red-500 opacity-50 group-hover:opacity-100 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all btn-del-item">
-                    <i class="fa-solid fa-trash-can text-[10px]"></i>
+                <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span class="text-[10px] font-bold text-gray-500 w-5 shrink-0">#${itemNumber}</span>
+                    <code class="text-xs text-indigo-200 font-mono truncate flex-1 select-all">${item.payload}</code>
+                </div>
+                <button class="btn-del-item w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 hover:border-red-500 flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-90" title="Hapus item ini">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
                 </button>
             `;
             row.querySelector('.btn-del-item').onclick = (e) => deleteStockItem(item.id, e.currentTarget);
@@ -416,13 +456,13 @@ async function renderStockItems() {
                 paginationEl.classList.replace('flex', 'hidden');
             } else {
                 paginationEl.classList.replace('hidden', 'flex');
-                if (pageInfoEl) pageInfoEl.textContent = `Hal ${currentStockPage} / ${totalPages}  (${items.length} item)`;
+                if (pageInfoEl) pageInfoEl.textContent = `Hal ${currentStockPage} / ${totalPages} (${items.length} item)`;
                 if (btnPrev) btnPrev.disabled = currentStockPage === 1;
                 if (btnNext) btnNext.disabled = currentStockPage === totalPages;
             }
         }
     } catch (e) {
-        stockListContainer.innerHTML = `<p class="text-[10px] text-red-400">Gagal memuat: ${e.message}</p>`;
+        stockListContainer.innerHTML = `<p class="text-xs text-red-400 py-2">Gagal memuat: ${e.message}</p>`;
     }
 }
 
