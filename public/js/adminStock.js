@@ -179,6 +179,97 @@ export function initAdminStock() {
     document.getElementById('btn-stock-next')?.addEventListener('click', () => {
         currentStockPage++; renderStockItems();
     });
+
+    if (stockInputVariant) {
+        initSmoothSelect(stockInputVariant);
+    }
+}
+
+export function initSmoothSelect(selectEl, onChange) {
+    if (!selectEl) return null;
+    let wrapper = selectEl.closest('.custom-select-wrapper');
+    if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper';
+        selectEl.parentNode.insertBefore(wrapper, selectEl);
+        wrapper.appendChild(selectEl);
+        selectEl.classList.add('hidden');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'custom-select-trigger';
+        trigger.innerHTML = `
+            <span class="custom-select-label truncate">Pilih Varian...</span>
+            <i class="fa-solid fa-chevron-down custom-select-arrow text-xs text-gray-400"></i>
+        `;
+        wrapper.insertBefore(trigger, selectEl);
+
+        const menu = document.createElement('div');
+        menu.className = 'custom-select-menu';
+        wrapper.appendChild(menu);
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
+                if (w !== wrapper) w.classList.remove('open');
+            });
+            wrapper.classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!wrapper.contains(e.target)) {
+                wrapper.classList.remove('open');
+            }
+        });
+    }
+
+    syncSmoothSelect(selectEl, onChange);
+    return wrapper;
+}
+
+export function syncSmoothSelect(selectEl, onChange) {
+    const wrapper = selectEl.closest('.custom-select-wrapper');
+    if (!wrapper) return;
+    const trigger = wrapper.querySelector('.custom-select-trigger');
+    const label = trigger?.querySelector('.custom-select-label');
+    const menu = wrapper.querySelector('.custom-select-menu');
+    if (!menu || !label) return;
+
+    menu.innerHTML = '';
+    const options = Array.from(selectEl.options);
+    const selectedOption = options.find(o => o.selected && !o.disabled) || options.find(o => !o.disabled);
+
+    if (selectedOption && !selectedOption.disabled && selectEl.value) {
+        label.textContent = selectedOption.textContent;
+        label.classList.remove('text-gray-400');
+    } else {
+        const placeholderOpt = options.find(o => o.disabled);
+        label.textContent = placeholderOpt ? placeholderOpt.textContent.replace(/^--\s*|\s*--$/g, '') : 'Pilih Varian...';
+        label.classList.add('text-gray-400');
+    }
+
+    options.forEach(opt => {
+        if (opt.disabled) return;
+        const isSelected = String(opt.value) === String(selectEl.value);
+        const item = document.createElement('div');
+        item.className = `custom-select-option ${isSelected ? 'selected' : ''}`;
+        item.innerHTML = `
+            <span class="truncate font-medium">${opt.textContent}</span>
+            ${isSelected ? '<i class="fa-solid fa-check text-xs text-indigo-400"></i>' : ''}
+        `;
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectEl.value = opt.value;
+            label.textContent = opt.textContent;
+            label.classList.remove('text-gray-400');
+            wrapper.querySelectorAll('.custom-select-option').forEach(el => el.classList.remove('selected'));
+            item.classList.add('selected');
+            wrapper.classList.remove('open');
+            selectEl.dispatchEvent(new Event('change'));
+            if (typeof onChange === 'function') onChange(opt.value);
+        });
+        menu.appendChild(item);
+    });
 }
 
 export function openStockModal(product) {
@@ -194,6 +285,10 @@ export function openStockModal(product) {
         opt.textContent = `${v.name} (${v.fulfillment})`;
         stockInputVariant.appendChild(opt);
     });
+
+    // Sync smooth custom dropdown
+    initSmoothSelect(stockInputVariant);
+    syncSmoothSelect(stockInputVariant);
 
     // Reset fields
     stockInputBulk.value = '';
@@ -214,6 +309,7 @@ export function openStockModal(product) {
 
     stockInputVariant.onchange = () => {
         currentStockPage = 1;
+        syncSmoothSelect(stockInputVariant);
         updateStockStats(product);
     };
 

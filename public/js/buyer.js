@@ -308,46 +308,45 @@ function renderBuyerProducts(overrideData) {
     const imageUrl = getImageFallback(product.image_url, product.name);
 
     const card = document.createElement('div');
-    card.className = 'card-scroll flex flex-col overflow-hidden cursor-pointer group transition-all active:scale-95';
-    card.style.cssText = 'background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);';
+    card.className = 'card-scroll liquid-glass glow-top-indigo flex flex-col overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/20 active:scale-98 p-2.5 pb-3';
 
     card.innerHTML = `
-            <!-- Image -->
-            <div class="relative overflow-hidden w-full shrink-0" style="aspect-ratio:4/3; background:#0d0d1f;">
+            <!-- Image with rounded canvas -->
+            <div class="product-card-canvas relative overflow-hidden w-full shrink-0 rounded-xl">
                 <img
                     src="${imageUrl}"
                     alt="${product.name}"
-                    class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                    class="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-108"
                     loading="lazy"
                     onerror="this.src='https://placehold.co/400x300/1e293b/white?text=${encodeURIComponent(product.name)}'">
                 ${
                   isOutOfStock
                     ? `
-                <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <span class="text-white text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full" style="background:rgba(239,68,68,0.7);backdrop-filter:blur(4px);">Habis</span>
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center">
+                    <span class="text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-red-500/85 shadow-md">Habis</span>
                 </div>`
                     : ''
                 }
             </div>
             <!-- Info -->
-            <div class="flex flex-col gap-2 p-3 flex-1">
-                <h3 class="font-bold text-white text-sm line-clamp-2 leading-snug">${product.name}</h3>
-                <div class="font-black text-blue-400 text-base tracking-wide">${priceLabel}</div>
-                ${
-                  isOutOfStock
-                    ? `<div class="text-[11px] text-red-400/80 font-bold">Stok Habis</div>`
-                    : `<div class="flex items-center gap-1.5">
-                          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-                          <span class="text-[11px] text-emerald-400 font-bold">${totalStock.toLocaleString('id-ID')} stok</span>
-                       </div>`
-                }
-                <button
-                    class="w-full text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-between mt-auto transition-all active:scale-95"
-                    style="${isOutOfStock ? 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(107,114,128,1);cursor:not-allowed;' : 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);color:white;'}"
-                    ${isOutOfStock ? 'disabled' : ''}>
+            <div class="flex flex-col gap-1.5 pt-2.5 px-2 flex-1">
+                <h3 class="font-bold text-white text-xs sm:text-sm line-clamp-2 leading-snug h-8 sm:h-9 flex items-start group-hover:text-blue-400 transition-colors">${product.name}</h3>
+                <div class="font-black text-blue-400 text-sm sm:text-base tracking-wide">${priceLabel}</div>
+                <div class="h-4 flex items-center">
+                  ${
+                    isOutOfStock
+                      ? `<span class="text-[10px] text-red-400 font-bold uppercase tracking-wider">Stok Habis</span>`
+                      : `<div class="flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                            <span class="text-[10px] text-emerald-400 font-bold">${totalStock.toLocaleString('id-ID')} stok</span>
+                         </div>`
+                  }
+                </div>
+                <div
+                    class="w-full text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-between mt-2 ${isOutOfStock ? 'btn-card-disabled' : 'btn-card-action'}">
                     <span>${isOutOfStock ? 'Stok Habis' : 'Lihat Detail'}</span>
-                    ${!isOutOfStock ? `<i class="fa-solid fa-arrow-right text-[10px] text-gray-400"></i>` : ''}
-                </button>
+                    ${!isOutOfStock ? `<i class="fa-solid fa-arrow-right text-[10px]"></i>` : ''}
+                </div>
             </div>
         `;
 
@@ -417,13 +416,17 @@ function openDetailPage(product) {
     (product.variants || []).forEach((v, index) => {
       const isOut = (v.stock || 0) === 0;
       const chip = document.createElement('button');
-      chip.className = 'variant-chip flex flex-col items-start px-4 py-3 rounded-xl transition-all active:scale-95';
-      chip.style.cssText = isOut ? 'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);opacity:0.5;cursor:not-allowed;' : 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);';
+      chip.className = `variant-chip liquid-glass w-full flex flex-col justify-between items-start p-3 sm:p-3.5 rounded-2xl min-h-[66px] text-left transition-all active:scale-95 ${isOut ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-white/30'}`;
       chip.disabled = isOut;
       chip.innerHTML = `
-                <span class="font-bold text-sm ${isOut ? 'text-gray-500' : 'text-white'}">${v.name}</span>
-                <span class="text-[11px] mt-0.5 ${isOut ? 'text-red-400/60' : 'text-emerald-400/80'}">${isOut ? 'Habis' : `Stok: ${(v.stock || 0).toLocaleString('id-ID')}`}</span>
-            `;
+        <div class="flex items-center justify-between w-full gap-1.5">
+          <span class="font-bold text-xs sm:text-sm text-left line-clamp-1 flex-1 ${isOut ? 'text-gray-500' : 'text-white'}">${v.name}</span>
+          <span class="variant-indicator w-4 h-4 rounded-full border border-white/20 flex items-center justify-center shrink-0 transition-all ${isOut ? 'hidden' : ''}">
+            <i class="fa-solid fa-check text-[9px] text-transparent transition-colors"></i>
+          </span>
+        </div>
+        <span class="text-[11px] mt-1.5 font-semibold text-left ${isOut ? 'text-red-400/70' : 'text-emerald-400'}">${isOut ? 'Habis' : `Stok: ${(v.stock || 0).toLocaleString('id-ID')}`}</span>
+      `;
       if (!isOut) {
         chip.addEventListener('click', () => selectDetailVariant(v, chip));
       }
@@ -468,16 +471,24 @@ function selectDetailVariant(variant, chipElement) {
   activeVariant = variant;
   currentQty = variant.min_qty || 1;
 
-  // Highlight chip
+  // Highlight chip with glow & active check indicator
   const allChips = detailPageVariants?.querySelectorAll('.variant-chip');
   allChips?.forEach((c) => {
-    c.style.background = 'rgba(255,255,255,0.05)';
-    c.style.border = '1px solid rgba(255,255,255,0.12)';
-    c.style.boxShadow = 'none';
+    c.classList.remove('glow-top-blue', 'variant-chip-active');
+    const ind = c.querySelector('.variant-indicator');
+    if (ind) {
+      ind.className = 'variant-indicator w-4 h-4 rounded-full border border-white/20 flex items-center justify-center shrink-0 transition-all';
+      const icon = ind.querySelector('i');
+      if (icon) icon.className = 'fa-solid fa-check text-[9px] text-transparent transition-colors';
+    }
   });
-  chipElement.style.background = 'rgba(59,130,246,0.2)';
-  chipElement.style.border = '1px solid rgba(59,130,246,0.5)';
-  chipElement.style.boxShadow = '0 0 12px rgba(59,130,246,0.2)';
+  chipElement.classList.add('glow-top-blue', 'variant-chip-active');
+  const activeInd = chipElement.querySelector('.variant-indicator');
+  if (activeInd) {
+    activeInd.className = 'variant-indicator w-4 h-4 rounded-full bg-blue-500 border border-blue-400 flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/50 transition-all';
+    const activeIcon = activeInd.querySelector('i');
+    if (activeIcon) activeIcon.className = 'fa-solid fa-check text-[9px] text-white transition-colors';
+  }
 
   // Update price & stock
   if (detailPagePrice) detailPagePrice.textContent = formatCurrency(resolveTierPrice(variant, currentQty));
@@ -551,7 +562,7 @@ function updateDetailQtyDisplay() {
   const total = formatCurrency(currentQty * unitPrice);
   const originalTotal = formatCurrency(currentQty * basePrice);
   const canCheckout = currentQty > 0 && !isCheckoutSubmitting;
-  const btnLabel = currentQty > 0 ? `Beli Sekarang — ${formatCurrency(currentQty * unitPrice)}` : 'Pilih Varian Dulu';
+  const btnLabel = currentQty > 0 ? 'Beli Sekarang' : 'Pilih Varian Dulu';
 
   if (detailPagePrice) detailPagePrice.textContent = formatCurrency(unitPrice);
   if (detailPagePriceOriginal) {

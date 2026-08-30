@@ -7,11 +7,21 @@ export const formatCurrency = (amount) => {
     }).format(amount);
 };
 
-export const hideLoading = () => {
-    const elLoading = document.getElementById('loading-state');
-    if (elLoading) {
-        elLoading.classList.add('hidden');
-    }
+const _pageLoadTime = Date.now();
+
+export const hideLoading = (minDuration = 2000) => {
+    const elapsed = Date.now() - _pageLoadTime;
+    const remaining = Math.max(0, minDuration - elapsed);
+
+    setTimeout(() => {
+        const elLoading = document.getElementById('loading-state');
+        if (elLoading) {
+            elLoading.classList.add('fade-out');
+            setTimeout(() => {
+                elLoading.classList.add('hidden');
+            }, 350);
+        }
+    }, remaining);
 };
 
 export const setupGlobalErrorHandlers = () => {

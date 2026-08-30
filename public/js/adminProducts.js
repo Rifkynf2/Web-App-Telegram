@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient.js';
 import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId } from './store.js';
 import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl } from './utils.js';
-import { openStockModal, initAdminStock } from './adminStock.js';
+import { openStockModal, initAdminStock, initSmoothSelect, syncSmoothSelect } from './adminStock.js';
 
 // ── Mock Data (preview mode) ───────────────────────────────────────────────────
 const MOCK_ADMIN_STATS = {
@@ -313,24 +313,134 @@ function renderAdminView(stats = null) {
     if (eSold) eSold.textContent = stats.sold_lifetime;
   }
 
-  if (adminList) {
-    adminList.innerHTML = '';
+  filterAndRenderAdminProducts();
+}
 
-    if (products.length === 0) {
-      adminList.innerHTML = `
-                <div class="glass-panel p-8 flex flex-col items-center justify-center py-10 opacity-50">
-                    <i class="fa-solid fa-box-open text-4xl mb-3"></i>
-                    <p class="text-sm">Belum ada produk</p>
-                </div>
-            `;
-      return;
-    }
+const adminSearchInput = document.getElementById('admin-search-products');
+const btnClearAdminSearch = document.getElementById('btn-clear-admin-search');
+let currentAdminSearchQuery = '';
 
-    products.forEach((product) => {
-      const div = createAdminProductRow(product);
-      adminList.appendChild(div);
-    });
+// ── Search Bar Dynamic Running Placeholder Animation ────────────────────────
+const placeholderTexts = [
+  'Cari nama produk...',
+  'Ketik nama produk yang dicari...',
+  'Cari produk Netflix, Spotify, Canva...',
+  'Temukan nama produk di sini...',
+];
+
+let placeholderIndex = 0;
+let charIndex = 0;
+let isDeleting = 0;
+let typewriterTimeout = null;
+let isSearchInputFocused = false;
+
+function typePlaceholder() {
+  if (!adminSearchInput || isSearchInputFocused || (adminSearchInput.value && adminSearchInput.value.length > 0)) {
+    return;
   }
+
+  const currentText = placeholderTexts[placeholderIndex];
+  if (isDeleting) {
+    charIndex--;
+    adminSearchInput.setAttribute('placeholder', currentText.substring(0, charIndex));
+  } else {
+    charIndex++;
+    adminSearchInput.setAttribute('placeholder', currentText.substring(0, charIndex));
+  }
+
+  let typeSpeed = isDeleting ? 35 : 75;
+
+  if (!isDeleting && charIndex === currentText.length) {
+    typeSpeed = 2200; // Pause when full text is displayed
+    isDeleting = 1;
+  } else if (isDeleting && charIndex === 0) {
+    isDeleting = 0;
+    placeholderIndex = (placeholderIndex + 1) % placeholderTexts.length;
+    typeSpeed = 450; // Pause before typing next phrase
+  }
+
+  typewriterTimeout = setTimeout(typePlaceholder, typeSpeed);
+}
+
+if (adminSearchInput) {
+  adminSearchInput.addEventListener('input', (e) => {
+    currentAdminSearchQuery = (e.target.value || '').trim().toLowerCase();
+    if (btnClearAdminSearch) {
+      if (currentAdminSearchQuery.length > 0) {
+        btnClearAdminSearch.classList.remove('hidden');
+      } else {
+        btnClearAdminSearch.classList.add('hidden');
+      }
+    }
+    filterAndRenderAdminProducts();
+  });
+
+  adminSearchInput.addEventListener('focus', () => {
+    isSearchInputFocused = true;
+    clearTimeout(typewriterTimeout);
+    adminSearchInput.setAttribute('placeholder', 'Cari nama produk...');
+  });
+
+  adminSearchInput.addEventListener('blur', () => {
+    isSearchInputFocused = false;
+    if (!adminSearchInput.value || adminSearchInput.value.length === 0) {
+      charIndex = 0;
+      isDeleting = 0;
+      clearTimeout(typewriterTimeout);
+      typewriterTimeout = setTimeout(typePlaceholder, 600);
+    }
+  });
+
+  // Start initial typewriter loop after load
+  typewriterTimeout = setTimeout(typePlaceholder, 1000);
+}
+
+if (btnClearAdminSearch) {
+  btnClearAdminSearch.addEventListener('click', () => {
+    if (adminSearchInput) {
+      adminSearchInput.value = '';
+      currentAdminSearchQuery = '';
+      btnClearAdminSearch.classList.add('hidden');
+      filterAndRenderAdminProducts();
+      adminSearchInput.focus();
+    }
+  });
+}
+
+function filterAndRenderAdminProducts() {
+  if (!adminList) return;
+  const allProducts = adminCatalogData || [];
+  const filtered = currentAdminSearchQuery
+    ? allProducts.filter((p) => (p.name || '').toLowerCase().includes(currentAdminSearchQuery))
+    : allProducts;
+
+  adminList.innerHTML = '';
+
+  if (filtered.length === 0) {
+    if (allProducts.length === 0) {
+      adminList.innerHTML = `
+        <div class="liquid-glass p-8 flex flex-col items-center justify-center py-10 opacity-60">
+          <i class="fa-solid fa-box-open text-4xl mb-3 text-indigo-400"></i>
+          <p class="text-sm font-semibold text-white">Belum ada produk</p>
+          <p class="text-xs text-gray-400 mt-1">Klik tombol Tambah di atas untuk membuat produk baru</p>
+        </div>
+      `;
+    } else {
+      adminList.innerHTML = `
+        <div class="liquid-glass p-8 flex flex-col items-center justify-center py-10 opacity-70">
+          <i class="fa-solid fa-magnifying-glass text-3xl mb-3 text-indigo-400"></i>
+          <p class="text-sm font-semibold text-white">Tidak ada produk yang cocok</p>
+          <p class="text-xs text-gray-400 mt-1">Coba kata kunci pencarian lain</p>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  filtered.forEach((product) => {
+    const div = createAdminProductRow(product);
+    adminList.appendChild(div);
+  });
   observeAdminCards();
 }
 
@@ -365,7 +475,8 @@ function observeAdminCards() {
 
 function createAdminProductRow(product) {
   const div = document.createElement('div');
-  div.className = 'card-scroll glass-panel p-3 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors';
+  const statusGlowClass = product.is_active === false ? 'glow-left-red' : 'glow-left-emerald';
+  div.className = `card-scroll liquid-glass ${statusGlowClass} p-3 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors`;
 
   const varCount = product.variants ? product.variants.length : 0;
   const activeVarCount = (product.variants || []).filter((variant) => variant.is_active !== false).length;
@@ -374,25 +485,28 @@ function createAdminProductRow(product) {
   const productStatus = product.is_active === false ? 'Nonaktif' : 'Aktif';
 
   div.innerHTML = `
-        <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-lg bg-white/5 overflow-hidden shrink-0">
-                <img src="${getImageFallback(product.image_url, product.name)}" class="w-full h-full object-cover">
+        <div class="flex items-center gap-3.5 min-w-0">
+            <div class="w-12 h-12 rounded-xl liquid-glass overflow-hidden shrink-0 border border-white/10 p-0.5">
+                <img src="${getImageFallback(product.image_url, product.name)}" class="w-full h-full object-cover rounded-lg">
             </div>
-            <div class="text-left w-full">
+            <div class="text-left min-w-0 flex-1">
                 <h4 class="text-xs font-bold text-white line-clamp-1">${product.name}</h4>
                 <p class="text-[10px] text-gray-400 mt-1">${compactSubText} • ${product.stock_count} Stok</p>
-                <p class="text-[9px] ${product.is_active === false ? 'text-red-400' : 'text-emerald-400'} mt-1 uppercase tracking-widest font-bold">${productStatus}</p>
+                <p class="text-[9px] ${product.is_active === false ? 'text-red-400' : 'text-emerald-400'} mt-1 uppercase tracking-widest font-bold flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full ${product.is_active === false ? 'bg-red-400' : 'bg-emerald-400'}"></span>
+                  ${productStatus}
+                </p>
             </div>
         </div>
-        <div class="flex items-center gap-2">
-            <button class="w-8 h-8 shrink-0 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white flex items-center justify-center btn-stock" title="Kelola Stok">
+        <div class="flex items-center gap-2 shrink-0">
+            <button class="btn-action-squircle btn-action-blue btn-stock" title="Kelola Stok">
                 <i class="fa-solid fa-box-open text-xs"></i>
             </button>
-            <button class="w-8 h-8 shrink-0 rounded-lg bg-white/5 text-gray-400 hover:text-white flex items-center justify-center btn-edit" title="Edit Produk">
+            <button class="btn-action-squircle btn-action-green btn-edit" title="Edit Produk">
                 <i class="fa-solid fa-pen-to-square text-xs"></i>
             </button>
-            <button class="w-8 h-8 shrink-0 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center btn-delete" title="Hapus Produk">
-                <i class="fa-solid fa-trash text-xs"></i>
+            <button class="btn-action-squircle btn-action-red btn-delete" title="Hapus Produk">
+                <i class="fa-solid fa-trash-can text-xs"></i>
             </button>
         </div>
     `;
@@ -486,7 +600,7 @@ function addTierRow(container, tier = null) {
 
 function addVariantBlock(variant = null) {
   const div = document.createElement('div');
-  div.className = 'glass-panel p-4 flex flex-col gap-3 relative overflow-hidden bg-black/20';
+  div.className = 'liquid-glass p-4 flex flex-col gap-3 relative overflow-hidden';
   if (variant && variant.id) div.setAttribute('data-id', variant.id);
 
   const defaultData = variant || { name: '', price: '', fulfillment: '', description: '', min_qty: 1, max_qty: 999, qty_per_purchase: 1, snk: '', is_active: true };
@@ -760,6 +874,10 @@ function addVariantBlock(variant = null) {
   });
 
   adminVariantsContainer.appendChild(div);
+  const fulfillSelect = div.querySelector('.var-fulfillment');
+  if (fulfillSelect) {
+    initSmoothSelect(fulfillSelect);
+  }
 }
 
 function openAdminModal(product = null) {
