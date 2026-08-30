@@ -587,15 +587,15 @@ function addTierRow(container, tier = null) {
   row.className = 'flex items-end gap-2 tier-row';
   row.innerHTML = `
         <div class="flex flex-col gap-1.5 flex-1">
-            <label class="text-[9px] text-gray-400">Qty Min</label>
-            <input type="number" min="2" value="${tier?.min_qty ?? ''}" placeholder="10" class="tier-min-qty w-full bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
+            <label class="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Qty Min</label>
+            <input type="number" min="2" value="${tier?.min_qty ?? ''}" placeholder="10" class="tier-min-qty w-full liquid-glass border border-indigo-500/30 rounded-xl px-3 py-2 text-center text-white text-xs focus:outline-none focus:border-indigo-400">
         </div>
         <div class="flex flex-col gap-1.5 flex-1">
-            <label class="text-[9px] text-gray-400">Harga/Pcs</label>
-            <input type="number" min="0" value="${tier?.price ?? ''}" placeholder="2000" class="tier-price w-full bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
+            <label class="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Harga/Pcs</label>
+            <input type="number" min="0" value="${tier?.price ?? ''}" placeholder="2000" class="tier-price w-full liquid-glass border border-indigo-500/30 rounded-xl px-3 py-2 text-center text-white text-xs focus:outline-none focus:border-indigo-400">
         </div>
-        <button type="button" class="btn-remove-tier w-8 h-8 shrink-0 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center" title="Hapus Tier">
-            <i class="fa-solid fa-circle-minus text-xs"></i>
+        <button type="button" class="btn-remove-tier btn-liquid-danger w-9 h-9 shrink-0 rounded-xl flex items-center justify-center transition-all active:scale-90 cursor-pointer shadow-sm" title="Hapus Tier">
+            <i class="fa-solid fa-minus text-xs"></i>
         </button>
     `;
   row.querySelector('.btn-remove-tier').addEventListener('click', () => row.remove());
@@ -682,13 +682,13 @@ function addVariantBlock(variant = null) {
                     <button type="button" class="btn-tutorial-wholesale text-blue-400 hover:text-blue-300 text-[10px] flex items-center gap-1 font-bold" title="Penjelasan Harga Grosir"><i class="fa-solid fa-circle-question"></i> Penjelasan</button>
                 </div>
                 <div class="var-tiers-container flex flex-col gap-2"></div>
-                <button type="button" class="btn-add-tier text-sm bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white px-3 py-2 rounded-lg transition-colors font-bold flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-plus"></i> Tambah Harga Grosir
+                <button type="button" class="btn-add-tier btn-liquid-emerald w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer shadow-sm">
+                    <i class="fa-solid fa-plus text-xs"></i> <span>Tambah Harga Grosir</span>
                 </button>
             </div>
             <div class="flex flex-col gap-1.5 col-span-3">
-                <label class="text-[9px] text-gray-400">Status Varian</label>
-                <select class="var-status bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-2 text-white text-xs">
+                <label class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Status Varian</label>
+                <select class="var-status bg-white/5 border border-indigo-500/30 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500 appearance-none">
                     <option value="true" ${defaultData.is_active !== false ? 'selected' : ''} class="bg-slate-900">Aktif</option>
                     <option value="false" ${defaultData.is_active === false ? 'selected' : ''} class="bg-slate-900">Nonaktif</option>
                 </select>
@@ -881,6 +881,10 @@ function addVariantBlock(variant = null) {
   const fulfillSelect = div.querySelector('.var-fulfillment');
   if (fulfillSelect) {
     initSmoothSelect(fulfillSelect);
+  }
+  const statusSelect = div.querySelector('.var-status');
+  if (statusSelect) {
+    initSmoothSelect(statusSelect, () => updateVariantStatusBadge(div));
   }
 }
 
