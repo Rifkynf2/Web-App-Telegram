@@ -483,6 +483,10 @@ function createAdminProductRow(product) {
   const compactSubText = varCount > 0 ? `${activeVarCount}/${varCount} varian aktif` : 'Belum ada varian';
   const lowestPrice = getLowestVariantPrice((product.variants || []).filter((variant) => variant.is_active !== false));
   const productStatus = product.is_active === false ? 'Nonaktif' : 'Aktif';
+  const isOutOfStock = (product.stock_count || 0) <= 0;
+  const stockDisplay = isOutOfStock
+    ? `<span class="text-red-400 font-bold">0 Stok</span>`
+    : `<span class="text-gray-300 font-medium">${product.stock_count} Stok</span>`;
 
   div.innerHTML = `
         <div class="flex items-center gap-3.5 min-w-0">
@@ -491,7 +495,7 @@ function createAdminProductRow(product) {
             </div>
             <div class="text-left min-w-0 flex-1">
                 <h4 class="text-xs font-bold text-white line-clamp-1">${product.name}</h4>
-                <p class="text-[10px] text-gray-400 mt-1">${compactSubText} • ${product.stock_count} Stok</p>
+                <p class="text-[10px] text-gray-400 mt-1">${compactSubText} • ${stockDisplay}</p>
                 <p class="text-[9px] ${product.is_active === false ? 'text-red-400' : 'text-emerald-400'} mt-1 uppercase tracking-widest font-bold flex items-center gap-1">
                   <span class="w-1.5 h-1.5 rounded-full ${product.is_active === false ? 'bg-red-400' : 'bg-emerald-400'}"></span>
                   ${productStatus}
