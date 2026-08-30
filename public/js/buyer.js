@@ -94,6 +94,7 @@ const elProfImg = document.getElementById('prof-img');
 const detailPage = document.getElementById('detail-page');
 const detailPageHeaderTitle = document.getElementById('detail-page-header-title');
 const detailPageImage = document.getElementById('detail-page-image');
+const detailPageImg = document.getElementById('detail-page-img');
 const detailPageName = document.getElementById('detail-page-name');
 const detailPageDesc = document.getElementById('detail-page-desc');
 const detailPageSold = document.getElementById('detail-page-sold');
@@ -400,8 +401,15 @@ function openDetailPage(product) {
   if (detailPageDesc) detailPageDesc.textContent = product.description || '';
 
   const imageUrl = getImageFallback(product.image_url, product.name);
+  if (detailPageImg) {
+    detailPageImg.src = imageUrl;
+    detailPageImg.alt = product.name;
+    detailPageImg.onerror = () => {
+      detailPageImg.src = `https://placehold.co/400x400/1e293b/white?text=${encodeURIComponent(product.name)}`;
+    };
+  }
   if (detailPageImage) {
-    detailPageImage.style.backgroundImage = `url('${imageUrl}')`;
+    detailPageImage.style.backgroundImage = 'none';
   }
 
   // Sold count (sum across all variants)

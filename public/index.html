@@ -224,9 +224,14 @@
         <div class="shrink-0 md:w-[45%] flex items-center justify-center p-6 md:p-10 md:border-r md:border-white/5 md:overflow-hidden">
           <div
             id="detail-page-image"
-            class="w-44 h-44 rounded-2xl liquid-glass shadow-xl shadow-black/40
-                   md:w-full md:h-auto md:aspect-square md:rounded-3xl md:max-w-sm"
-            style="background-size: cover; background-position: center; background-repeat: no-repeat;">
+            class="product-card-canvas w-44 h-44 rounded-2xl shadow-xl shadow-black/40
+                   md:w-full md:h-auto md:aspect-square md:rounded-3xl md:max-w-sm flex items-center justify-center overflow-hidden p-3 relative">
+            <img
+              id="detail-page-img"
+              src=""
+              alt="Detail Produk"
+              class="w-full h-full object-contain rounded-xl transition-transform duration-300"
+              loading="lazy" />
           </div>
         </div>
 
@@ -327,9 +332,9 @@
     <!-- Detail Page — Fixed Bottom Bar (mobile only, hidden on md+) -->
     <div
       id="detail-bottom-bar"
-      class="md:hidden fixed bottom-0 left-0 right-0 z-220 hidden px-5 py-4 liquid-glass border-x-0 border-b-0 rounded-b-none shadow-2xl">
+      class="md:hidden fixed bottom-0 left-0 right-0 z-220 hidden px-5 py-4 shadow-2xl">
       <div class="flex items-center justify-between mb-3.5">
-        <div class="flex items-center gap-3 rounded-xl p-1.5 liquid-glass">
+        <div class="detail-qty-pill flex items-center gap-3 rounded-xl p-1.5">
           <button id="detail-page-btn-min" class="w-10 h-10 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors active:scale-90">
             <i class="fa-solid fa-minus"></i>
           </button>

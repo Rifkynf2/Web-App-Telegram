@@ -545,6 +545,39 @@ html[data-theme="light"] .help-icon-box {
   color: #4f46e5 !important;
 }
 
+/* ==========================================================================
+   Detail Page — Fixed Bottom Action Bar (Rich Liquid Glass with Rounded Top)
+   ========================================================================== */
+#detail-bottom-bar {
+  background: rgba(10, 15, 29, 0.94) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border: none !important;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.16) !important;
+  border-top-left-radius: 1.5rem !important;
+  border-top-right-radius: 1.5rem !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.detail-qty-pill {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html[data-theme="light"] #detail-bottom-bar {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-top: 1.5px solid rgba(199, 210, 254, 0.9) !important;
+  box-shadow: 0 -10px 32px rgba(99, 102, 241, 0.14), inset 0 1.5px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html[data-theme="light"] .detail-qty-pill {
+  background: rgba(240, 244, 255, 0.85) !important;
+  border: 1px solid rgba(199, 210, 254, 0.7) !important;
+}
+
 .detail-page-slide {
   transform: translateX(100%);
   transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
