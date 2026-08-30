@@ -604,7 +604,7 @@ function addTierRow(container, tier = null) {
 
 function addVariantBlock(variant = null) {
   const div = document.createElement('div');
-  div.className = 'liquid-glass p-4 flex flex-col gap-3 relative overflow-hidden';
+  div.className = 'liquid-glass p-4 flex flex-col gap-3 relative';
   if (variant && variant.id) div.setAttribute('data-id', variant.id);
 
   const defaultData = variant || { name: '', price: '', fulfillment: '', description: '', min_qty: 1, max_qty: 999, qty_per_purchase: 1, snk: '', is_active: true };

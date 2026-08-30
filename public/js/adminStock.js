@@ -232,15 +232,24 @@ export function initSmoothSelect(selectEl, onChange) {
 
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
+            const wasOpen = wrapper.classList.contains('open');
             document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
-                if (w !== wrapper) w.classList.remove('open');
+                w.classList.remove('open');
+                const parentCard = w.closest('.liquid-glass');
+                if (parentCard) parentCard.style.zIndex = '';
             });
-            wrapper.classList.toggle('open');
+            if (!wasOpen) {
+                wrapper.classList.add('open');
+                const parentCard = wrapper.closest('.liquid-glass');
+                if (parentCard) parentCard.style.zIndex = '50';
+            }
         });
 
         document.addEventListener('click', (e) => {
             if (!wrapper.contains(e.target)) {
                 wrapper.classList.remove('open');
+                const parentCard = wrapper.closest('.liquid-glass');
+                if (parentCard) parentCard.style.zIndex = '';
             }
         });
     }
