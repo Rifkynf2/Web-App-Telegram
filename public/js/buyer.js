@@ -699,9 +699,28 @@ function bindCheckoutModalEvents() {
   }
 }
 
+function updateNavIndicator(animateBalloon = false) {
+  const activeBtn = document.querySelector('.nav-tab-btn.nav-tab-active');
+  const indicator = document.getElementById('nav-indicator');
+  if (!activeBtn || !indicator) return;
+
+  if (animateBalloon) {
+    indicator.classList.remove('glider-balloon');
+    void indicator.offsetWidth; // Force reflow to re-trigger balloon animation
+    indicator.classList.add('glider-balloon');
+  }
+
+  indicator.style.width = `${activeBtn.offsetWidth}px`;
+  indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+}
+
 function bindNavEvents() {
   if (navHome) navHome.addEventListener('click', () => switchTab('home'));
   if (navProfile) navProfile.addEventListener('click', () => switchTab('profile'));
+
+  window.addEventListener('resize', () => updateNavIndicator(false));
+  requestAnimationFrame(() => updateNavIndicator(false));
+  setTimeout(() => updateNavIndicator(false), 100);
 }
 
 // ── Tab Switching ──────────────────────────────────────────────────────────────
@@ -718,24 +737,14 @@ function switchTab(tab) {
 
   // Update nav state immediately
   if (tab === 'home') {
-    navHome.style.background = 'rgba(59,130,246,0.2)';
-    navHome.querySelector('i').className = 'fa-solid fa-house text-lg text-blue-400';
-    navHome.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-blue-400';
     navHome.classList.add('nav-tab-active');
-    navProfile.style.background = 'transparent';
-    navProfile.querySelector('i').className = 'fa-solid fa-user-astronaut text-lg text-gray-400';
-    navProfile.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-gray-400';
     navProfile.classList.remove('nav-tab-active');
   } else {
-    navProfile.style.background = 'rgba(59,130,246,0.2)';
-    navProfile.querySelector('i').className = 'fa-solid fa-user-astronaut text-lg text-blue-400';
-    navProfile.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-blue-400';
     navProfile.classList.add('nav-tab-active');
-    navHome.style.background = 'transparent';
-    navHome.querySelector('i').className = 'fa-solid fa-house text-lg text-gray-400';
-    navHome.querySelector('span').className = 'text-[9px] font-black uppercase tracking-widest text-gray-400';
     navHome.classList.remove('nav-tab-active');
   }
+
+  updateNavIndicator(true);
 
   // Fade out → swap → fade in
   outEl.style.transition = 'opacity 0.15s ease';

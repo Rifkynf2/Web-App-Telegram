@@ -336,21 +336,213 @@ select:focus {
   outline: none !important;
 }
 
+/* ==========================================================================
+   Buyer Floating Bottom Nav — iOS Liquid Glass with Glider Animation
+   ========================================================================== */
 .ios-nav-pill,
 nav#bottom-nav {
   position: fixed !important;
   bottom: 1.5rem !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
+  translate: 0 0 !important; /* Reset Tailwind v4 translate property to ensure exact centering */
   z-index: 50 !important;
-  display: block !important;
-  background: linear-gradient(145deg, #151c2e 0%, #0f172a 40%, #0a0f1d 100%) !important;
-  backdrop-filter: blur(32px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
   border-radius: 9999px !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  padding: 4px !important;
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+html[data-theme="light"] .ios-nav-pill,
+html[data-theme="light"] nav#bottom-nav {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  border-top: 1px solid rgba(255, 255, 255, 1) !important;
+  box-shadow: 0 16px 32px -4px rgba(99, 102, 241, 0.18), 0 4px 12px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Sliding Liquid Glass Indicator (iOS Glider with Balloon Pop-up) */
+.nav-indicator {
+  position: absolute !important;
+  top: 4px !important;
+  bottom: 4px !important;
+  left: 0 !important;
+  border-radius: 9999px !important;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.32) 0%, rgba(99, 102, 241, 0.26) 100%) !important;
+  border: 1px solid rgba(96, 165, 250, 0.45) !important;
+  border-top: 1px solid rgba(147, 197, 253, 0.75) !important;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+  transform-origin: center center !important;
+  /* Smooth snappy curve landing exactly at target without overshooting */
+  transition: transform 0.32s cubic-bezier(0.25, 1, 0.5, 1), width 0.28s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+/* Balloon Pop-Up / Inflate Effect while gliding */
+.nav-indicator.glider-balloon {
+  animation: gliderBalloonPop 0.34s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes gliderBalloonPop {
+  0% {
+    scale: 1 1;
+  }
+  42% {
+    scale: 1.14 1.20; /* Menggembung pas & natural seperti balon melayang */
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.55), 0 0 16px rgba(99, 102, 241, 0.4), inset 0 1.5px 0 rgba(255, 255, 255, 0.5);
+  }
+  75% {
+    scale: 1.03 1.04;
+  }
+  100% {
+    scale: 1 1; /* Mendarat pas presisi */
+  }
+}
+
+html[data-theme="light"] .nav-indicator {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.18) 100%) !important;
+  border: 1px solid rgba(99, 102, 241, 0.35) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+html[data-theme="light"] .nav-indicator.glider-balloon {
+  animation: gliderBalloonPopLight 0.34s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes gliderBalloonPopLight {
+  0% {
+    scale: 1 1;
+  }
+  42% {
+    scale: 1.14 1.20; /* Menggembung pas & natural di mode terang */
+    box-shadow: 0 8px 22px rgba(99, 102, 241, 0.28), 0 0 14px rgba(59, 130, 246, 0.22), inset 0 1.5px 0 rgba(255, 255, 255, 0.95);
+  }
+  75% {
+    scale: 1.03 1.04;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+
+.nav-tab-btn {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px 24px !important;
+  border-radius: 9999px !important;
+  gap: 3px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 2 !important;
+  outline: none !important;
+  user-select: none !important;
+  transition: color 0.25s ease !important;
+}
+
+.nav-tab-btn i {
+  font-size: 1.1rem !important;
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), color 0.25s ease, filter 0.25s ease !important;
+}
+
+.nav-tab-btn span {
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  transition: color 0.25s ease !important;
+}
+
+.nav-tab-btn:hover:not(.nav-tab-active) {
+  color: #f1f5f9 !important;
+}
+
+html[data-theme="light"] .nav-tab-btn {
+  color: #64748b !important;
+}
+
+html[data-theme="light"] .nav-tab-btn:hover:not(.nav-tab-active) {
+  color: #1e293b !important;
+}
+
+/* Active State — Pop-up Spring Physics */
+.nav-tab-btn.nav-tab-active {
+  color: #60a5fa !important;
+}
+
+.nav-tab-btn.nav-tab-active i {
+  color: #38bdf8 !important;
+  transform: translateY(-2px) scale(1.14) !important;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.65)) !important;
+}
+
+.nav-tab-btn.nav-tab-active span {
+  color: #93c5fd !important;
+}
+
+/* Active Tab in Light Mode */
+html[data-theme="light"] .nav-tab-btn.nav-tab-active {
+  color: #4f46e5 !important;
+}
+
+html[data-theme="light"] .nav-tab-btn.nav-tab-active i {
+  color: #4f46e5 !important;
+  transform: translateY(-2px) scale(1.14) !important;
+  filter: drop-shadow(0 0 6px rgba(79, 70, 229, 0.4)) !important;
+}
+
+html[data-theme="light"] .nav-tab-btn.nav-tab-active span {
+  color: #4338ca !important;
+}
+
+.nav-tab-btn:active {
+  transform: scale(0.92) !important;
+}
+
+/* ==========================================================================
+   Profile View — Liquid Glass Elements
+   ========================================================================== */
+.prof-stat-card {
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.help-icon-box {
+  background: rgba(99, 102, 241, 0.15) !important;
+  border: 1px solid rgba(99, 102, 241, 0.25) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15) !important;
+}
+
+html[data-theme="light"] .prof-stat-card {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border: 1px solid rgba(199, 210, 254, 0.65) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+html[data-theme="light"] .help-icon-box {
+  background: rgba(99, 102, 241, 0.12) !important;
+  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+  color: #4f46e5 !important;
 }
 
 .detail-page-slide {
@@ -432,13 +624,7 @@ html[data-theme="light"] .btn-back-pulse::after {
   background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
 }
 
-@keyframes navTabPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
-  50%       { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
-}
-.nav-tab-active {
-  animation: navTabPulse 2s ease-in-out infinite;
-}
+
 
 /* ═══════════════════════════════════════════
    HOVER STATES (dark + light)

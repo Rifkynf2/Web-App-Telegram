@@ -152,14 +152,12 @@
           <!-- Stats — pill bubbles -->
           <div class="w-full flex gap-3 z-10">
             <div
-              class="flex-3 flex flex-col items-start p-4 rounded-2xl"
-              style="background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);">
-              <span class="text-[10px] text-blue-300/70 uppercase tracking-widest mb-1 font-bold">Saldo Anda</span>
+              class="prof-stat-card flex-3 flex flex-col items-start p-4 rounded-2xl glow-left-blue">
+              <span class="text-[10px] text-blue-400 uppercase tracking-widest mb-1 font-bold">Saldo Anda</span>
               <span class="text-xl font-black text-blue-400" id="prof-balance">Rp 0</span>
             </div>
             <div
-              class="flex-1 flex flex-col items-center justify-center p-4 rounded-2xl"
-              style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);">
+              class="prof-stat-card flex-1 flex flex-col items-center justify-center p-4 rounded-2xl">
               <span class="text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-bold">Trx</span>
               <span class="text-xl font-black text-white" id="prof-total-trx">0</span>
             </div>
@@ -175,8 +173,7 @@
             target="_blank"
             class="w-full flex items-center justify-between group p-3 rounded-2xl transition-all hover:bg-white/5">
             <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-indigo-400"
-                style="background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.25);">
+              <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-indigo-400 help-icon-box">
                 <i class="fa-solid fa-headset text-xl"></i>
               </div>
               <div class="text-left">
@@ -387,23 +384,28 @@
           <i class="fa-brands fa-telegram text-2xl"></i>
           Buka Telegram
         </a>
+      </div>
     </div>
 
-    <!-- Bottom Nav — iOS Floating Pill -->
-    <nav id="bottom-nav" class="ios-nav-pill fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <div class="flex items-center gap-1 p-1.5">
+    <!-- Bottom Nav — iOS Floating Pill with Sliding Liquid Glass Glider -->
+    <nav id="bottom-nav" class="ios-nav-pill">
+      <div id="nav-pill-container" class="relative flex items-center p-1">
+        <!-- Sliding Liquid Glass Glider Indicator -->
+        <div id="nav-indicator" class="nav-indicator"></div>
+
         <button
           id="nav-btn-home"
-          class="nav-tab-active flex flex-col items-center px-7 py-2.5 rounded-full gap-1 transition-all active:scale-90"
-          style="background: rgba(59,130,246,0.2);">
-          <i class="fa-solid fa-house text-lg text-blue-400"></i>
-          <span class="text-[9px] font-black uppercase tracking-widest text-blue-400">Beranda</span>
+          class="nav-tab-btn nav-tab-active"
+          data-tab="home">
+          <i class="fa-solid fa-house"></i>
+          <span>Beranda</span>
         </button>
         <button
           id="nav-btn-profile"
-          class="flex flex-col items-center px-7 py-2.5 rounded-full gap-1 transition-all active:scale-90 text-gray-400 hover:text-white">
-          <i class="fa-solid fa-user-astronaut text-lg"></i>
-          <span class="text-[9px] font-black uppercase tracking-widest">Profile</span>
+          class="nav-tab-btn"
+          data-tab="profile">
+          <i class="fa-solid fa-user-astronaut"></i>
+          <span>Profile</span>
         </button>
       </div>
     </nav>
