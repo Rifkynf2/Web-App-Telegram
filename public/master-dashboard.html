@@ -47,8 +47,8 @@
             top: 0; left: 0; right: 0; bottom: 0;
             width: 100vw;
             height: 100vh;
-            opacity: 0.18;
-            z-index: 1;
+            opacity: 0.14;
+            z-index: 0;
             pointer-events: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.25)' stroke-width='1.2'%3E%3Cpath d='M-100,200 Q200,50 500,250 T1000,150' /%3E%3Cpath d='M-100,260 Q200,110 500,310 T1000,210' /%3E%3Cpath d='M-100,320 Q200,170 500,370 T1000,270' /%3E%3Cpath d='M-100,380 Q200,230 500,430 T1000,330' /%3E%3Cpath d='M-100,440 Q200,290 500,490 T1000,390' /%3E%3Cpath d='M-100,500 Q200,350 500,550 T1000,450' /%3E%3Cpath d='M-100,560 Q200,410 500,610 T1000,510' /%3E%3Cpath d='M-100,620 Q200,470 500,670 T1000,570' /%3E%3C/g%3E%3C/svg%3E");
             background-size: 700px 700px;
@@ -95,26 +95,92 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #loginOverlay.fade-out {
+            opacity: 0;
+            transform: scale(0.95) translateY(-12px);
+            pointer-events: none;
+        }
+
+        #loginOverlay.fade-in {
+            animation: loginFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes loginFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-12px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .login-box {
-            background: rgba(30, 41, 59, 0.45);
-            backdrop-filter: blur(28px) saturate(180%);
-            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            position: relative;
+            background: linear-gradient(
+                145deg,
+                rgba(255, 255, 255, 0.08) 0%,
+                rgba(30, 41, 59, 0.45) 40%,
+                rgba(15, 23, 42, 0.5) 100%
+            );
+            backdrop-filter: blur(32px) saturate(200%);
+            -webkit-backdrop-filter: blur(32px) saturate(200%);
             padding: 2.5rem;
             border-radius: 24px;
-            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.28);
+            border-left: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.7),
+                        0 0 35px -5px rgba(59, 130, 246, 0.18),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+                        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
             text-align: center;
-            max-width: 400px;
+            max-width: 410px;
             width: 90%;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        /* Animated Running Border on Login Box */
+        .login-box::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            padding: 1.5px; /* border thickness */
+            background: linear-gradient(90deg,
+                rgba(255, 255, 255, 0.05) 0%,
+                rgba(255, 255, 255, 0.05) 25%,
+                rgba(59, 130, 246, 0.85) 40%,
+                rgba(139, 92, 246, 1) 50%,
+                rgba(6, 182, 212, 0.85) 60%,
+                rgba(255, 255, 255, 0.05) 75%,
+                rgba(255, 255, 255, 0.05) 100%
+            );
+            background-size: 200% 100%;
+            animation: slideBorder 8s linear infinite;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
         }
 
         .login-box h2 {
             font-family: 'Outfit', 'Inter', sans-serif;
             font-weight: 700;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.5rem;
             color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+        }
+
+        .login-box h2 i {
+            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.6));
         }
 
         .input-group {
@@ -124,20 +190,26 @@
 
         .input-group input {
             width: 100%;
-            padding: 0.75rem 1rem;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 0.85rem 1.1rem;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(15, 23, 42, 0.6) 100%);
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-left: 1px solid rgba(255, 255, 255, 0.14);
             color: white;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.2s;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            transition: all 0.25s ease;
         }
 
         .input-group input:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.5);
+            border-top-color: rgba(59, 130, 246, 0.8);
+            border-left-color: rgba(59, 130, 246, 0.6);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
         }
 
         .btn {
@@ -219,10 +291,41 @@
         .app-container {
             display: none;
             position: relative;
-            z-index: 1;
+            z-index: 2;
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
+        }
+
+        .app-container.app-enter {
+            animation: appSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .app-container.app-exit {
+            animation: appSlideOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: none;
+        }
+
+        @keyframes appSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(22px) scale(0.985);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes appSlideOut {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(22px) scale(0.985);
+            }
         }
 
         header {
@@ -233,12 +336,11 @@
             padding: 1.1rem 1.5rem;
             position: relative;
             border-radius: 18px;
-            /* Inner Glass applied directly to header */
-            background: rgba(30, 41, 59, 0.4);
+            /* Solid dark glass to block background topography lines */
+            background: rgba(15, 23, 42, 0.88);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            /* overflow: hidden; */ /* Removed so we can see glowing border clearly */
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
         /* Animated Running Border */
@@ -282,17 +384,32 @@
         }
 
         .header-icon-badge {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             flex-shrink: 0;
-            border-radius: 14px;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
-            color: #fff;
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .header-icon-badge:hover {
+            transform: translateY(-2px) scale(1.08);
+        }
+
+        .header-icon-svg {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 14px rgba(59, 130, 246, 0.45));
+            transition: filter 0.25s ease;
+        }
+        .header-icon-badge:hover .header-icon-svg {
+            filter: drop-shadow(0 6px 22px rgba(59, 130, 246, 0.7));
         }
 
         .header-right-group {
@@ -345,58 +462,56 @@
             flex-direction: column;
             justify-content: space-between;
             
-            /* Liquid Glass base layer */
+            /* Solid Dark Glass base layer */
             background: linear-gradient(
                 145deg,
-                rgba(255, 255, 255, 0.07) 0%,
-                rgba(30, 41, 59, 0.35) 40%,
-                rgba(15, 23, 42, 0.3) 100%
+                rgba(30, 41, 59, 0.92) 0%,
+                rgba(15, 23, 42, 0.96) 100%
             );
-            backdrop-filter: blur(20px) saturate(200%);
-            -webkit-backdrop-filter: blur(20px) saturate(200%);
+            backdrop-filter: blur(24px) saturate(200%);
+            -webkit-backdrop-filter: blur(24px) saturate(200%);
             padding: 1.5rem;
             border-radius: 18px;
             /* Dual border: bright top-left highlight (glass refraction) + subtle outer */
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-top: 1px solid rgba(255, 255, 255, 0.22);
             border-left: 1px solid rgba(255, 255, 255, 0.14);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.12),
-                        inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.38),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         /* Top-border glow styles */
         .stat-card.glow-blue {
             border-top: 2px solid rgba(59, 130, 246, 0.9);
-            box-shadow: 0 -4px 15px -4px rgba(59, 130, 246, 0.4), 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            box-shadow: 0 -4px 15px -4px rgba(59, 130, 246, 0.4), 0 8px 32px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
         }
         .stat-card.glow-teal {
             border-top: 2px solid rgba(20, 184, 166, 0.9);
-            box-shadow: 0 -4px 15px -4px rgba(20, 184, 166, 0.4), 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            box-shadow: 0 -4px 15px -4px rgba(20, 184, 166, 0.4), 0 8px 32px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
         }
         .stat-card.glow-red {
             border-top: 2px solid rgba(239, 68, 68, 0.9);
-            box-shadow: 0 -4px 15px -4px rgba(239, 68, 68, 0.4), 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            box-shadow: 0 -4px 15px -4px rgba(239, 68, 68, 0.4), 0 8px 32px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
         }
         .stat-card.glow-yellow {
             border-top: 2px solid rgba(245, 158, 11, 0.9);
-            box-shadow: 0 -4px 15px -4px rgba(245, 158, 11, 0.4), 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            box-shadow: 0 -4px 15px -4px rgba(245, 158, 11, 0.4), 0 8px 32px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
         }
         .stat-card.glow-green {
             border-top: 2px solid rgba(16, 185, 129, 0.9);
-            box-shadow: 0 -4px 15px -4px rgba(16, 185, 129, 0.4), 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            box-shadow: 0 -4px 15px -4px rgba(16, 185, 129, 0.4), 0 8px 32px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
         }
 
         .stat-card:hover {
             transform: translateY(-3px);
             background: linear-gradient(
                 145deg,
-                rgba(255, 255, 255, 0.11) 0%,
-                rgba(30, 41, 59, 0.45) 40%,
-                rgba(15, 23, 42, 0.4) 100%
+                rgba(30, 41, 59, 0.96) 0%,
+                rgba(15, 23, 42, 0.98) 100%
             );
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
         }
 
         .stat-card-top {
@@ -573,7 +688,7 @@
         .glass-bg {
             position: absolute;
             inset: 0;
-            background: rgba(30, 41, 59, 0.35);
+            background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
             z-index: 0;
@@ -623,23 +738,47 @@
         th, td {
             padding: 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            vertical-align: middle;
         }
 
-        /* Prevent specific columns from squishing, allow name column to break */
-        th:nth-child(1), td:nth-child(1), /* ID */
-        th:nth-child(3), td:nth-child(3), /* Renter */
-        th:nth-child(4), td:nth-child(4), /* Status */
-        th:nth-child(5), td:nth-child(5), /* Expiry */
-        th:nth-child(6), td:nth-child(6)  /* Actions */ {
-            white-space: nowrap;
-        }
+        /* =================================================
+         * DESKTOP ONLY: Fixed column widths & layout
+         * ================================================= */
+        @media (min-width: 641px) {
+            table {
+                table-layout: fixed; /* Mencegah kolom bergeser/mencar saat loading vs loaded */
+            }
 
-        th:nth-child(2), td:nth-child(2) { /* Group Name / Shop Name */
-            word-wrap: break-word;
-            word-break: break-word;
-            white-space: normal;
-            min-width: 150px; 
-            max-width: 250px; /* Force long text to break instead of stretching table */
+            /* Fixed column widths for Telegram Bot Table */
+            #tab-telegram table th:nth-child(1), #tab-telegram table td:nth-child(1) { width: 17%; }
+            #tab-telegram table th:nth-child(2), #tab-telegram table td:nth-child(2) { width: 29%; }
+            #tab-telegram table th:nth-child(3), #tab-telegram table td:nth-child(3) { width: 15%; text-align: center; }
+            #tab-telegram table th:nth-child(4), #tab-telegram table td:nth-child(4) { width: 13%; text-align: center; }
+            #tab-telegram table th:nth-child(5), #tab-telegram table td:nth-child(5) { width: 12%; text-align: center; }
+            #tab-telegram table th:nth-child(6), #tab-telegram table td:nth-child(6) { width: 14%; text-align: right; }
+
+            /* Fixed column widths for WhatsApp Bot Table */
+            #tab-whatsapp table th:nth-child(1), #tab-whatsapp table td:nth-child(1) { width: 18%; }
+            #tab-whatsapp table th:nth-child(2), #tab-whatsapp table td:nth-child(2) { width: 28%; }
+            #tab-whatsapp table th:nth-child(3), #tab-whatsapp table td:nth-child(3) { width: 15%; text-align: center; }
+            #tab-whatsapp table th:nth-child(4), #tab-whatsapp table td:nth-child(4) { width: 13%; text-align: center; }
+            #tab-whatsapp table th:nth-child(5), #tab-whatsapp table td:nth-child(5) { width: 12%; text-align: center; }
+            #tab-whatsapp table th:nth-child(6), #tab-whatsapp table td:nth-child(6) { width: 14%; text-align: right; }
+
+            /* Prevent specific columns from squishing, allow name column to break */
+            th:nth-child(1), td:nth-child(1), /* ID */
+            th:nth-child(3), td:nth-child(3), /* Status / Renter */
+            th:nth-child(4), td:nth-child(4), /* Rental / Status */
+            th:nth-child(5), td:nth-child(5), /* Expiry */
+            th:nth-child(6), td:nth-child(6)  /* Actions */ {
+                white-space: nowrap;
+            }
+
+            th:nth-child(2), td:nth-child(2) { /* Group Name / Shop Name */
+                word-wrap: break-word;
+                word-break: break-word;
+                white-space: normal;
+            }
         }
 
         th {
@@ -655,6 +794,28 @@
             font-size: 0.875rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+        }
+
+        /* Smooth Table & Header Entrance Animation */
+        @keyframes tableFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        thead, tbody {
+            transition: opacity 0.25s ease;
+        }
+
+        thead.fade-in,
+        tbody.fade-in {
+            animation: tableFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            will-change: opacity, transform;
         }
 
         td { 
@@ -740,43 +901,59 @@
         .modal-body { margin-bottom: 1.5rem; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 1rem; }
 
-        /* Toast */
+        /* Toast Notification (Top-Right on Desktop/Tablet, Top on Mobile) */
         .toast-container {
             position: fixed;
-            bottom: 1.5rem;
+            top: 1.5rem;
             right: 1.5rem;
-            z-index: 9999;
+            z-index: 99999;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.6rem;
+            pointer-events: none;
         }
 
         .toast {
-            background: rgba(30, 41, 59, 0.6);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            pointer-events: auto;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(24px) saturate(190%);
+            -webkit-backdrop-filter: blur(24px) saturate(190%);
             color: var(--text-color);
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px -6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            padding: 0.85rem 1.25rem;
+            border-radius: 14px;
+            box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.22);
             border-left: 3px solid var(--primary-color);
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            animation: slideIn 0.3s forwards;
+            font-size: 0.92rem;
+            font-weight: 500;
+            max-width: 380px;
+            animation: slideInRightToast 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        .toast.success { border-left-color: var(--success-color); }
-        .toast.error { border-left-color: var(--danger-color); }
+        .toast.success {
+            border-left-color: var(--success-color);
+            box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.6), 0 0 20px -4px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+        .toast.error {
+            border-left-color: var(--danger-color);
+            box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.6), 0 0 20px -4px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
 
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
+        @keyframes slideInRightToast {
+            from { transform: translateX(110%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+        @keyframes slideInTopToast {
+            from { transform: translateY(-110%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeOutToast {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(-8px) scale(0.96); }
         }
 
         /* Utilities */
@@ -811,21 +988,20 @@
             flex-wrap: wrap;
             gap: 0.75rem;
             position: relative;
-            /* Liquid Glass with solid dark fallback base to eliminate transparent glitch */
+            /* Solid Dark Glass base to eliminate transparent glitch */
             background: linear-gradient(
                 145deg,
-                rgba(255, 255, 255, 0.06) 0%,
-                rgba(30, 41, 59, 0.55) 40%,
-                rgba(15, 23, 42, 0.6) 100%
+                rgba(30, 41, 59, 0.92) 0%,
+                rgba(15, 23, 42, 0.96) 100%
             );
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-top: 1px solid rgba(255, 255, 255, 0.2);
             border-left: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 18px;
             padding: 1.25rem 1.25rem 1rem;
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.08);
             -webkit-transform: translateZ(0);
             transform: translateZ(0);
             -webkit-backface-visibility: hidden;
@@ -863,12 +1039,16 @@
             line-height: 1.4;
         }
 
-        .spreadsheet-btn {
+        .spreadsheet-btn,
+        .copy-btn {
             transition: all 0.2s ease;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
         
-        /* Spreadsheet Button: Telegram (Blue/Cyan) */
-        .spreadsheet-btn.btn-telegram {
+        /* Action Button: Telegram (Blue/Cyan) */
+        .spreadsheet-btn.btn-telegram,
+        .copy-btn.btn-telegram {
             border: 1px solid rgba(59, 130, 246, 0.3);
             border-top: 1px solid rgba(59, 130, 246, 0.5);
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0.04) 100%);
@@ -877,18 +1057,21 @@
             color: #eff6ff;
             box-shadow: inset 0 1px 0 rgba(59, 130, 246, 0.2);
         }
-        .spreadsheet-btn.btn-telegram:hover {
+        .spreadsheet-btn.btn-telegram:hover,
+        .copy-btn.btn-telegram:hover {
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.28) 0%, rgba(59, 130, 246, 0.1) 100%);
             border-color: rgba(59, 130, 246, 0.6);
             box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
         }
-        .spreadsheet-btn.btn-telegram i {
+        .spreadsheet-btn.btn-telegram i,
+        .copy-btn.btn-telegram i {
             color: #60a5fa;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
         }
 
-        /* Spreadsheet Button: WhatsApp (Green) */
-        .spreadsheet-btn.btn-whatsapp {
+        /* Action Button: WhatsApp (Green) */
+        .spreadsheet-btn.btn-whatsapp,
+        .copy-btn.btn-whatsapp {
             border: 1px solid rgba(16, 185, 129, 0.3);
             border-top: 1px solid rgba(16, 185, 129, 0.5);
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(16, 185, 129, 0.04) 100%);
@@ -897,14 +1080,16 @@
             color: #ecfdf5;
             box-shadow: inset 0 1px 0 rgba(16, 185, 129, 0.2);
         }
-        .spreadsheet-btn.btn-whatsapp:hover {
+        .spreadsheet-btn.btn-whatsapp:hover,
+        .copy-btn.btn-whatsapp:hover {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.28) 0%, rgba(16, 185, 129, 0.1) 100%);
             border-color: rgba(16, 185, 129, 0.6);
             box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
         }
-        .spreadsheet-btn.btn-whatsapp i {
+        .spreadsheet-btn.btn-whatsapp i,
+        .copy-btn.btn-whatsapp i {
             color: #34d399;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
         }
 
         /* ── Search Bar ─────────────────────────────────────────── */
@@ -1009,11 +1194,18 @@
             }
             .tab-header-actions {
                 width: 100%;
-                justify-content: center;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
                 margin-top: 0.25rem;
             }
-            .spreadsheet-btn {
+            .spreadsheet-btn,
+            .copy-btn {
                 width: 100%;
+                justify-content: center;
+                text-align: center;
+                padding: 0.5rem 0.6rem;
+                font-size: 0.8rem;
             }
         }
 
@@ -1120,10 +1312,14 @@
                 gap: 0.85rem;
             }
             .header-icon-badge {
-                width: 48px;
-                height: 48px;
+                width: 38px;
+                height: 38px;
                 flex-shrink: 0;
                 align-self: center;
+            }
+            .header-icon-badge .header-icon-svg {
+                width: 36px;
+                height: 36px;
             }
             .header-right-group {
                 flex-direction: column;
@@ -1158,7 +1354,8 @@
                 align-items: stretch;
                 gap: 0.75rem;
             }
-            .spreadsheet-btn {
+            .spreadsheet-btn,
+            .copy-btn {
                 width: 100%;
                 justify-content: center;
                 text-align: center;
@@ -1185,10 +1382,14 @@
             thead { display: none; }
 
             tbody#tenantsTableBody tr, tbody#waGroupsTableBody tr {
-                background: rgba(30, 41, 59, 0.4);
-                backdrop-filter: blur(20px) saturate(180%);
-                -webkit-backdrop-filter: blur(20px) saturate(180%);
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: linear-gradient(
+                    145deg,
+                    rgba(30, 41, 59, 0.94) 0%,
+                    rgba(15, 23, 42, 0.98) 100%
+                );
+                backdrop-filter: blur(24px) saturate(180%);
+                -webkit-backdrop-filter: blur(24px) saturate(180%);
+                border: 1px solid rgba(255, 255, 255, 0.08);
                 border-radius: 16px;
                 margin-bottom: 1rem;
                 padding: 0.25rem 0;
@@ -1198,11 +1399,11 @@
             /* Mobile Theme Glow for Rows */
             #tab-telegram tbody tr {
                 border-top: 2px solid rgba(59, 130, 246, 0.85);
-                box-shadow: 0 -4px 14px -4px rgba(59, 130, 246, 0.35), 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+                box-shadow: 0 -4px 14px -4px rgba(59, 130, 246, 0.35), 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
             }
             #tab-whatsapp tbody tr {
                 border-top: 2px solid rgba(16, 185, 129, 0.85);
-                box-shadow: 0 -4px 14px -4px rgba(16, 185, 129, 0.35), 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+                box-shadow: 0 -4px 14px -4px rgba(16, 185, 129, 0.35), 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
             }
             tbody#tenantsTableBody tr.empty-row, tbody#waGroupsTableBody tr.empty-row { background: none; border: none; box-shadow: none; }
 
@@ -1216,7 +1417,9 @@
                 text-align: right !important;
                 white-space: normal !important; /* Force reset for mobile */
                 word-break: break-word;
+                width: 100% !important; /* Full width card on mobile */
                 max-width: none !important; /* Reset desktop column max-width */
+                box-sizing: border-box;
             }
             tbody#tenantsTableBody td .cell-value, tbody#waGroupsTableBody td .cell-value {
                 display: block;
@@ -1246,8 +1449,17 @@
             .modal-footer { flex-wrap: wrap; }
             .modal-footer .btn { flex: 1 1 auto; min-width: 120px; }
 
-            .toast-container { left: 1rem; right: 1rem; bottom: 1rem; }
-            .toast { width: 100%; }
+            .toast-container {
+                top: 1rem;
+                left: 1rem;
+                right: 1rem;
+                bottom: auto;
+            }
+            .toast {
+                width: 100%;
+                max-width: none;
+                animation: slideInTopToast 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
 
             .login-box { padding: 1.75rem 1.5rem; }
         }
@@ -1283,7 +1495,7 @@
         <header>
             <div class="header-brand">
                 <div class="header-icon-badge">
-                    <i class="fa-solid fa-layer-group"></i>
+                    <img src="/images/cloud-server.svg" alt="Cloud Server Icon" class="header-icon-svg">
                 </div>
                 <div class="header-right-group">
                     <div class="header-title-group">
@@ -1357,8 +1569,11 @@
                     </div>
                 </div>
                 <div class="tab-header-actions">
+                    <button class="refresh-btn copy-btn btn-telegram" id="btnCopyTelegram" title="Copy table data as CSV">
+                        <i class="fa-regular fa-copy"></i> <span>Copy CSV</span>
+                    </button>
                     <a href="https://docs.google.com/spreadsheets/d/13olCZtXPwaSdfCNI8GXdat_mKXPxJ-Om4vfJw81cL_I/edit?usp=sharing" target="_blank" rel="noopener" class="refresh-btn spreadsheet-btn btn-telegram" style="text-decoration: none;">
-                        <i class="fa-solid fa-file-excel"></i> Spreadsheet
+                        <i class="fa-solid fa-file-excel"></i> <span>Spreadsheet</span>
                     </a>
                 </div>
             </div>
@@ -1402,8 +1617,11 @@
                     </div>
                 </div>
                 <div class="tab-header-actions">
+                    <button class="refresh-btn copy-btn btn-whatsapp" id="btnCopyWhatsapp" title="Copy table data as CSV">
+                        <i class="fa-regular fa-copy"></i> <span>Copy CSV</span>
+                    </button>
                     <a href="https://docs.google.com/spreadsheets/d/1ZrDqkxFLZx0dK6IP8Fo2LbtqFhqjioUmIRQtyLObzdI/edit?usp=sharing" target="_blank" rel="noopener" class="refresh-btn spreadsheet-btn btn-whatsapp" style="text-decoration: none;">
-                        <i class="fa-solid fa-file-excel"></i> Spreadsheet
+                        <i class="fa-solid fa-file-excel"></i> <span>Spreadsheet</span>
                     </a>
                 </div>
             </div>

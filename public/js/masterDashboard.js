@@ -25,7 +25,9 @@ function invalidateStatsCache() {
     _statsCacheTime.whatsapp = 0;
     console.log('[Cache] Stats cache invalidated.');
 }
-const isPreviewMode = new URLSearchParams(window.location.search).get('preview') === 'true';
+const urlPreviewParam = new URLSearchParams(window.location.search).get('preview');
+const isPreviewMode = urlPreviewParam === 'true';
+const isPreviewLoginMode = urlPreviewParam === 'login';
 
 const SVG_SPINNER = `<svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve"><path fill="currentColor" d="M10,40c0,0,0-0.4,0-1.1c0-0.3,0-0.8,0-1.3c0-0.3,0-0.5,0-0.8c0-0.3,0.1-0.6,0.1-0.9c0.1-0.6,0.1-1.4,0.2-2.1
 		c0.2-0.8,0.3-1.6,0.5-2.5c0.2-0.9,0.6-1.8,0.8-2.8c0.3-1,0.8-1.9,1.2-3c0.5-1,1.1-2,1.7-3.1c0.7-1,1.4-2.1,2.2-3.1
@@ -156,6 +158,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchTgInput) initTypingPlaceholder(searchTgInput, ["Cari Bot ID...", "Cari Shop Name...", "Cari @username..."]);
     if (searchWaInput) initTypingPlaceholder(searchWaInput, ["Cari Group ID...", "Cari Group Name...", "Cari Renter Name..."]);
 
+    // ── Copy CSV Event Listeners ────────────────────────────────────────────────
+    const btnCopyTg = document.getElementById('btnCopyTelegram');
+    if (btnCopyTg) btnCopyTg.addEventListener('click', () => handleCopyCsv('telegram'));
+
+    const btnCopyWa = document.getElementById('btnCopyWhatsapp');
+    if (btnCopyWa) btnCopyWa.addEventListener('click', () => handleCopyCsv('whatsapp'));
+
 
 
     async function handleRefresh() {
@@ -172,19 +181,50 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Refresh error:', err);
             showToast('Failed to refresh data', 'error');
         } finally {
-            setTimeout(() => {
-                if (icon) icon.classList.remove('fa-spin');
-                if (btnRefresh) btnRefresh.disabled = false;
-            }, 600);
+            if (icon) icon.classList.remove('fa-spin');
+            if (btnRefresh) btnRefresh.disabled = false;
         }
+    }
+
+    function handleLogout() {
+        localStorage.removeItem('master_secret');
+        adminSecret = '';
+        transitionAppToLogin();
+        showToast('Logged out successfully', 'success');
+    }
+
+    if (isPreviewLoginMode) {
+        console.log('[MasterDashboard] Preview Login mode — displaying login screen');
+        loginOverlay.style.display = 'flex';
+        mainApp.style.display = 'none';
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+            }
+            setTimeout(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-lock"></i> Access Dashboard';
+                }
+                showToast('Login successful — Welcome to Master Dashboard', 'success');
+                transitionLoginToApp();
+                loadStats();
+                loadActiveTab();
+            }, 800);
+        });
+        if (btnLogout) btnLogout.addEventListener('click', handleLogout);
+        if (btnRefresh) btnRefresh.addEventListener('click', handleRefresh);
+        return;
     }
 
     if (isPreviewMode) {
         console.log('[MasterDashboard] Preview mode — mock data loaded');
         loadStats();
-        loginForm.addEventListener('submit', (e) => e.preventDefault());
-        btnLogout.addEventListener('click', () => location.reload());
-        btnRefresh.addEventListener('click', handleRefresh);
+        if (btnLogout) btnLogout.addEventListener('click', handleLogout);
+        if (btnRefresh) btnRefresh.addEventListener('click', handleRefresh);
         return;
     }
 
@@ -214,8 +254,8 @@ document.addEventListener('DOMContentLoaded', () => {
         loadStats().then(success => {
             if (success) {
                 localStorage.setItem('master_secret', adminSecret);
-                loginOverlay.style.display = 'none';
-                mainApp.style.display = 'block';
+                showToast('Login successful — Welcome to Master Dashboard', 'success');
+                transitionLoginToApp();
                 loadActiveTab();
             } else {
                 showToast('Invalid Secret Key', 'error');
@@ -225,12 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    btnLogout.addEventListener('click', () => {
-        localStorage.removeItem('master_secret');
-        location.reload();
-    });
-
-    btnRefresh.addEventListener('click', handleRefresh);
+    if (btnLogout) btnLogout.addEventListener('click', handleLogout);
+    if (btnRefresh) btnRefresh.addEventListener('click', handleRefresh);
 });
 
 // ── Typing Animation Logic ──────────────────────────────────────────────────
@@ -347,9 +383,9 @@ function updateStatsHeader() {
 
 function loadActiveTab() {
     if (activeTab === 'whatsapp') {
-        loadWaGroups();
+        return loadWaGroups();
     } else {
-        loadTenants();
+        return loadTenants();
     }
 }
 
@@ -439,8 +475,7 @@ function renderStats(s) {
 async function loadStats() {
     if (isPreviewMode) {
         if (loginOverlay.style.display !== 'none') {
-            loginOverlay.style.display = 'none';
-            mainApp.style.display = 'block';
+            transitionLoginToApp();
             loadActiveTab();
         }
         renderStats(activeTab === 'whatsapp' ? MOCK_WA_STATS : MOCK_STATS);
@@ -472,8 +507,7 @@ async function loadStats() {
         console.log(`[Cache] Stats cache refreshed for tab: ${tab}`);
 
         if (loginOverlay.style.display !== 'none') {
-            loginOverlay.style.display = 'none';
-            mainApp.style.display = 'block';
+            transitionLoginToApp();
             loadActiveTab();
         }
 
@@ -487,7 +521,10 @@ async function loadStats() {
 
 // ── Telegram Bot Tenants ─────────────────────────────────────────────────────
 function renderTenants(tenants) {
+    const table = document.querySelector('#tab-telegram table');
+    const thead = table?.querySelector('thead');
     const tbody = document.getElementById('tenantsTableBody');
+    if (thead) thead.classList.remove('fade-in');
     tbody.classList.remove('fade-in');
 
     if (tenants.length === 0) {
@@ -567,6 +604,7 @@ function renderTenants(tenants) {
     });
 
     requestAnimationFrame(() => {
+        if (thead) thead.classList.add('fade-in');
         tbody.classList.add('fade-in');
     });
 }
@@ -624,7 +662,10 @@ function applyFilterAndSortWaGroups() {
 const minDelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function loadTenants() {
+    const table = document.querySelector('#tab-telegram table');
+    const thead = table?.querySelector('thead');
     const tbody = document.getElementById('tenantsTableBody');
+    if (thead) thead.classList.remove('fade-in');
     tbody.classList.remove('fade-in');
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${SVG_SPINNER}<br><span class="loading-text">Loading data...</span></td></tr>`;
 
@@ -656,7 +697,10 @@ async function loadTenants() {
 
 // ── WhatsApp Bot Groups ──────────────────────────────────────────────────────
 function renderWaGroups(groups) {
+    const table = document.querySelector('#tab-whatsapp table');
+    const thead = table?.querySelector('thead');
     const tbody = document.getElementById('waGroupsTableBody');
+    if (thead) thead.classList.remove('fade-in');
     tbody.classList.remove('fade-in');
 
     if (groups.length === 0) {
@@ -743,12 +787,16 @@ function renderWaGroups(groups) {
     });
 
     requestAnimationFrame(() => {
+        if (thead) thead.classList.add('fade-in');
         tbody.classList.add('fade-in');
     });
 }
 
 async function loadWaGroups() {
+    const table = document.querySelector('#tab-whatsapp table');
+    const thead = table?.querySelector('thead');
     const tbody = document.getElementById('waGroupsTableBody');
+    if (thead) thead.classList.remove('fade-in');
     tbody.classList.remove('fade-in');
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${SVG_SPINNER}<br><span class="loading-text">Loading data...</span></td></tr>`;
 
@@ -775,6 +823,196 @@ async function loadWaGroups() {
     } catch (err) {
         showToast(err.message, 'error');
         tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--danger-color)"><i class="fa-solid fa-triangle-exclamation"></i><br>Failed to load data</td></tr>`;
+    }
+}
+
+// ── CSV Export & Clipboard Logic ─────────────────────────────────────────────
+function csvEscape(val) {
+    if (val === null || val === undefined) return '""';
+    const str = String(val).replace(/"/g, '""');
+    return `"${str}"`;
+}
+
+async function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+    }
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    return new Promise((resolve, reject) => {
+        const successful = document.execCommand('copy');
+        textArea.remove();
+        if (successful) resolve();
+        else reject(new Error('Copy command failed'));
+    });
+}
+
+function generateTelegramCsv(tenants) {
+    const headers = ['Bot ID', 'Shop Name', 'Username', 'Status', 'Member Since', 'Rental Plan', 'Expiry Date', 'Remaining Days'];
+    const rows = tenants.map(t => {
+        const remainingDays = t.subscription?.expiryDate 
+            ? calculateRemainingDaysWib(t.subscription.expiryDate) 
+            : (t.subscription?.remainingDays ?? 0);
+        const isExpired = Boolean(t.subscription?.isExpired || (remainingDays !== null && remainingDays < 0));
+        const displayStatus = (t.status === 'EXPIRED' || isExpired) ? 'INACTIVE' : (t.status || 'ACTIVE');
+        const remainingText = formatRemainingDaysText(remainingDays, isExpired);
+
+        let memberSince = '-';
+        if (t.created_at || t.createdAt) {
+            const d = new Date(t.created_at || t.createdAt);
+            if (!isNaN(d.getTime())) {
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yyyy = d.getFullYear();
+                memberSince = `${dd}/${mm}/${yyyy}`;
+            }
+        }
+
+        let expiryDate = '-';
+        if (t.subscription?.expiryDate) {
+            const d = new Date(t.subscription.expiryDate);
+            if (!isNaN(d.getTime())) {
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yyyy = d.getFullYear();
+                expiryDate = `${dd}/${mm}/${yyyy}`;
+            }
+        }
+
+        return [
+            csvEscape(t.bot_id || ''),
+            csvEscape(t.shop_name || ''),
+            csvEscape(t.username ? `@${t.username}` : ''),
+            csvEscape(displayStatus),
+            csvEscape(memberSince),
+            csvEscape(t.subscription?.plan || 'Standard'),
+            csvEscape(expiryDate),
+            csvEscape(remainingText)
+        ].join(',');
+    });
+
+    return [headers.map(h => csvEscape(h)).join(','), ...rows].join('\r\n');
+}
+
+function generateWaCsv(groups) {
+    const headers = ['Group ID', 'Group Name', 'Renter Name', 'Status', 'Member Since', 'Expiry Date', 'Remaining Days'];
+    const rows = groups.map(g => {
+        const displayGroupId = g.target_group_id || g.store_group_id || g.id || '';
+        const isActive = Boolean(g.is_active);
+        let isExpired = false;
+        let remainingDays = null;
+        let remainingText = '-';
+
+        if (g.paid_until) {
+            remainingDays = calculateRemainingDaysWib(g.paid_until);
+            if (remainingDays !== null) {
+                if (remainingDays < 0) isExpired = true;
+                remainingText = formatRemainingDaysText(remainingDays, isExpired);
+            }
+        }
+
+        let statusText = isActive ? 'ACTIVE' : 'INACTIVE';
+        if (isExpired) statusText = 'EXPIRED';
+
+        let memberSince = '-';
+        if (g.joined_at) {
+            const d = new Date(g.joined_at);
+            if (!isNaN(d.getTime())) {
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yyyy = d.getFullYear();
+                memberSince = `${dd}/${mm}/${yyyy}`;
+            }
+        }
+
+        let expiryDisplay = '-';
+        if (g.paid_until) {
+            const parts = g.paid_until.split('-');
+            if (parts.length === 3) {
+                expiryDisplay = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            } else {
+                expiryDisplay = g.paid_until;
+            }
+        }
+
+        return [
+            csvEscape(displayGroupId),
+            csvEscape(g.group_name || ''),
+            csvEscape(g.renter_name || '-'),
+            csvEscape(statusText),
+            csvEscape(memberSince),
+            csvEscape(expiryDisplay),
+            csvEscape(remainingText)
+        ].join(',');
+    });
+
+    return [headers.map(h => csvEscape(h)).join(','), ...rows].join('\r\n');
+}
+
+async function handleCopyCsv(type) {
+    const btn = type === 'telegram' ? document.getElementById('btnCopyTelegram') : document.getElementById('btnCopyWhatsapp');
+    let csvData = '';
+
+    if (type === 'telegram') {
+        const query = (document.getElementById('searchTelegram')?.value || '').toLowerCase().trim();
+        let list = _currentTenants;
+        if (query) {
+            list = list.filter(t =>
+                String(t.bot_id || '').toLowerCase().includes(query) ||
+                String(t.shop_name || '').toLowerCase().includes(query) ||
+                String(t.username || '').toLowerCase().includes(query)
+            );
+        }
+        list = sortTenantsByExpiry(list);
+        if (!list || list.length === 0) {
+            showToast('No data to copy', 'error');
+            return;
+        }
+        csvData = generateTelegramCsv(list);
+    } else {
+        const query = (document.getElementById('searchWhatsapp')?.value || '').toLowerCase().trim();
+        let list = _currentWaGroups;
+        if (query) {
+            list = list.filter(g => {
+                const gid = String(g.target_group_id || g.store_group_id || g.id || '').toLowerCase();
+                return (
+                    gid.includes(query) ||
+                    String(g.group_name || '').toLowerCase().includes(query) ||
+                    String(g.renter_name || '').toLowerCase().includes(query)
+                );
+            });
+        }
+        list = sortWaGroupsByExpiry(list);
+        if (!list || list.length === 0) {
+            showToast('No data to copy', 'error');
+            return;
+        }
+        csvData = generateWaCsv(list);
+    }
+
+    try {
+        await copyToClipboard(csvData);
+
+        if (btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check" style="color: #34d399;"></i> <span>Copied!</span>';
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }, 1800);
+        }
+
+        showToast('CSV Copied!', 'success');
+    } catch (err) {
+        console.error('Copy CSV error:', err);
+        showToast('Failed to copy CSV', 'error');
     }
 }
 
@@ -1114,6 +1352,68 @@ async function executeWaDelete(groupId) {
 }
 
 // ── Modal & Toast UI Helpers ────────────────────────────────────────────────
+function transitionLoginToApp() {
+    const overlay = document.getElementById('loginOverlay') || loginOverlay;
+    const app = document.getElementById('mainApp') || mainApp;
+
+    if (!overlay || overlay.style.display === 'none') {
+        if (app) {
+            app.style.display = 'block';
+            app.classList.add('app-enter');
+        }
+        return;
+    }
+
+    overlay.classList.add('fade-out');
+    if (app) {
+        app.style.display = 'block';
+        app.classList.remove('app-exit');
+        app.classList.add('app-enter');
+    }
+
+    setTimeout(() => {
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.classList.remove('fade-out');
+        }
+    }, 450);
+}
+
+function transitionAppToLogin() {
+    const overlay = document.getElementById('loginOverlay') || loginOverlay;
+    const app = document.getElementById('mainApp') || mainApp;
+
+    if (app) {
+        app.classList.remove('app-enter');
+        app.classList.add('app-exit');
+    }
+
+    if (overlay) {
+        overlay.classList.remove('fade-out');
+        overlay.style.display = 'flex';
+        overlay.classList.add('fade-in');
+
+        // Reset password input & verify button state
+        const secretInput = document.getElementById('adminSecret');
+        if (secretInput) secretInput.value = '';
+        const btn = document.getElementById('loginBtn');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-lock"></i> Access Dashboard';
+        }
+    }
+
+    setTimeout(() => {
+        if (app) {
+            app.style.display = 'none';
+            app.classList.remove('app-exit');
+        }
+        if (overlay) {
+            overlay.classList.remove('fade-in');
+        }
+    }, 450);
+}
+
 const modal = document.getElementById('actionModal');
 function openModal() { modal.classList.add('active'); }
 function closeModal() { modal.classList.remove('active'); }
@@ -1135,7 +1435,7 @@ function showToast(message, type = 'success') {
     container.appendChild(toast);
 
     setTimeout(() => {
-        toast.style.animation = 'fadeOut 0.3s forwards';
+        toast.style.animation = 'fadeOutToast 0.3s forwards';
         setTimeout(() => toast.remove(), 300);
     }, 4000);
 }
