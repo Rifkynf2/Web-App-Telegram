@@ -316,9 +316,17 @@ function setupTabListeners() {
             const targetTab = btn.getAttribute('data-tab');
             if (targetTab === activeTab) return;
 
-            const oldIndex = TAB_ORDER.indexOf(activeTab);
-            const newIndex = TAB_ORDER.indexOf(targetTab);
-            const animClass = newIndex > oldIndex ? 'slide-in-right' : 'slide-in-left';
+            const oldPane = document.getElementById(`tab-${activeTab}`);
+            const newPane = document.getElementById(`tab-${targetTab}`);
+
+            // 1. Simpan posisi scroll saat ini & tahan tinggi konten agar halaman tidak kolaps (mencegah scroll lompat ke atas)
+            const savedScrollY = window.scrollY;
+            if (oldPane && newPane) {
+                const oldHeight = oldPane.offsetHeight;
+                if (oldHeight > 0) {
+                    newPane.style.minHeight = `${oldHeight}px`;
+                }
+            }
 
             activeTab = targetTab;
             tabBtns.forEach(b => b.classList.toggle('active', b === btn));
@@ -330,18 +338,30 @@ function setupTabListeners() {
             }
 
             document.querySelectorAll('.tab-pane').forEach(pane => {
-                pane.classList.remove('slide-in-right', 'slide-in-left');
+                pane.classList.remove('tab-fade-in');
                 const isActive = pane.id === `tab-${activeTab}`;
                 pane.classList.toggle('active', isActive);
                 
                 if (isActive) {
-                    pane.classList.add(animClass);
+                    pane.classList.add('tab-fade-in');
                     pane.addEventListener('animationend', function handler() {
-                        pane.classList.remove(animClass);
+                        pane.classList.remove('tab-fade-in');
                         pane.removeEventListener('animationend', handler);
                     }, { once: true });
                 }
             });
+
+            // 2. Auto-scroll halus (Smooth Auto-Scroll) ke posisi tab & tabel
+            if (mainTabs) {
+                const rect = mainTabs.getBoundingClientRect();
+                const targetY = window.scrollY + rect.top - 20; // 20px padding di atas tab
+                if (window.scrollY > targetY) {
+                    window.scrollTo({
+                        top: Math.max(0, targetY),
+                        behavior: 'smooth'
+                    });
+                }
+            }
 
             updateStatsHeader();
             loadStats();
@@ -519,22 +539,58 @@ async function loadStats() {
     }
 }
 
+// ── Scroll & Viewport Observer (Refrensi: Admin Panel Card Scroll) ───────────
+let _tableObserver = null;
+let _tableStaggerIdx = 0;
+let _tableStaggerReset = null;
+
+function observeTableRows(tbody) {
+  _tableStaggerIdx = 0;
+  if (!_tableObserver) {
+    _tableObserver = new IntersectionObserver(
+      (entries) => {
+        const intersecting = entries.filter(e => e.isIntersecting);
+        if (intersecting.length === 0) return;
+
+        intersecting.sort((a, b) => (a.target.sectionRowIndex ?? 0) - (b.target.sectionRowIndex ?? 0));
+
+        intersecting.forEach((entry) => {
+          const el = entry.target;
+          const delay = _tableStaggerIdx * 90;
+          el.style.animationDelay = `${delay}ms`;
+          el.querySelectorAll('td').forEach(td => {
+            td.style.animationDelay = `${delay}ms`;
+          });
+          el.classList.add('visible');
+          _tableStaggerIdx++;
+          _tableObserver.unobserve(el);
+          clearTimeout(_tableStaggerReset);
+          _tableStaggerReset = setTimeout(() => {
+            _tableStaggerIdx = 0;
+          }, 400);
+        });
+      },
+      { threshold: 0.05, rootMargin: '0px 0px 50px 0px' }
+    );
+  }
+
+  // Only observe rows not yet visible
+  tbody.querySelectorAll('.table-row-item:not(.visible)').forEach((el) => _tableObserver.observe(el));
+}
+
 // ── Telegram Bot Tenants ─────────────────────────────────────────────────────
 function renderTenants(tenants) {
-    const table = document.querySelector('#tab-telegram table');
-    const thead = table?.querySelector('thead');
     const tbody = document.getElementById('tenantsTableBody');
-    if (thead) thead.classList.remove('fade-in');
-    tbody.classList.remove('fade-in');
 
     if (tenants.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-box-open"></i><br>No tenants found.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6" class="empty-state"><i class="fa-solid fa-box-open"></i><br>No tenants found.</td></tr>';
         return;
     }
 
     tbody.innerHTML = '';
     tenants.forEach(t => {
         const tr = document.createElement('tr');
+        tr.className = 'table-row-item';
 
         const expiry = t.subscription?.expiryDate ? new Date(t.subscription.expiryDate).toLocaleDateString('id-ID') : '-';
         const memberSinceHtml = formatMemberSinceHtml(t.created_at || t.createdAt);
@@ -604,8 +660,9 @@ function renderTenants(tenants) {
     });
 
     requestAnimationFrame(() => {
-        if (thead) thead.classList.add('fade-in');
-        tbody.classList.add('fade-in');
+        observeTableRows(tbody);
+        const pane = tbody.closest('.tab-pane');
+        if (pane) pane.style.minHeight = '';
     });
 }
 
@@ -662,15 +719,11 @@ function applyFilterAndSortWaGroups() {
 const minDelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function loadTenants() {
-    const table = document.querySelector('#tab-telegram table');
-    const thead = table?.querySelector('thead');
     const tbody = document.getElementById('tenantsTableBody');
-    if (thead) thead.classList.remove('fade-in');
-    tbody.classList.remove('fade-in');
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${SVG_SPINNER}<br><span class="loading-text">Loading data...</span></td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state">${SVG_SPINNER}<br><span class="loading-text">Loading data...</span></td></tr>`;
 
     if (isPreviewMode) {
-        await minDelay(3000);
+        await minDelay(1000);
         _currentTenants = MOCK_TENANTS;
         applyFilterAndSortTenants();
         return;
@@ -681,7 +734,7 @@ async function loadTenants() {
             fetch(`${API_BASE}/tenants?limit=100`, {
                 headers: { 'X-Admin-Secret': adminSecret }
             }),
-            minDelay(3000)
+            minDelay(600)
         ]);
         const data = await res.json();
 
@@ -691,20 +744,16 @@ async function loadTenants() {
         applyFilterAndSortTenants();
     } catch (err) {
         showToast(err.message, 'error');
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--danger-color)"><i class="fa-solid fa-triangle-exclamation"></i><br>Failed to load data</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state" style="color:var(--danger-color)"><i class="fa-solid fa-triangle-exclamation"></i><br>Failed to load data</td></tr>`;
     }
 }
 
 // ── WhatsApp Bot Groups ──────────────────────────────────────────────────────
 function renderWaGroups(groups) {
-    const table = document.querySelector('#tab-whatsapp table');
-    const thead = table?.querySelector('thead');
     const tbody = document.getElementById('waGroupsTableBody');
-    if (thead) thead.classList.remove('fade-in');
-    tbody.classList.remove('fade-in');
 
     if (groups.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-box-open"></i><br>No WhatsApp groups found.</td></tr>';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6" class="empty-state"><i class="fa-solid fa-box-open"></i><br>No WhatsApp groups found.</td></tr>';
         return;
     }
 
@@ -712,6 +761,7 @@ function renderWaGroups(groups) {
 
     groups.forEach(g => {
         const tr = document.createElement('tr');
+        tr.className = 'table-row-item';
 
         const displayGroupId = g.target_group_id || g.store_group_id || g.id;
         const memberSinceHtml = formatMemberSinceHtml(g.joined_at);
@@ -787,21 +837,18 @@ function renderWaGroups(groups) {
     });
 
     requestAnimationFrame(() => {
-        if (thead) thead.classList.add('fade-in');
-        tbody.classList.add('fade-in');
+        observeTableRows(tbody);
+        const pane = tbody.closest('.tab-pane');
+        if (pane) pane.style.minHeight = '';
     });
 }
 
 async function loadWaGroups() {
-    const table = document.querySelector('#tab-whatsapp table');
-    const thead = table?.querySelector('thead');
     const tbody = document.getElementById('waGroupsTableBody');
-    if (thead) thead.classList.remove('fade-in');
-    tbody.classList.remove('fade-in');
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${SVG_SPINNER}<br><span class="loading-text">Loading data...</span></td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state">${SVG_SPINNER}<br><span class="loading-text">Loading data...</span></td></tr>`;
 
     if (isPreviewMode) {
-        await minDelay(3000);
+        await minDelay(1000);
         _currentWaGroups = MOCK_WA_GROUPS;
         applyFilterAndSortWaGroups();
         return;
@@ -812,7 +859,7 @@ async function loadWaGroups() {
             fetch(`${API_BASE}/wa-groups?action=list`, {
                 headers: { 'X-Admin-Secret': adminSecret }
             }),
-            minDelay(3000)
+            minDelay(600)
         ]);
         const data = await res.json();
 
@@ -822,7 +869,7 @@ async function loadWaGroups() {
         applyFilterAndSortWaGroups();
     } catch (err) {
         showToast(err.message, 'error');
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--danger-color)"><i class="fa-solid fa-triangle-exclamation"></i><br>Failed to load data</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state" style="color:var(--danger-color)"><i class="fa-solid fa-triangle-exclamation"></i><br>Failed to load data</td></tr>`;
     }
 }
 
