@@ -167,6 +167,9 @@ export async function initBuyerApp() {
     return;
   }
 
+  // Initialize navigation glider immediately so there is no layout lag or glitch line during loading
+  bindNavEvents();
+
   // Preview tanpa bot_id → pakai mock data, skip semua API/Supabase calls
   if (isPreviewMode && !hasBotId) {
     shopSettings.name = 'Preview Toko';
@@ -467,7 +470,10 @@ function closeDetailPage() {
     }, 320);
   }
   if (detailBottomBar) detailBottomBar.classList.add('hidden');
-  if (bottomNav) bottomNav.classList.remove('hidden');
+  if (bottomNav) {
+    bottomNav.classList.remove('hidden');
+    updateNavIndicator(false);
+  }
 
   // Reset state
   activeProduct = null;
@@ -702,7 +708,10 @@ function bindCheckoutModalEvents() {
   if (btnCloseModal) {
     btnCloseModal.addEventListener('click', () => {
       checkoutModal?.classList.replace('flex', 'hidden');
-      if (bottomNav) bottomNav.classList.remove('hidden');
+      if (bottomNav) {
+        bottomNav.classList.remove('hidden');
+        updateNavIndicator(false);
+      }
     });
   }
 }
@@ -712,23 +721,37 @@ function updateNavIndicator(animateBalloon = false) {
   const indicator = document.getElementById('nav-indicator');
   if (!activeBtn || !indicator) return;
 
+  const width = activeBtn.offsetWidth;
+  if (!width) return;
+
   if (animateBalloon) {
     indicator.classList.remove('glider-balloon');
     void indicator.offsetWidth; // Force reflow to re-trigger balloon animation
     indicator.classList.add('glider-balloon');
   }
 
-  indicator.style.width = `${activeBtn.offsetWidth}px`;
+  indicator.style.width = `${width}px`;
   indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+  indicator.classList.add('ready');
+  indicator.style.opacity = '1';
 }
 
+let isNavBound = false;
 function bindNavEvents() {
-  if (navHome) navHome.addEventListener('click', () => switchTab('home'));
-  if (navProfile) navProfile.addEventListener('click', () => switchTab('profile'));
+  if (!isNavBound) {
+    isNavBound = true;
+    if (navHome) navHome.addEventListener('click', () => switchTab('home'));
+    if (navProfile) navProfile.addEventListener('click', () => switchTab('profile'));
 
-  window.addEventListener('resize', () => updateNavIndicator(false));
+    window.addEventListener('resize', () => updateNavIndicator(false));
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => updateNavIndicator(false));
+    }
+  }
+
   requestAnimationFrame(() => updateNavIndicator(false));
-  setTimeout(() => updateNavIndicator(false), 100);
+  setTimeout(() => updateNavIndicator(false), 50);
+  setTimeout(() => updateNavIndicator(false), 150);
 }
 
 // ── Tab Switching ──────────────────────────────────────────────────────────────

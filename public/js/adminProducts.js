@@ -604,13 +604,12 @@ function addTierRow(container, tier = null) {
 
 function addVariantBlock(variant = null) {
   const div = document.createElement('div');
-  div.className = 'liquid-glass p-4 flex flex-col gap-3 relative';
+  div.className = 'liquid-glass glow-top-indigo p-4 flex flex-col gap-3 relative';
   if (variant && variant.id) div.setAttribute('data-id', variant.id);
 
   const defaultData = variant || { name: '', price: '', fulfillment: '', description: '', min_qty: 1, max_qty: 999, qty_per_purchase: 1, snk: '', is_active: true };
 
   div.innerHTML = `
-        <div class="absolute top-0 right-0 left-0 h-1 bg-indigo-500/50"></div>
         <button class="absolute top-3 right-3 text-red-400 hover:text-red-300 transition-colors btn-remove-variant" title="Hapus Varian">
             <i class="fa-solid fa-circle-minus"></i>
         </button>
