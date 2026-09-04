@@ -2276,3 +2276,65 @@ html[data-theme="light"] .admin-stock-item .btn-del-item:hover {
   background: #dc2626 !important;
   color: #ffffff !important;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   TELEGRAM FALLBACK - iOS LIQUID GLASS STYLE
+   ══════════════════════════════════════════════════════════════ */
+.ios-glass-card {
+  background: rgba(13, 18, 36, 0.68) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  box-shadow:
+    0 30px 60px -15px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.28) !important;
+}
+
+.ios-glass-pill {
+  background: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+.ios-glass-pill:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CARD RUNNING BORDER (BORDER ONLY - ZERO BACKGROUND BLEED)
+   ══════════════════════════════════════════════════════════════ */
+.card-running-border {
+  position: relative !important;
+  border: none !important;
+}
+
+.card-running-border::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px; /* Exact 1.5px border outline */
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.08) 20%,
+    rgba(56, 189, 248, 0.9) 38%,
+    rgba(129, 140, 248, 1) 50%,
+    rgba(168, 85, 247, 0.9) 62%,
+    rgba(255, 255, 255, 0.08) 80%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation: slideBorder 6s linear infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 20;
+}
+
+
+

@@ -38,58 +38,86 @@
   <body
     class="bg-linear-to-br from-[#020617] via-[#0f0c29] to-[#020617] text-gray-100 min-h-screen text-sm antialiased relative"
     style="font-family: &quot;Outfit&quot;, sans-serif">
-    <!-- Telegram Fallback / Landing Page (Visible by default) -->
+    <!-- Telegram Fallback / Simple Elegant iOS Liquid Glass -->
     <div
       id="telegram-fallback"
-      class="fixed inset-0 z-1000 bg-[#020617] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-      <div
-        class="absolute inset-0 overflow-hidden pointer-events-none opacity-50">
-        <div
-          class="absolute top-[10%] left-[10%] w-[80%] h-[80%] rounded-full bg-blue-600/10 blur-[150px] animate-pulse"></div>
-        <div
-          class="absolute bottom-[10%] right-[10%] w-[60%] h-[60%] rounded-full bg-indigo-600/10 blur-[150px]"></div>
+      class="fixed inset-0 z-1000 bg-[#030712] text-gray-100 flex items-center justify-center p-4 sm:p-6 overflow-y-auto selection:bg-indigo-500 selection:text-white"
+      style="font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;">
+      
+      <!-- Ambient Lighting Glow (Subtle & Calming) -->
+      <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[10%] left-1/2 -translate-x-1/2 w-[500px] h-[350px] rounded-full bg-linear-to-b from-indigo-600/20 via-purple-600/10 to-transparent blur-[130px]"></div>
+        <div class="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-[400px] h-[300px] rounded-full bg-blue-600/10 blur-[130px]"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:24px_24px] opacity-60"></div>
       </div>
 
-      <div
-        class="liquid-glass max-w-sm p-10 relative z-10 flex flex-col items-center shadow-2xl">
-        <div
-          class="w-24 h-24 rounded-3xl bg-linear-to-tr from-indigo-600 to-purple-600 flex items-center justify-center mb-8 shadow-xl shadow-indigo-500/20 relative">
-          <i class="fa-solid fa-crown text-4xl text-white"></i>
-          <div
-            class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center border-2 border-[#020617] animate-bounce">
-            <i class="fa-solid fa-check text-[10px] text-white"></i>
+      <!-- Center Card: Simple & Elegant iOS Liquid Glass with Masked Running Border -->
+      <div class="relative z-10 w-full max-w-md my-auto">
+        <div class="ios-glass-card card-running-border rounded-[32px] p-6 sm:p-9 text-center relative overflow-hidden shadow-2xl">
+          
+          <!-- Specular Highlight Line on Top Border -->
+          <div class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/40 to-transparent"></div>
+          
+          <!-- Official Logo Emblem (iOS Squircle) -->
+          <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-[22px] sm:rounded-[26px] p-1.5 bg-white/10 border border-white/20 shadow-xl shadow-indigo-500/20 mx-auto mb-5 relative group">
+            <img
+              src="images/Logo RNFBOT.webp"
+              alt="RNF BOT"
+              class="w-full h-full object-cover rounded-[18px] sm:rounded-[22px] bg-white shadow-inner" />
           </div>
-        </div>
 
-        <h1
-          class="text-3xl font-black text-white mb-4 tracking-tighter uppercase leading-tight">
-          Solusi Digital<br /><span class="text-indigo-400">Website & Bot</span>
-        </h1>
-        <p class="text-gray-400 text-sm mb-10 leading-relaxed font-medium px-2">
-          Ingin memiliki sistem Toko Online Otomatis & Bot Telegram profesional
-          seperti ini? Tingkatkan pendapatan bisnis Anda sekarang.
-        </p>
+          <!-- Status Indicator Pill -->
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.06] border border-white/10 text-gray-300 text-[11px] font-semibold mb-4">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="tracking-wide">Ekosistem Bot Telegram</span>
+          </div>
 
-        <a
-          href="https://t.me/rnf_shopp"
-          class="w-full bg-white text-[#050b18] font-black py-4.5 px-8 rounded-2xl transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-white/10 flex items-center justify-center gap-3 decoration-0 mb-4">
-          <i class="fa-solid fa-comment-dots"></i>
-          <span>HUBUNGI CREATOR</span>
-        </a>
+          <!-- Headline -->
+          <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug mb-3">
+            Otomasi Toko Digital &amp;<br />
+            <span class="text-transparent bg-clip-text bg-linear-to-r from-sky-400 via-sky-300 to-indigo-400 drop-shadow-[0_2px_12px_rgba(56,189,248,0.25)]">
+              Bot Telegram
+            </span>
+          </h1>
 
-        <a
-          href="https://t.me/rnf_shopp"
-          class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] hover:text-indigo-400 transition-colors"
-          >Portfolio & Harga Service</a
-        >
-
-        <div class="mt-8 pt-6 border-t border-white/5 w-full">
-          <p
-            class="text-[10px] text-gray-600 font-bold uppercase tracking-widest">
-            RNF BOT System
+          <!-- Description -->
+          <p class="text-gray-300/80 text-xs sm:text-sm font-normal leading-relaxed max-w-xs sm:max-w-sm mx-auto mb-7">
+            Aplikasi toko dan sistem transaksi ini terintegrasi langsung di dalam Telegram. Kunjungi website resmi kami untuk informasi penyewaan bot dan fitur lengkap lainnya.
           </p>
+
+          <!-- Buttons: Clean, Focused, Only 2 Buttons -->
+          <div class="flex flex-col gap-2.5 w-full">
+            <!-- Primary Action (rnfbot.my.id) -->
+            <a
+              href="https://rnfbot.my.id"
+              class="group w-full py-3.5 px-5 rounded-2xl bg-linear-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30 active:scale-[0.98] transition-all duration-200 decoration-0">
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs text-indigo-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+              <span>Kunjungi Website Resmi</span>
+            </a>
+
+            <!-- Secondary Action (rnfbot.my.id/docs) -->
+            <a
+              href="https://rnfbot.my.id/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="w-full py-3 px-5 rounded-2xl ios-glass-pill text-gray-200 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 hover:text-white hover:border-white/20 active:scale-[0.98] transition-all duration-200 decoration-0 border border-white/10">
+              <i class="fa-solid fa-book-open text-xs text-indigo-400"></i>
+              <span>Dokumentasi Sistem</span>
+            </a>
+          </div>
+
+          <!-- Subtle Footer Note -->
+          <div class="mt-6 pt-5 border-t border-white/[0.08] flex items-center justify-between text-[11px] text-gray-400">
+            <a href="https://t.me/rnf_shopp" target="_blank" rel="noopener noreferrer" class="hover:text-gray-300 transition-colors flex items-center gap-1.5">
+              <i class="fa-brands fa-telegram text-sky-400"></i>
+              <span>Hubungi Creator</span>
+            </a>
+            <span>&copy; 2026 RNF BOT SYSTEM</span>
+          </div>
+
         </div>
       </div>
+
     </div>
 
     <!-- Background Dot Matrix & Ambient Glow -->
