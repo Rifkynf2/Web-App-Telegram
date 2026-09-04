@@ -430,9 +430,9 @@ async function renderStockItems() {
         stockListContainer.innerHTML = '';
         if (items.length === 0) {
             stockListContainer.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-6 text-gray-500 gap-1.5 opacity-70">
-                    <i class="fa-solid fa-box-open text-2xl"></i>
-                    <p class="text-xs font-semibold">Stok varian ini masih kosong</p>
+                <div class="liquid-glass p-8 flex flex-col items-center justify-center text-gray-400 gap-2 border border-white/10 rounded-2xl">
+                    <i class="fa-solid fa-box-open text-3xl text-indigo-400/60 mb-1"></i>
+                    <p class="text-xs font-semibold text-gray-300">Stok varian ini masih kosong</p>
                 </div>
             `;
             if (paginationEl) paginationEl.classList.replace('flex', 'hidden');
@@ -450,11 +450,11 @@ async function renderStockItems() {
         pageItems.forEach((item, idx) => {
             const itemNumber = (currentStockPage - 1) * STOCK_PAGE_SIZE + idx + 1;
             const row = document.createElement('div');
-            row.className = 'flex items-center justify-between gap-3 p-2.5 bg-white/5 rounded-xl border border-white/10 hover:border-indigo-500/30 hover:bg-white/[0.08] transition-all group';
+            row.className = 'admin-stock-item group';
             row.innerHTML = `
                 <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                    <span class="text-[10px] font-bold text-gray-500 w-5 shrink-0">#${itemNumber}</span>
-                    <code class="text-xs text-indigo-200 font-mono truncate flex-1 select-all">${item.payload}</code>
+                    <span class="stock-item-badge shrink-0">#${itemNumber}</span>
+                    <code class="stock-item-code truncate flex-1 select-all">${item.payload}</code>
                 </div>
                 <button class="btn-del-item w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 hover:border-red-500 flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-90" title="Hapus item ini">
                     <i class="fa-solid fa-trash-can text-xs"></i>
