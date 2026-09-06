@@ -1,35 +1,13 @@
 const { getWaSupabase } = require('./waSupabase');
 const { success, error, unauthorized, notFound, serverError, handleCors } = require('./response');
 
+const { getTodayWIB, addDaysToWibDate, calcRenewalDaysWA } = require('./wibDate');
+
 /**
  * /api/admin/wa-groups handler
  * Admin management API for WhatsApp Bot Rental Groups.
  * Auth: X-Admin-Secret header
  */
-
-function getTodayWIB() {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" });
-    const [dd, mm, yyyy] = dateStr.split("/");
-    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-}
-
-function addDaysToDate(dateStr, days) {
-    const d = new Date(dateStr + "T00:00:00Z");
-    d.setUTCDate(d.getUTCDate() + Number(days));
-    const yyyy = d.getUTCFullYear();
-    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-    const dd = String(d.getUTCDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-}
-
-function calcRenewalDays(currentPaidUntil, days = 31) {
-    const today = getTodayWIB();
-    if (currentPaidUntil && currentPaidUntil > today) {
-        return addDaysToDate(currentPaidUntil, days);
-    }
-    return addDaysToDate(today, days);
-}
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
@@ -106,7 +84,7 @@ module.exports = async function handler(req, res) {
                 if (fetchErr || !group) return notFound(res, 'Group not found');
 
                 const extendDays = parseInt(days, 10) || 31;
-                const newPaidUntil = calcRenewalDays(group.paid_until, extendDays);
+                const newPaidUntil = calcRenewalDaysWA(group.paid_until, extendDays);
 
                 const { data: updated, error: updateErr } = await supa
                     .from('managed_groups')
@@ -153,6 +131,22 @@ module.exports = async function handler(req, res) {
 
             if (action === 'toggle' || action === 'suspend' || action === 'activate') {
                 const targetActive = action === 'activate' ? true : (action === 'suspend' ? false : Boolean(is_active));
+
+                // Security Guard: Prevent unpausing/activating a group whose rent is already expired
+                if (targetActive) {
+                    const { data: group, error: fetchErr } = await supa
+                        .from('managed_groups')
+                        .select('paid_until, group_name')
+                        .eq('id', id)
+                        .single();
+
+                    if (fetchErr || !group) return notFound(res, 'Group not found');
+
+                    const today = getTodayWIB();
+                    if (group.paid_until && group.paid_until < today) {
+                        return error(res, `Grup "${group.group_name || id}" sudah kedaluwarsa (${group.paid_until}). Silakan perpanjang sewa (Extend Rent) terlebih dahulu.`, 400);
+                    }
+                }
 
                 const { data: updated, error: updateErr } = await supa
                     .from('managed_groups')

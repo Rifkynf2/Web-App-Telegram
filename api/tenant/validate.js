@@ -81,6 +81,11 @@ module.exports = async function handler(req, res) {
                 message: 'Bot ini telah dinonaktifkan oleh Developer.'
             };
         } else if (now > expiryDate) {
+            // Auto-sync status to EXPIRED in DB if it was still marked ACTIVE (Zero-waste lazy update)
+            if (tenantStatus === 'ACTIVE') {
+                masterDb.from('tenants').update({ status: 'EXPIRED' }).eq('bot_id', botId).then(() => {}).catch(() => {});
+            }
+
             result = {
                 active: false,
                 expiryDate: data.expiry_date,

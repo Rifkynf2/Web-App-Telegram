@@ -1,11 +1,12 @@
 const { getMasterSupabase } = require('../_lib/masterSupabase');
 const { success, error, unauthorized, notFound, serverError, handleCors } = require('../_lib/response');
+const { diffCalendarDaysWIB, calcRenewalExpiryWIB } = require('../_lib/wibDate');
 
 /**
  * /api/admin/[resource]
  * Consolidated admin handler — routes by [resource] dynamic segment.
  *
- * Handles: stats, subscriptions, tenants
+ * Handles: stats, subscriptions, tenants, sync-expired, wa-groups
  * Auth: X-Admin-Secret header
  */
 
@@ -65,6 +66,7 @@ module.exports = async function handler(req, res) {
         case 'stats':         return handleStats(req, res);
         case 'subscriptions': return handleSubscriptions(req, res);
         case 'tenants':       return handleTenants(req, res);
+        case 'sync-expired':  return handleManualSync(req, res);
         case 'wa-groups':     return require('../_lib/wa-groups-handler')(req, res);
         default:              return error(res, `Unknown resource: ${resource}`, 404);
     }
@@ -107,12 +109,66 @@ async function handleCronExpire(req, res) {
     }
 }
 
+// ── LAZY SYNC (5-Minute Throttle — Zero Waste Supabase Free Tier) ───────────
+let _lastLazySyncAt = 0;
+const LAZY_SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 menit
+
+async function maybeLazySyncExpiredTenants() {
+    const now = Date.now();
+    if (now - _lastLazySyncAt < LAZY_SYNC_COOLDOWN_MS) {
+        return; // Masih dalam cooldown, skip (0 query ke database)
+    }
+    _lastLazySyncAt = now;
+
+    try {
+        const { data, error: rpcError } = await getMasterSupabase().rpc('sync_expired_tenants');
+        if (!rpcError && Array.isArray(data) && data.length > 0) {
+            const flippedBotIds = data.map((row) => row.bot_id);
+            // Non-blocking background notification to affected bot servers
+            Promise.all(flippedBotIds.map(async (botId) => {
+                try {
+                    const botApiBaseUrl = await getBotApiBaseUrl(botId);
+                    await notifyBotCacheInvalidate(botId, botApiBaseUrl);
+                } catch (_) {}
+            })).catch(() => {});
+            console.log(`[API/admin] Lazy sync flipped ${flippedBotIds.length} tenant(s) to EXPIRED.`);
+        }
+    } catch (err) {
+        console.error('[API/admin] Lazy sync error:', err.message);
+    }
+}
+
+async function handleManualSync(req, res) {
+    if (req.method !== 'POST') return error(res, 'Method not allowed', 405);
+    try {
+        const { data, error: rpcError } = await getMasterSupabase().rpc('sync_expired_tenants');
+        if (rpcError) {
+            console.error('[API/admin/sync-expired] RPC error:', rpcError.message);
+            return serverError(res, rpcError.message);
+        }
+        const flippedBotIds = (data || []).map((row) => row.bot_id);
+        await Promise.all(flippedBotIds.map(async (botId) => {
+            try {
+                const botApiBaseUrl = await getBotApiBaseUrl(botId);
+                await notifyBotCacheInvalidate(botId, botApiBaseUrl);
+            } catch (_) {}
+        }));
+        _lastLazySyncAt = Date.now();
+        return success(res, { updated: flippedBotIds.length, bot_ids: flippedBotIds });
+    } catch (err) {
+        console.error('[API/admin/sync-expired] Error:', err.message);
+        return serverError(res);
+    }
+}
+
 // ── STATS ────────────────────────────────────────────────────────────────────
 
 async function handleStats(req, res) {
     if (req.method !== 'GET') return error(res, 'Method not allowed', 405);
 
     try {
+        await maybeLazySyncExpiredTenants();
+
         const { data, error: rpcError } = await getMasterSupabase().rpc('get_master_stats');
         if (rpcError) {
             console.error('[API/admin/stats] RPC error:', rpcError.message);
@@ -153,14 +209,14 @@ async function listSubscriptions(req, res) {
             .order('expiry_date', { ascending: true })
             .range(offset, offset + parseInt(limit) - 1);
 
-        const now = new Date().toISOString();
+        const nowIso = new Date().toISOString();
         switch (filter) {
-            case 'expired':  query = query.lt('expiry_date', now); break;
-            case 'active':   query = query.gte('expiry_date', now).eq('status', 'ACTIVE'); break;
+            case 'expired':  query = query.lt('expiry_date', nowIso); break;
+            case 'active':   query = query.gte('expiry_date', nowIso).eq('status', 'ACTIVE'); break;
             case 'trial':    query = query.eq('status', 'TRIAL'); break;
             case 'expiring_soon': {
                 const threeDays = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
-                query = query.gte('expiry_date', now).lte('expiry_date', threeDays);
+                query = query.gte('expiry_date', nowIso).lte('expiry_date', threeDays);
                 break;
             }
         }
@@ -171,12 +227,14 @@ async function listSubscriptions(req, res) {
             return serverError(res);
         }
 
+        const now = new Date();
         const enriched = (data || []).map(s => {
-            const expiry = new Date(s.expiry_date);
+            const remainingDays = diffCalendarDaysWIB(now, s.expiry_date);
+            const isExpired = remainingDays !== null ? remainingDays < 0 : true;
             return {
                 ...s,
-                remainingDays: expiry ? Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24)) : 0,
-                isExpired: expiry < new Date(),
+                remainingDays: remainingDays !== null ? remainingDays : 0,
+                isExpired,
                 tenant: s.tenants,
                 plan: s.plans
             };
@@ -239,9 +297,8 @@ async function manualRenew(req, res) {
             .from('subscriptions').select('expiry_date').eq('bot_id', bot_id)
             .order('expiry_date', { ascending: false }).limit(1).maybeSingle();
 
-        let baseDate = new Date();
-        if (current && new Date(current.expiry_date) > baseDate) baseDate = new Date(current.expiry_date);
-        const newExpiry = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000);
+        // Selaraskan tanggal jatuh tempo tepat jam 00:00:00 WIB (Asia/Jakarta)
+        const newExpiryIso = calcRenewalExpiryWIB(current?.expiry_date, days);
 
         const { data: plan } = await masterDb.from('plans').select('id').eq('name', 'Premium').single();
 
@@ -249,7 +306,7 @@ async function manualRenew(req, res) {
             .from('subscriptions')
             .upsert({
                 bot_id: parseInt(bot_id), plan_id: plan?.id || null,
-                expiry_date: newExpiry.toISOString(), status: 'ACTIVE',
+                expiry_date: newExpiryIso, status: 'ACTIVE',
                 last_payment_at: new Date().toISOString()
             }, { onConflict: 'bot_id' })
             .select().single();
@@ -264,9 +321,10 @@ async function manualRenew(req, res) {
         const botApiBaseUrl = await getBotApiBaseUrl(bot_id);
         await notifyBotCacheInvalidate(bot_id, botApiBaseUrl);
 
+        const expiryDisplay = new Date(newExpiryIso).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' });
         return success(res, {
             subscription: data,
-            message: `Subscription extended by ${days} days until ${newExpiry.toLocaleDateString('id-ID')}`
+            message: `Subscription extended by ${days} days until ${expiryDisplay} (00:00 WIB)`
         });
     } catch (err) {
         console.error('[API/admin/subscriptions] Renew error:', err.message);
@@ -287,6 +345,8 @@ async function handleTenants(req, res) {
 
 async function listTenants(req, res) {
     try {
+        await maybeLazySyncExpiredTenants();
+
         const masterDb = getMasterSupabase();
         const { status, search, page = 1, limit = 20 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -317,17 +377,20 @@ async function listTenants(req, res) {
             return serverError(res);
         }
 
+        const now = new Date();
         const enriched = (data || []).map(t => {
             const sub = Array.isArray(t.subscriptions) ? t.subscriptions[0] : t.subscriptions;
-            const expiry = sub?.expiry_date ? new Date(sub.expiry_date) : null;
+            const remainingDays = sub?.expiry_date ? diffCalendarDaysWIB(now, sub.expiry_date) : null;
+            const isExpired = remainingDays !== null ? remainingDays < 0 : true;
+
             return {
                 bot_id: t.bot_id, username: t.username, shop_name: t.shop_name,
                 owner_chat_id: t.owner_chat_id, status: t.status,
                 db_url: t.tenant_configs?.supabase_url || null,
                 subscription: {
                     plan: sub?.plans?.name || 'None', expiryDate: sub?.expiry_date,
-                    isExpired: expiry ? expiry < new Date() : true,
-                    remainingDays: expiry ? Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24)) : 0,
+                    isExpired,
+                    remainingDays: remainingDays !== null ? remainingDays : 0,
                     status: sub?.status
                 },
                 created_at: t.created_at
@@ -357,6 +420,23 @@ async function updateTenant(req, res) {
 
     try {
         const masterDb = getMasterSupabase();
+
+        // Security Guard: Prevent unpausing/activating a tenant whose subscription is already expired
+        if (action === 'activate') {
+            const { data: sub } = await masterDb
+                .from('subscriptions')
+                .select('expiry_date')
+                .eq('bot_id', bot_id)
+                .order('expiry_date', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (sub?.expiry_date && new Date(sub.expiry_date) < new Date()) {
+                const expiryDisplay = new Date(sub.expiry_date).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' });
+                return error(res, `Tidak dapat mengaktifkan bot karena masa sewa telah habis (${expiryDisplay}). Silakan perpanjang sewa (Extend Rent) terlebih dahulu.`, 400);
+            }
+        }
+
         const { data, error: dbError } = await masterDb
             .from('tenants').update({ status: newStatus }).eq('bot_id', bot_id)
             .select('bot_id, username, status').single();

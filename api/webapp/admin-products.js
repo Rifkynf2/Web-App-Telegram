@@ -74,6 +74,20 @@ module.exports = async function handler(req, res) {
             if (!relayResponse.ok) {
                 return error(res, relayData.error || 'Gagal memuat produk admin', relayResponse.status);
             }
+
+            const productList = Array.isArray(relayData.products)
+                ? relayData.products
+                : (Array.isArray(relayData.data?.products) ? relayData.data.products : null);
+            if (productList) {
+                productList.sort((a, b) => {
+                    const nameA = (a?.name || '').trim();
+                    const nameB = (b?.name || '').trim();
+                    const cmp = nameA.localeCompare(nameB, 'id', { sensitivity: 'base', numeric: true });
+                    if (cmp !== 0) return cmp;
+                    return String(a?.id || '').localeCompare(String(b?.id || ''));
+                });
+            }
+
             return success(res, relayData);
         }
 

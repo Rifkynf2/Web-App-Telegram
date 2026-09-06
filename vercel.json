@@ -27,6 +27,6 @@
     }
   ],
   "crons": [
-    { "path": "/api/admin/cron-expire", "schedule": "0 1 * * *" }
+    { "path": "/api/admin/cron-expire", "schedule": "0 17 * * *" }
   ]
 }

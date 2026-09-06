@@ -515,7 +515,12 @@ BEGIN
     ORDER BY s.expiry_date DESC LIMIT 1;
 
     v_base_date := GREATEST(COALESCE(v_current_expiry, v_now), v_now);
-    v_new_expiry := v_base_date + make_interval(days => v_duration_days);
+    -- Align to 00:00:00 WIB (Asia/Jakarta). If base date has time past 00:00:00 (e.g. trial or mid-day payment),
+    -- round up to next day midnight + plan duration so the client gets full calendar days plus remaining bonus hours.
+    v_new_expiry := (
+        date_trunc('day', (v_base_date AT TIME ZONE 'Asia/Jakarta')) 
+        + make_interval(days => v_duration_days + CASE WHEN (v_base_date AT TIME ZONE 'Asia/Jakarta')::time > '00:00:00'::time THEN 1 ELSE 0 END)
+    ) AT TIME ZONE 'Asia/Jakarta';
 
     -- Step 4: Upsert subscription
     INSERT INTO subscriptions (bot_id, plan_id, expiry_date, status, last_payment_at)

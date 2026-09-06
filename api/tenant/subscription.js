@@ -1,6 +1,7 @@
 const { getMasterSupabase } = require('../_lib/masterSupabase');
 const { verifyHMAC } = require('../_lib/hmacAuth');
 const { success, error, unauthorized, notFound, serverError, handleCors } = require('../_lib/response');
+const { diffCalendarDaysWIB } = require('../_lib/wibDate');
 
 /**
  * /api/tenant/subscription
@@ -66,12 +67,19 @@ async function getSubscription(req, res) {
             .eq('bot_id', botId)
             .single();
 
-        // Calculate remaining days
+        // Calculate remaining days via WIB calendar difference
         const now = new Date();
         const expiry = new Date(sub.expiry_date);
-        const remainingMs = expiry - now;
-        const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
-        const isActive = remainingMs > 0 && tenant?.status === 'ACTIVE';
+        const diffDays = diffCalendarDaysWIB(now, sub.expiry_date);
+        const remainingDays = diffDays !== null && diffDays > 0 ? diffDays : 0;
+        const isTimeExpired = now >= expiry;
+        const isActive = !isTimeExpired && tenant?.status === 'ACTIVE';
+
+        // Auto-sync status if expired but tenant status is still ACTIVE in DB (Zero-waste lazy update)
+        if (isTimeExpired && tenant?.status === 'ACTIVE') {
+            masterDb.from('tenants').update({ status: 'EXPIRED' }).eq('bot_id', botId).then(() => {}).catch(() => {});
+            if (tenant) tenant.status = 'EXPIRED';
+        }
 
         // Get recent invoices
         const { data: invoices } = await masterDb
@@ -84,7 +92,7 @@ async function getSubscription(req, res) {
         return success(res, {
             subscription: {
                 id: sub.id,
-                status: isActive ? 'ACTIVE' : (remainingMs <= 0 ? 'EXPIRED' : sub.status),
+                status: isActive ? 'ACTIVE' : (isTimeExpired ? 'EXPIRED' : sub.status),
                 startDate: sub.start_date,
                 expiryDate: sub.expiry_date,
                 remainingDays,

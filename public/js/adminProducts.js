@@ -123,6 +123,20 @@ let adminCatalogData = [];
 let latestAdminStats = null;
 let deletedVariantIds = [];
 
+/**
+ * Mengurutkan produk secara alfabetis (A - Z) stabil & case-insensitive dengan fallback ID
+ */
+function sortProductsAlphabetically(products) {
+  if (!Array.isArray(products)) return [];
+  return [...products].sort((a, b) => {
+    const nameA = (a?.name || '').trim();
+    const nameB = (b?.name || '').trim();
+    const cmp = nameA.localeCompare(nameB, 'id', { sensitivity: 'base', numeric: true });
+    if (cmp !== 0) return cmp;
+    return String(a?.id || '').localeCompare(String(b?.id || ''));
+  });
+}
+
 function updateVariantStatusBadge(block) {
   const select = block.querySelector('.var-status');
   const badge = block.querySelector('.variant-status-badge');
@@ -162,7 +176,7 @@ export async function initAdminApp() {
   if (isPreviewMode && !urlParams.get('bot_id')) {
     hideLoading();
     if (elHeaderShopName) elHeaderShopName.textContent = 'Preview Toko';
-    adminCatalogData = MOCK_ADMIN_PRODUCTS;
+    adminCatalogData = sortProductsAlphabetically(MOCK_ADMIN_PRODUCTS);
     renderAdminView(MOCK_ADMIN_STATS);
     initAdminStock();
     setupAdminModalListeners();
@@ -266,9 +280,9 @@ export async function refreshAdminData() {
   const [stats, products] = await Promise.all([fetchAdminStats(), fetchAdminCatalog(adminAuthToken)]);
 
   latestAdminStats = stats;
-  adminCatalogData = products;
+  adminCatalogData = sortProductsAlphabetically(products);
   renderAdminView(stats);
-  return { stats, products };
+  return { stats, products: adminCatalogData };
 }
 
 function renderAdminView(stats = null) {
@@ -410,9 +424,11 @@ if (btnClearAdminSearch) {
 function filterAndRenderAdminProducts() {
   if (!adminList) return;
   const allProducts = adminCatalogData || [];
-  const filtered = currentAdminSearchQuery
-    ? allProducts.filter((p) => (p.name || '').toLowerCase().includes(currentAdminSearchQuery))
-    : allProducts;
+  const filtered = sortProductsAlphabetically(
+    currentAdminSearchQuery
+      ? allProducts.filter((p) => (p.name || '').toLowerCase().includes(currentAdminSearchQuery))
+      : allProducts
+  );
 
   adminList.innerHTML = '';
 
