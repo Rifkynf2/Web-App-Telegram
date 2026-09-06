@@ -399,6 +399,17 @@ function updateStatsHeader() {
         if (label4) label4.innerText = 'Total Revenue';
         if (icon4) icon4.className = 'fa-solid fa-money-bill-wave';
     }
+
+    if (!_statsCache[activeTab]) {
+        const v1 = document.getElementById('statTotalTenants');
+        const v2 = document.getElementById('statActiveTenants');
+        const v3 = document.getElementById('statExpiring');
+        const v4 = document.getElementById('statRevenue');
+        if (v1) v1.innerText = '-';
+        if (v2) v2.innerText = '-';
+        if (v3) v3.innerText = '-';
+        if (v4) v4.innerText = '-';
+    }
 }
 
 function loadActiveTab() {
@@ -515,6 +526,7 @@ async function loadStats() {
     try {
         const endpoint = tab === 'whatsapp' ? `${API_BASE}/wa-groups?action=stats` : `${API_BASE}/stats`;
         const res = await fetch(endpoint, {
+            cache: 'no-store',
             headers: { 'X-Admin-Secret': adminSecret }
         });
 
@@ -732,6 +744,7 @@ async function loadTenants() {
     try {
         const [res] = await Promise.all([
             fetch(`${API_BASE}/tenants?limit=100`, {
+                cache: 'no-store',
                 headers: { 'X-Admin-Secret': adminSecret }
             }),
             minDelay(600)
@@ -857,6 +870,7 @@ async function loadWaGroups() {
     try {
         const [res] = await Promise.all([
             fetch(`${API_BASE}/wa-groups?action=list`, {
+                cache: 'no-store',
                 headers: { 'X-Admin-Secret': adminSecret }
             }),
             minDelay(600)

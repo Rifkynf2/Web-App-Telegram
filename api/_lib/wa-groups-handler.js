@@ -12,6 +12,8 @@ const { getTodayWIB, addDaysToWibDate, calcRenewalDaysWA } = require('./wibDate'
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
     try {
         const supa = getWaSupabase();
         const action = req.query.action || req.body?.action;
@@ -20,7 +22,7 @@ module.exports = async function handler(req, res) {
         if (req.method === 'GET') {
             if (action === 'stats') {
                 const today = getTodayWIB();
-                const threeDaysLater = addDaysToDate(today, 3);
+                const threeDaysLater = addDaysToWibDate(today, 3);
 
                 // Run 4 parallel COUNT queries — no rows transferred, only numbers
                 const [
@@ -60,12 +62,17 @@ module.exports = async function handler(req, res) {
             // Default GET: List groups with only columns needed by the dashboard
             const { data: groups, error: listErr } = await supa
                 .from('managed_groups')
-                .select('id, store_group_id, target_group_id, group_name, renter_name, is_active, paid_until, joined_at')
+                .select('id, store_group_id, target_group_id, group_name, renter_name, is_active, paid_until, joined_at, updated_at')
                 .order('id', { ascending: false });
 
             if (listErr) throw listErr;
 
-            return success(res, { groups: groups || [] });
+            const enrichedGroups = (groups || []).map((g) => ({
+                ...g,
+                joined_at: g.joined_at || (g.updated_at ? g.updated_at.split('T')[0] : getTodayWIB())
+            }));
+
+            return success(res, { groups: enrichedGroups });
         }
 
         // ── PUT Requests ────────────────────────────────────────────────────

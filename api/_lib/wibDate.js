@@ -180,6 +180,7 @@ module.exports = {
     diffCalendarDaysWIB,
     calcRenewalExpiryWIB,
     addDaysToWibDate,
+    addDaysToDate: addDaysToWibDate,
     calcRenewalDaysWA,
     formatDisplayDateWIB
 };

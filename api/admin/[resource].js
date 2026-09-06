@@ -50,6 +50,8 @@ async function getBotApiBaseUrl(botId) {
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
     const resource = Array.isArray(req.query.resource) ? req.query.resource[0] : req.query.resource;
 
     // Triggered by Vercel Cron (see vercel.json "crons"), which authenticates
