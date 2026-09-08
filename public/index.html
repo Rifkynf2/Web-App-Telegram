@@ -221,16 +221,20 @@
           <div class="absolute inset-0 bg-linear-to-b from-blue-600/15 via-transparent to-transparent pointer-events-none"></div>
 
           <!-- Avatar -->
-          <div class="relative mb-4 z-10">
+          <div class="relative w-28 h-28 rounded-full mb-4 z-10 shrink-0">
             <div
-              class="w-28 h-28 rounded-full flex items-center justify-center text-4xl text-white font-bold overflow-hidden"
+              class="w-full h-full rounded-full flex items-center justify-center text-4xl text-white font-bold overflow-hidden"
               id="prof-initial"
               style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); box-shadow: 0 0 0 4px rgba(59,130,246,0.25), 0 8px 24px rgba(59,130,246,0.3);">
               G
             </div>
-            <img id="prof-img" class="absolute inset-0 w-28 h-28 rounded-full object-cover hidden" alt="Profile" />
+            <img
+              id="prof-img"
+              referrerpolicy="no-referrer"
+              class="absolute inset-0 w-full h-full rounded-full object-cover hidden z-10"
+              alt="Profile" />
             <!-- Online indicator -->
-            <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#0a0a19]"></div>
+            <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#0a0a19] z-20"></div>
           </div>
 
           <h2 class="text-2xl font-black text-white z-10" id="prof-name">Guest User</h2>

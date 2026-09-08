@@ -521,18 +521,28 @@ function populateUserIdentity() {
   const displayId = tgUser?.username ? `@${tgUser.username}` : userUsername ? `@${userUsername}` : `ID: ${tgUser?.id || 'Anonymous'}`;
   if (elProfId) elProfId.textContent = displayId;
 
-  if (finalPhoto) {
-    if (elProfImg) {
-      elProfImg.src = finalPhoto;
+  if (elProfInitial) {
+    elProfInitial.textContent = initial;
+  }
+
+  if (finalPhoto && elProfImg) {
+    elProfImg.referrerPolicy = 'no-referrer';
+    elProfImg.onload = () => {
       elProfImg.classList.remove('hidden');
-    }
-    if (elProfInitial) elProfInitial.classList.add('hidden');
+      if (elProfInitial) elProfInitial.classList.add('hidden');
+    };
+    elProfImg.onerror = () => {
+      elProfImg.classList.add('hidden');
+      elProfImg.removeAttribute('src');
+      if (elProfInitial) elProfInitial.classList.remove('hidden');
+    };
+    elProfImg.src = finalPhoto;
   } else {
-    if (elProfInitial) {
-      elProfInitial.textContent = initial;
-      elProfInitial.classList.remove('hidden');
+    if (elProfImg) {
+      elProfImg.classList.add('hidden');
+      elProfImg.removeAttribute('src');
     }
-    if (elProfImg) elProfImg.classList.add('hidden');
+    if (elProfInitial) elProfInitial.classList.remove('hidden');
   }
 
   if (tgUser?.id) {
