@@ -438,7 +438,7 @@ function calculateRemainingDaysWib(targetDateStr) {
 
 function formatRemainingDaysText(days, isExpired = false) {
     if (days === null || days === undefined || isNaN(days)) return '-';
-    if (days === 0) return 'Expires today';
+    if (days === 0) return isExpired ? 'Expired today' : 'Expires today';
     if (days === 1) return '1 day left';
     if (days > 1) return `${days} days left`;
     if (days === -1 || (isExpired && Math.abs(days) === 1)) return 'Minus 1 day';
@@ -610,11 +610,20 @@ function renderTenants(tenants) {
         const remainingDays = t.subscription?.expiryDate 
             ? calculateRemainingDaysWib(t.subscription.expiryDate) 
             : (t.subscription?.remainingDays ?? 0);
-        const isExpired = Boolean(t.subscription?.isExpired || (remainingDays !== null && remainingDays < 0));
+        const isTimeExpired = t.subscription?.expiryDate 
+            ? new Date(t.subscription.expiryDate) < new Date() 
+            : false;
+        const isExpired = Boolean(
+            t.subscription?.isExpired || 
+            isTimeExpired || 
+            t.status === 'EXPIRED' || 
+            t.subscription?.status === 'EXPIRED' || 
+            (remainingDays !== null && remainingDays < 0)
+        );
         const remainingText = formatRemainingDaysText(remainingDays, isExpired);
 
         let subBadgeClass = 'badge-active';
-        let subBadgeText = t.subscription?.status || 'ACTIVE';
+        let subBadgeText = isExpired ? 'EXPIRED' : (t.subscription?.status || 'ACTIVE');
         if (isExpired) {
             subBadgeClass = 'badge-suspended';
             subBadgeText = 'EXPIRED';
@@ -920,7 +929,14 @@ function generateTelegramCsv(tenants) {
         const remainingDays = t.subscription?.expiryDate 
             ? calculateRemainingDaysWib(t.subscription.expiryDate) 
             : (t.subscription?.remainingDays ?? 0);
-        const isExpired = Boolean(t.subscription?.isExpired || (remainingDays !== null && remainingDays < 0));
+        const isTimeExpired = t.subscription?.expiryDate ? new Date(t.subscription.expiryDate) < new Date() : false;
+        const isExpired = Boolean(
+            t.subscription?.isExpired || 
+            isTimeExpired || 
+            t.status === 'EXPIRED' || 
+            t.subscription?.status === 'EXPIRED' || 
+            (remainingDays !== null && remainingDays < 0)
+        );
         const displayStatus = (t.status === 'EXPIRED' || isExpired) ? 'INACTIVE' : (t.status || 'ACTIVE');
         const remainingText = formatRemainingDaysText(remainingDays, isExpired);
 

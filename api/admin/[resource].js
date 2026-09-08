@@ -232,11 +232,13 @@ async function listSubscriptions(req, res) {
         const now = new Date();
         const enriched = (data || []).map(s => {
             const remainingDays = diffCalendarDaysWIB(now, s.expiry_date);
-            const isExpired = remainingDays !== null ? remainingDays < 0 : true;
+            const isTimeExpired = s.expiry_date ? new Date(s.expiry_date) < now : false;
+            const isExpired = Boolean(isTimeExpired || (remainingDays !== null && remainingDays < 0) || s.status === 'EXPIRED');
             return {
                 ...s,
                 remainingDays: remainingDays !== null ? remainingDays : 0,
                 isExpired,
+                status: isExpired ? 'EXPIRED' : s.status,
                 tenant: s.tenants,
                 plan: s.plans
             };
@@ -383,7 +385,8 @@ async function listTenants(req, res) {
         const enriched = (data || []).map(t => {
             const sub = Array.isArray(t.subscriptions) ? t.subscriptions[0] : t.subscriptions;
             const remainingDays = sub?.expiry_date ? diffCalendarDaysWIB(now, sub.expiry_date) : null;
-            const isExpired = remainingDays !== null ? remainingDays < 0 : true;
+            const isTimeExpired = sub?.expiry_date ? new Date(sub.expiry_date) < now : false;
+            const isExpired = Boolean(isTimeExpired || (remainingDays !== null && remainingDays < 0) || t.status === 'EXPIRED' || sub?.status === 'EXPIRED');
 
             return {
                 bot_id: t.bot_id, username: t.username, shop_name: t.shop_name,
@@ -393,7 +396,7 @@ async function listTenants(req, res) {
                     plan: sub?.plans?.name || 'None', expiryDate: sub?.expiry_date,
                     isExpired,
                     remainingDays: remainingDays !== null ? remainingDays : 0,
-                    status: sub?.status
+                    status: isExpired ? 'EXPIRED' : (sub?.status || 'ACTIVE')
                 },
                 created_at: t.created_at
             };

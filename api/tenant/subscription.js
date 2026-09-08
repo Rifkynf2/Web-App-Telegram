@@ -75,10 +75,12 @@ async function getSubscription(req, res) {
         const isTimeExpired = now >= expiry;
         const isActive = !isTimeExpired && tenant?.status === 'ACTIVE';
 
-        // Auto-sync status if expired but tenant status is still ACTIVE in DB (Zero-waste lazy update)
-        if (isTimeExpired && tenant?.status === 'ACTIVE') {
+        // Auto-sync status if expired but tenant status or subscription is still ACTIVE in DB (Zero-waste lazy update)
+        if (isTimeExpired && (tenant?.status === 'ACTIVE' || sub?.status === 'ACTIVE')) {
             masterDb.from('tenants').update({ status: 'EXPIRED' }).eq('bot_id', botId).then(() => {}).catch(() => {});
+            masterDb.from('subscriptions').update({ status: 'EXPIRED' }).eq('bot_id', botId).then(() => {}).catch(() => {});
             if (tenant) tenant.status = 'EXPIRED';
+            if (sub) sub.status = 'EXPIRED';
         }
 
         // Get recent invoices

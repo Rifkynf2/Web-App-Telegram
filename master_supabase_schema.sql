@@ -397,6 +397,13 @@ CREATE OR REPLACE FUNCTION public.sync_expired_tenants()
 RETURNS TABLE(bot_id BIGINT)
 LANGUAGE plpgsql AS $$
 BEGIN
+  -- Sync subscriptions table
+  UPDATE public.subscriptions s
+  SET status = 'EXPIRED', updated_at = NOW()
+  WHERE s.expiry_date < NOW()
+    AND s.status = 'ACTIVE';
+
+  -- Sync tenants table and return flipped bot_ids
   RETURN QUERY
   WITH latest_sub AS (
     SELECT DISTINCT ON (s.bot_id) s.bot_id, s.expiry_date
@@ -405,7 +412,7 @@ BEGIN
   ),
   updated AS (
     UPDATE public.tenants t
-    SET status = 'EXPIRED'
+    SET status = 'EXPIRED', updated_at = NOW()
     FROM latest_sub ls
     WHERE t.bot_id = ls.bot_id
       AND t.status = 'ACTIVE'

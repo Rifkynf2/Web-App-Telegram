@@ -85,6 +85,9 @@ module.exports = async function handler(req, res) {
             if (tenantStatus === 'ACTIVE') {
                 masterDb.from('tenants').update({ status: 'EXPIRED' }).eq('bot_id', botId).then(() => {}).catch(() => {});
             }
+            if (data.status === 'ACTIVE') {
+                masterDb.from('subscriptions').update({ status: 'EXPIRED' }).eq('bot_id', botId).then(() => {}).catch(() => {});
+            }
 
             result = {
                 active: false,
