@@ -157,7 +157,6 @@ let isCheckoutSubmitting = false;
 let currentCatalogList = [];
 let currentSearchQuery = '';
 let runningPlaceholderTimeout = null;
-let isSearchFocused = false;
 let typewriterIndex = 0;
 let charIndex = 0;
 let isDeleting = false;
@@ -309,14 +308,15 @@ function getPlaceholderPhrases() {
 }
 
 function updateSearchPlaceholders(text) {
-  if (elInputSearch && !isSearchFocused) {
+  if (elInputSearch && (!elInputSearch.value || elInputSearch.value.length === 0)) {
     elInputSearch.placeholder = text;
   }
 }
 
 function stepRunningPlaceholder() {
   clearTimeout(runningPlaceholderTimeout);
-  if (!isRunningPlaceholderActive || isSearchFocused) return;
+  if (!isRunningPlaceholderActive) return;
+  if (elInputSearch && elInputSearch.value.length > 0) return;
 
   const phrases = getPlaceholderPhrases();
   const currentPhrase = phrases[typewriterIndex % phrases.length];
@@ -357,18 +357,17 @@ function stopRunningPlaceholder() {
 }
 
 function handleSearchFocus() {
-  isSearchFocused = true;
-  stopRunningPlaceholder();
-  if (elInputSearch) {
-    elInputSearch.placeholder = 'Cari nama aplikasi...';
+  // Saat kursor masuk/fokus, biarkan animasi placeholder tetap berjalan mulus.
+  // Hanya berhenti ketika pengguna mulai mengetik teks ke dalam input.
+  if (!elInputSearch || elInputSearch.value.length === 0) {
+    if (!isRunningPlaceholderActive) {
+      startRunningPlaceholder();
+    }
   }
 }
 
 function handleSearchBlur() {
-  isSearchFocused = false;
-  if (!elInputSearch?.value.trim()) {
-    charIndex = 0;
-    isDeleting = false;
+  if (!elInputSearch || elInputSearch.value.length === 0) {
     startRunningPlaceholder();
   }
 }
@@ -461,8 +460,15 @@ function bindSearchEvents() {
 
 function handleSearchInput(val) {
   currentSearchQuery = val;
-  const hasText = val.trim().length > 0;
+  const hasText = val.length > 0;
   if (elBtnClearSearch) elBtnClearSearch.classList.toggle('hidden', !hasText);
+
+  // Saat ada karakter ketikan, jeda animasi. Jika teks kosong, lanjutkan running placeholder.
+  if (hasText) {
+    stopRunningPlaceholder();
+  } else {
+    startRunningPlaceholder();
+  }
 
   if (profileView && !profileView.classList.contains('hidden')) {
     switchTab('home');
@@ -480,6 +486,7 @@ function clearAllSearch() {
   currentSearchQuery = '';
   if (elInputSearch) elInputSearch.value = '';
   if (elBtnClearSearch) elBtnClearSearch.classList.add('hidden');
+  startRunningPlaceholder();
   renderBuyerProducts();
 }
 
