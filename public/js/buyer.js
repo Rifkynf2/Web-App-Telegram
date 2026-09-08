@@ -81,10 +81,17 @@ const MOCK_CATALOG = [
 
 // ── DOM References ─────────────────────────────────────────────────────────────
 const elGrid = document.getElementById('product-grid');
-const elHeaderUserName = document.getElementById('header-user-name');
+const elHeaderPillInner = document.getElementById('header-pill-inner');
+const elBtnCloseSearch = document.getElementById('btn-close-search');
+const elHeaderBrandGroup = document.getElementById('header-brand-group');
 const elHeaderShopName = document.getElementById('header-shop-name');
-const elHeaderUserInitial = document.getElementById('header-user-initial');
-const elHeaderUserAvatar = document.getElementById('header-user-avatar');
+const elHeaderShopInitial = document.getElementById('header-shop-initial');
+const elHeaderShopLogo = document.getElementById('header-shop-logo');
+const elHeaderSearchContainer = document.getElementById('header-search-container');
+const elNavbarSearchBox = document.getElementById('navbar-search-box');
+const elInputSearch = document.getElementById('input-search');
+const elBtnClearSearch = document.getElementById('btn-clear-search');
+const elBtnSearchMobileToggle = document.getElementById('btn-search-mobile-toggle');
 const elProfName = document.getElementById('prof-name');
 const elProfId = document.getElementById('prof-id');
 const elProfInitial = document.getElementById('prof-initial');
@@ -147,6 +154,14 @@ let activeProduct = null;
 let activeVariant = null;
 let currentQty = 0;
 let isCheckoutSubmitting = false;
+let currentCatalogList = [];
+let currentSearchQuery = '';
+let runningPlaceholderTimeout = null;
+let isSearchFocused = false;
+let typewriterIndex = 0;
+let charIndex = 0;
+let isDeleting = false;
+let isRunningPlaceholderActive = true;
 
 // ── Init ───────────────────────────────────────────────────────────────────────
 export async function initBuyerApp() {
@@ -173,11 +188,13 @@ export async function initBuyerApp() {
   // Preview tanpa bot_id → pakai mock data, skip semua API/Supabase calls
   if (isPreviewMode && !hasBotId) {
     shopSettings.name = 'Preview Toko';
+    currentCatalogList = [...MOCK_CATALOG];
     populateUserIdentity();
-    renderBuyerProducts(MOCK_CATALOG);
+    renderBuyerProducts(currentCatalogList);
     bindDetailPageEvents();
     bindCheckoutModalEvents();
     bindNavEvents();
+    bindSearchEvents();
     hideLoading();
     console.log('[App] Running with MOCK data (no bot_id)');
     return;
@@ -189,11 +206,13 @@ export async function initBuyerApp() {
     if (isPreviewMode) {
       console.warn('[App] Tenant failed in preview mode, falling back to mock data');
       shopSettings.name = 'Preview Toko';
+      currentCatalogList = [...MOCK_CATALOG];
       populateUserIdentity();
-      renderBuyerProducts(MOCK_CATALOG);
+      renderBuyerProducts(currentCatalogList);
       bindDetailPageEvents();
       bindCheckoutModalEvents();
       bindNavEvents();
+      bindSearchEvents();
       hideLoading();
       return;
     }
@@ -213,14 +232,19 @@ export async function initBuyerApp() {
   }
 
   await Promise.all([fetchShopSettings(), fetchCatalog()]);
+  currentCatalogList = [...catalogData];
 
   populateUserIdentity();
-  renderBuyerProducts();
-  subscribeToInventoryChanges(() => renderBuyerProducts());
+  renderBuyerProducts(currentCatalogList);
+  subscribeToInventoryChanges(() => {
+    currentCatalogList = [...catalogData];
+    renderBuyerProducts(currentCatalogList);
+  });
 
   bindDetailPageEvents();
   bindCheckoutModalEvents();
   bindNavEvents();
+  bindSearchEvents();
 
   const botUsername = getBotUsername() || currentBotId;
   if (btnBackToBot && botUsername) {
@@ -240,31 +264,268 @@ export async function initBuyerApp() {
   hideLoading();
 }
 
-// ── User Identity ──────────────────────────────────────────────────────────────
+// ── Helper: Sort Alphabetical A-Z ─────────────────────────────────────────────
+function sortProductsAZ(items) {
+  if (!Array.isArray(items)) return [];
+  return [...items].sort((a, b) => {
+    const nameA = (a?.name || '').trim();
+    const nameB = (b?.name || '').trim();
+    return nameA.localeCompare(nameB, 'id', { sensitivity: 'base', numeric: true });
+  });
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// ── Running Placeholder (Typewriter Animation) ────────────────────────────────
+const DEFAULT_PLACEHOLDERS = [
+  'Cari Netflix...',
+  'Cari Spotify...',
+  'Cari YouTube...',
+  'Cari Canva Pro...',
+  'Cari ChatGPT Plus...',
+  'Cari Disney+...',
+  'Cari aplikasi favoritmu...'
+];
+
+function getPlaceholderPhrases() {
+  const source = (currentCatalogList && currentCatalogList.length > 0) ? currentCatalogList : catalogData;
+  if (Array.isArray(source) && source.length > 0) {
+    const topNames = source
+      .map((p) => (p.name || '').trim())
+      .filter((n) => n.length > 0)
+      .slice(0, 6);
+    if (topNames.length > 0) {
+      return [...topNames.map((n) => `Cari ${n}...`), 'Cari aplikasi favoritmu...'];
+    }
+  }
+  return DEFAULT_PLACEHOLDERS;
+}
+
+function updateSearchPlaceholders(text) {
+  if (elInputSearch && !isSearchFocused) {
+    elInputSearch.placeholder = text;
+  }
+}
+
+function stepRunningPlaceholder() {
+  clearTimeout(runningPlaceholderTimeout);
+  if (!isRunningPlaceholderActive || isSearchFocused) return;
+
+  const phrases = getPlaceholderPhrases();
+  const currentPhrase = phrases[typewriterIndex % phrases.length];
+
+  if (!isDeleting) {
+    charIndex++;
+    updateSearchPlaceholders(currentPhrase.substring(0, charIndex));
+
+    if (charIndex >= currentPhrase.length) {
+      isDeleting = true;
+      runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 1600);
+      return;
+    }
+    runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 90);
+  } else {
+    charIndex--;
+    updateSearchPlaceholders(currentPhrase.substring(0, charIndex));
+
+    if (charIndex <= 0) {
+      isDeleting = false;
+      typewriterIndex = (typewriterIndex + 1) % phrases.length;
+      runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 300);
+      return;
+    }
+    runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 45);
+  }
+}
+
+function startRunningPlaceholder() {
+  isRunningPlaceholderActive = true;
+  clearTimeout(runningPlaceholderTimeout);
+  stepRunningPlaceholder();
+}
+
+function stopRunningPlaceholder() {
+  isRunningPlaceholderActive = false;
+  clearTimeout(runningPlaceholderTimeout);
+}
+
+function handleSearchFocus() {
+  isSearchFocused = true;
+  stopRunningPlaceholder();
+  if (elInputSearch) {
+    elInputSearch.placeholder = 'Cari nama aplikasi...';
+  }
+}
+
+function handleSearchBlur() {
+  isSearchFocused = false;
+  if (!elInputSearch?.value.trim()) {
+    charIndex = 0;
+    isDeleting = false;
+    startRunningPlaceholder();
+  }
+}
+
+// ── Search State Management & Event Handling ─────────────────────────────────
+function activateSearchMode() {
+  if (profileView && !profileView.classList.contains('hidden')) {
+    switchTab('home');
+  }
+  if (elHeaderPillInner) elHeaderPillInner.classList.add('search-active');
+  if (elHeaderSearchContainer) elHeaderSearchContainer.classList.add('search-expanded');
+  if (elInputSearch && document.activeElement !== elInputSearch) {
+    elInputSearch.focus();
+  }
+}
+
+function deactivateSearchMode() {
+  if (elHeaderPillInner) elHeaderPillInner.classList.remove('search-active');
+  if (elHeaderSearchContainer) elHeaderSearchContainer.classList.remove('search-expanded');
+  clearAllSearch();
+  if (elInputSearch) elInputSearch.blur();
+}
+
+let isSearchBound = false;
+function bindSearchEvents() {
+  if (isSearchBound) return;
+  isSearchBound = true;
+
+  if (elInputSearch) {
+    elInputSearch.addEventListener('input', (e) => {
+      handleSearchInput(e.target.value);
+    });
+    elInputSearch.addEventListener('focus', () => {
+      activateSearchMode();
+      handleSearchFocus();
+    });
+    elInputSearch.addEventListener('blur', () => {
+      handleSearchBlur();
+      // If user left search empty and clicked outside, restore pill after brief delay
+      if (!elInputSearch.value.trim()) {
+        setTimeout(() => {
+          if (document.activeElement !== elInputSearch && !elInputSearch.value.trim()) {
+            if (elHeaderPillInner) elHeaderPillInner.classList.remove('search-active');
+            if (elHeaderSearchContainer) elHeaderSearchContainer.classList.remove('search-expanded');
+          }
+        }, 200);
+      }
+    });
+    elInputSearch.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        deactivateSearchMode();
+      }
+    });
+  }
+
+  // Clicking anywhere on the navbar search box activates and focuses input
+  if (elNavbarSearchBox) {
+    elNavbarSearchBox.addEventListener('click', (e) => {
+      if (e.target !== elBtnClearSearch && !elBtnClearSearch?.contains(e.target)) {
+        activateSearchMode();
+      }
+    });
+  }
+
+  // Clear search button (X)
+  if (elBtnClearSearch) {
+    elBtnClearSearch.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearAllSearch();
+      elInputSearch?.focus();
+    });
+  }
+
+  // Mobile search toggle button (magnifying glass)
+  if (elBtnSearchMobileToggle) {
+    elBtnSearchMobileToggle.addEventListener('click', () => {
+      activateSearchMode();
+    });
+  }
+
+  // Back button (arrow-left) in active search mode
+  if (elBtnCloseSearch) {
+    elBtnCloseSearch.addEventListener('click', () => {
+      deactivateSearchMode();
+    });
+  }
+
+  startRunningPlaceholder();
+}
+
+function handleSearchInput(val) {
+  currentSearchQuery = val;
+  const hasText = val.trim().length > 0;
+  if (elBtnClearSearch) elBtnClearSearch.classList.toggle('hidden', !hasText);
+
+  if (profileView && !profileView.classList.contains('hidden')) {
+    switchTab('home');
+  }
+
+  if (elHeaderPillInner && !elHeaderPillInner.classList.contains('search-active')) {
+    elHeaderPillInner.classList.add('search-active');
+    if (elHeaderSearchContainer) elHeaderSearchContainer.classList.add('search-expanded');
+  }
+
+  renderBuyerProducts();
+}
+
+function clearAllSearch() {
+  currentSearchQuery = '';
+  if (elInputSearch) elInputSearch.value = '';
+  if (elBtnClearSearch) elBtnClearSearch.classList.add('hidden');
+  renderBuyerProducts();
+}
+
+// ── Shop Branding & User Identity ─────────────────────────────────────────────
 function populateUserIdentity() {
   const finalName = tgUser?.first_name || userName;
   const initial = finalName.charAt(0).toUpperCase();
   const finalPhoto = tgUser?.photo_url || userPhoto;
 
-  if (elHeaderUserName) elHeaderUserName.textContent = finalName;
+  // 1. Shop identity in Navbar Pill (Always shop branding, never buyer personal avatar)
   if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
+
+  const shopLogoUrl = shopSettings.logoUrl || 'images/Logo RNFBOT.webp';
+  if (elHeaderShopLogo) {
+    elHeaderShopLogo.src = shopLogoUrl;
+    elHeaderShopLogo.classList.remove('hidden');
+    if (elHeaderShopInitial) elHeaderShopInitial.classList.add('hidden');
+
+    elHeaderShopLogo.onerror = () => {
+      elHeaderShopLogo.removeAttribute('src');
+      elHeaderShopLogo.classList.add('hidden');
+      if (elHeaderShopInitial) {
+        elHeaderShopInitial.classList.remove('hidden');
+        elHeaderShopInitial.innerHTML = '<i class="fa-solid fa-store"></i>';
+      }
+    };
+  }
+
+  // 2. Buyer User Identity (Strictly on Profile tab)
   if (elProfName) elProfName.textContent = finalName;
 
   const displayId = tgUser?.username ? `@${tgUser.username}` : userUsername ? `@${userUsername}` : `ID: ${tgUser?.id || 'Anonymous'}`;
   if (elProfId) elProfId.textContent = displayId;
 
   if (finalPhoto) {
-    if (elHeaderUserAvatar) {
-      elHeaderUserAvatar.src = finalPhoto;
-      elHeaderUserAvatar.classList.remove('hidden');
-    }
     if (elProfImg) {
       elProfImg.src = finalPhoto;
       elProfImg.classList.remove('hidden');
     }
+    if (elProfInitial) elProfInitial.classList.add('hidden');
   } else {
-    if (elHeaderUserInitial) elHeaderUserInitial.textContent = initial;
-    if (elProfInitial) elProfInitial.textContent = initial;
+    if (elProfInitial) {
+      elProfInitial.textContent = initial;
+      elProfInitial.classList.remove('hidden');
+    }
+    if (elProfImg) elProfImg.classList.add('hidden');
   }
 
   if (tgUser?.id) {
@@ -300,9 +561,59 @@ function populateUserIdentity() {
 // ── Product Grid (2-col) ───────────────────────────────────────────────────────
 function renderBuyerProducts(overrideData) {
   if (!elGrid) return;
-  elGrid.innerHTML = '';
 
-  const products = overrideData || catalogData;
+  if (Array.isArray(overrideData) && overrideData.length > 0) {
+    currentCatalogList = overrideData;
+  } else if ((!currentCatalogList || currentCatalogList.length === 0) && Array.isArray(catalogData) && catalogData.length > 0) {
+    currentCatalogList = catalogData;
+  }
+
+  elGrid.innerHTML = '';
+  const rawList = currentCatalogList || [];
+
+  // Filter by application name ONLY (product.name)
+  const query = (currentSearchQuery || '').trim().toLowerCase();
+  let filtered = rawList;
+  if (query) {
+    filtered = rawList.filter((p) => (p.name || '').toLowerCase().includes(query));
+  }
+
+  // Automatic default alphabetical A-Z sort
+  const products = sortProductsAZ(filtered);
+
+  // Empty state when search or catalog has no items
+  if (products.length === 0) {
+    const isSearching = query.length > 0;
+    elGrid.innerHTML = `
+      <div class="col-span-full py-16 px-4 flex flex-col items-center justify-center text-center">
+        <div class="w-16 h-16 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center justify-center mb-4 text-gray-400 shadow-xl">
+          <i class="fa-solid ${isSearching ? 'fa-magnifying-glass' : 'fa-box-open'} text-2xl text-indigo-400"></i>
+        </div>
+        <h3 class="text-base font-bold text-white mb-1.5">
+          ${isSearching ? 'Aplikasi Tidak Ditemukan' : 'Belum Ada Produk'}
+        </h3>
+        <p class="text-xs text-gray-400 max-w-xs mb-5 leading-relaxed">
+          ${isSearching 
+            ? `Tidak ada aplikasi dengan nama "${escapeHtml(currentSearchQuery)}". Coba kata kunci lainnya.` 
+            : 'Saat ini belum ada produk yang tersedia di toko ini.'}
+        </p>
+        ${isSearching ? `
+          <button id="btn-reset-search" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/30 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-rotate-left mr-1.5"></i>Tampilkan Semua Aplikasi
+          </button>
+        ` : ''}
+      </div>
+    `;
+
+    const btnReset = document.getElementById('btn-reset-search');
+    if (btnReset) {
+      btnReset.addEventListener('click', () => {
+        clearAllSearch();
+      });
+    }
+    return;
+  }
+
   products.forEach((product) => {
     const totalStock = product.stock_count;
     const isOutOfStock = totalStock === 0;
@@ -773,6 +1084,7 @@ function switchTab(tab) {
   } else {
     navProfile.classList.add('nav-tab-active');
     navHome.classList.remove('nav-tab-active');
+    deactivateSearchMode();
   }
 
   updateNavIndicator(true);

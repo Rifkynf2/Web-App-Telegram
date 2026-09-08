@@ -127,25 +127,65 @@
     <div class="bg-decoration"><span></span><span></span><span></span></div>
 
     <!-- Header Pill (Preview Toko in Buyer Mode) -->
-    <header id="header-pill" class="fixed top-4 left-1/2 z-50 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-transparent! border-0! shadow-none!" style="background: transparent;">
-      <div id="header-pill-inner" class="running-border flex items-center gap-3 px-3.5 py-2.5 rounded-full shadow-2xl">
-        <!-- Avatar -->
-        <div class="w-9 h-9 rounded-full bg-linear-to-tr from-blue-50 to-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm shrink-0 overflow-hidden relative border border-white/20 shadow-md shadow-blue-500/10 z-10">
-          <span id="header-user-initial" class="z-10 tracking-tighter">?</span>
-          <img id="header-user-avatar" class="absolute inset-0 w-full h-full object-cover hidden z-20" alt="Profile" />
-        </div>
-        <!-- Names (hidden user name kept for JS) -->
-        <span id="header-user-name" class="hidden"></span>
-        <div class="flex-1 min-w-0 z-10">
-          <p id="header-shop-name" class="text-xs font-black text-white tracking-wide truncate">RNF BOT SYSTEM</p>
-        </div>
-        <!-- Theme Toggle -->
+    <header id="header-pill" class="fixed top-4 left-1/2 z-50 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl bg-transparent! border-0! shadow-none!" style="background: transparent;">
+      <div id="header-pill-inner" class="running-border flex items-center gap-2.5 sm:gap-3 px-3.5 sm:px-4 py-2 rounded-full shadow-2xl relative w-full overflow-hidden">
+        <!-- Back Button (Shown when search is active - pure floating icon, no border) -->
         <button
-          id="btn-theme-toggle"
-          class="transition-all active:scale-90 hover:scale-110 p-1 shrink-0 z-10"
-          title="Ganti tema">
-          <i class="fa-solid fa-sun text-amber-400 text-xl"></i>
+          id="btn-close-search"
+          type="button"
+          class="flex items-center justify-center text-gray-300 hover:text-white transition-all active:scale-90 hover:scale-110 cursor-pointer z-20 shrink-0"
+          title="Kembali ke toko">
+          <i class="fa-solid fa-arrow-left text-sm"></i>
         </button>
+
+        <!-- Brand identity (Shop Logo + Shop Name) -->
+        <div id="header-brand-group" class="flex items-center gap-2.5 sm:gap-3 min-w-0 z-10 shrink-0 flex-1 sm:flex-initial">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-linear-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-indigo-300 font-bold text-xs shrink-0 overflow-hidden relative border border-white/15 shadow-md shadow-indigo-500/10">
+            <span id="header-shop-initial" class="z-10"><i class="fa-solid fa-store"></i></span>
+            <img id="header-shop-logo" class="absolute inset-0 w-full h-full object-cover hidden z-20" alt="Logo Toko" />
+          </div>
+          <div class="min-w-0">
+            <p id="header-shop-name" class="text-xs sm:text-sm font-black text-white tracking-wide truncate max-w-[150px] sm:max-w-[280px] md:max-w-[420px]">RNF BOT SYSTEM</p>
+          </div>
+        </div>
+
+        <!-- Search Bar Container (Exact Admin Panel Liquid Glass Search Box) -->
+        <div id="header-search-container" class="relative z-10 ml-auto">
+          <div class="search-box" id="navbar-search-box">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide-search shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input
+              type="search"
+              id="input-search"
+              placeholder="Cari aplikasi..."
+              autocomplete="off"
+            />
+            <button
+              id="btn-clear-search"
+              type="button"
+              class="hidden text-gray-400 hover:text-white transition-colors cursor-pointer pr-1 shrink-0"
+              title="Bersihkan">
+              <i class="fa-solid fa-circle-xmark text-sm"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Controls (Right side: Mobile Search Toggle + Theme Toggle) -->
+        <div id="header-actions-group" class="flex items-center gap-2 shrink-0 z-10 ml-auto sm:ml-0">
+          <button
+            id="btn-search-mobile-toggle"
+            type="button"
+            class="sm:hidden flex items-center justify-center text-sky-400 hover:text-sky-300 transition-all active:scale-90 hover:scale-110 cursor-pointer shrink-0"
+            title="Cari aplikasi">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </button>
+          <button
+            id="btn-theme-toggle"
+            type="button"
+            class="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 hover:scale-110 p-1 shrink-0 cursor-pointer"
+            title="Ganti tema">
+            <i class="fa-solid fa-sun text-amber-400 text-lg"></i>
+          </button>
+        </div>
       </div>
     </header>
 

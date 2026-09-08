@@ -156,6 +156,13 @@ export async function fetchCatalog() {
         };
     });
 
+    // Default sort alfabet A-Z otomatis
+    catalogData.sort((a, b) => {
+        const nameA = (a.name || '').trim();
+        const nameB = (b.name || '').trim();
+        return nameA.localeCompare(nameB, 'id', { sensitivity: 'base', numeric: true });
+    });
+
     return catalogData;
 }
 
