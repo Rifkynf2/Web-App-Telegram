@@ -879,6 +879,260 @@
         .modal-body { margin-bottom: 1.5rem; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 1rem; }
 
+        /* ── Single Clean Expired Reminder Button ── */
+        .btn-reminder-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.38rem;
+            margin-top: 6px;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(220, 38, 38, 0.06) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.38);
+            border-top: 1px solid rgba(239, 68, 68, 0.58);
+            color: #fca5a5;
+            padding: 0.26rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            white-space: nowrap;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-reminder-pill:hover {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.35) 0%, rgba(220, 38, 38, 0.14) 100%);
+            color: #ffffff;
+            border-color: rgba(239, 68, 68, 0.7);
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .btn-reminder-pill:active {
+            transform: translateY(0);
+        }
+
+        .btn-reminder-pill i {
+            font-size: 0.8rem;
+            line-height: 1;
+            color: #fca5a5;
+            transition: color 0.18s ease;
+        }
+
+        .btn-reminder-pill:hover i {
+            color: #ffffff;
+        }
+
+        /* ── iOS Liquid Glass Reminder Modal & Textarea ── */
+        .reminder-modal-content {
+            max-width: 580px;
+            background: linear-gradient(165deg, rgba(30, 41, 59, 0.78) 0%, rgba(15, 23, 42, 0.88) 100%);
+            backdrop-filter: blur(36px) saturate(210%);
+            -webkit-backdrop-filter: blur(36px) saturate(210%);
+            border-radius: 26px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            border-left: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 35px 80px -15px rgba(0, 0, 0, 0.75), 0 0 45px rgba(59, 130, 246, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            padding: 1.85rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .reminder-modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+            pointer-events: none;
+        }
+
+        .reminder-recipient-badge {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem 0.85rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            padding: 0.55rem 0.9rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.85rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .recipient-badge-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            min-width: 0;
+        }
+
+        .recipient-badge-item .badge-main {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .recipient-badge-item .badge-value {
+            color: #f8fafc;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .recipient-badge-divider {
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+            user-select: none;
+        }
+
+        /* iOS Frosted Glass Textarea with Custom Sleek Scrollbar */
+        .reminder-textarea {
+            width: 100%;
+            min-height: 290px;
+            background: rgba(6, 11, 25, 0.65);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 18px;
+            padding: 1rem 1.15rem;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 0.9rem;
+            line-height: 1.65;
+            resize: vertical;
+            outline: none;
+            box-sizing: border-box;
+            box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            transition: all 0.25s ease;
+        }
+
+        .reminder-textarea:focus {
+            border-color: rgba(59, 130, 246, 0.45);
+            border-top-color: rgba(59, 130, 246, 0.75);
+            box-shadow: 0 0 24px rgba(59, 130, 246, 0.22), inset 0 3px 10px rgba(0, 0, 0, 0.45);
+        }
+
+        /* ── Custom Liquid Glass Scrollbar for Textarea (No White Scrollbar!) ── */
+        .reminder-textarea::-webkit-scrollbar {
+            width: 7px;
+        }
+        .reminder-textarea::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.35);
+            border-radius: 9999px;
+            margin: 8px 0;
+        }
+        .reminder-textarea::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.12) 100%);
+            border-radius: 9999px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        .reminder-textarea::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.28) 100%);
+        }
+        .reminder-textarea {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.22) rgba(15, 23, 42, 0.35);
+        }
+
+        /* ── Proportional iOS Footer Layout: Tutup (Kecil) & Salin (Besar) ── */
+        .reminder-modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.85rem;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .btn-modal-cancel {
+            flex: 0 0 auto;
+            min-width: 95px;
+            padding: 0.78rem 1.3rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+            color: var(--text-muted);
+            border-radius: 14px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-modal-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.22);
+            transform: translateY(-1px);
+        }
+
+        .btn-modal-copy-primary {
+            flex: 1; /* Prominent large width */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0.82rem 1.6rem;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            border-left: 1px solid rgba(255, 255, 255, 0.25);
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            letter-spacing: 0.01em;
+            text-align: center;
+        }
+
+        /* Telegram Theme Gradient (Default) */
+        .btn-modal-copy-primary,
+        .btn-modal-copy-primary.theme-tg {
+            background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #1d4ed8 100%);
+            box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        }
+        .btn-modal-copy-primary:hover,
+        .btn-modal-copy-primary.theme-tg:hover {
+            background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 50%, #2563eb 100%);
+            box-shadow: 0 12px 30px -4px rgba(37, 99, 235, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+            transform: translateY(-2px);
+        }
+
+        /* WhatsApp Theme Gradient */
+        .btn-modal-copy-primary.theme-wa {
+            background: linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%);
+            box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        }
+        .btn-modal-copy-primary.theme-wa:hover {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+            box-shadow: 0 12px 30px -4px rgba(16, 185, 129, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+            transform: translateY(-2px);
+        }
+
+        .btn-modal-copy-primary:active {
+            transform: translateY(0);
+        }
+
         /* Toast Notification (Top-Right on Desktop/Tablet, Top on Mobile) */
         .toast-container {
             position: fixed;
@@ -1479,6 +1733,66 @@
             .modal-footer { flex-wrap: wrap; }
             .modal-footer .btn { flex: 1 1 auto; min-width: 120px; }
 
+            /* Mobile Liquid Glass Reminder Modal Rules */
+            .reminder-modal-content {
+                padding: 1.25rem !important;
+                border-radius: 22px !important;
+                width: 95% !important;
+                max-width: 95% !important;
+            }
+            .reminder-modal-content .modal-title {
+                font-size: 1.05rem !important;
+            }
+            .reminder-recipient-badge {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 0.35rem !important;
+                padding: 0.65rem 0.85rem !important;
+            }
+            .recipient-badge-divider {
+                display: none !important;
+            }
+            .recipient-badge-item {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                width: 100% !important;
+                gap: 0.5rem !important;
+            }
+            .recipient-badge-item .badge-main {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 0.4rem !important;
+                flex-shrink: 0 !important;
+            }
+            .recipient-badge-item .badge-value {
+                text-align: right !important;
+                word-break: break-all !important;
+                max-width: 65% !important;
+            }
+            .reminder-textarea {
+                min-height: 240px !important;
+                font-size: 0.85rem !important;
+                padding: 0.85rem !important;
+            }
+            .reminder-modal-footer {
+                flex-direction: column !important;
+                gap: 0.6rem !important;
+                width: 100% !important;
+            }
+            .btn-modal-copy-primary {
+                width: 100% !important;
+                flex: none !important;
+                order: 1 !important;
+                padding: 0.85rem 1rem !important;
+            }
+            .btn-modal-cancel {
+                width: 100% !important;
+                flex: none !important;
+                order: 2 !important;
+                padding: 0.75rem 1rem !important;
+            }
+
             .toast-container {
                 top: 1rem;
                 left: 1rem;
@@ -1694,6 +2008,28 @@
             </div>
             <div class="modal-footer" id="modalFooter">
                 <!-- Buttons injected dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Reminder Text Preview Modal (iOS Liquid Glass Style) -->
+    <div class="modal" id="reminderModal">
+        <div class="modal-content reminder-modal-content">
+            <div class="modal-header" style="margin-bottom: 1rem;">
+                <h3 class="modal-title" id="reminderModalTitle">
+                    <i class="fa-regular fa-clipboard" style="color: var(--warning-color); margin-right: 8px;"></i>Pratinjau Teks Tagihan
+                </h3>
+                <button class="close-btn" onclick="closeReminderModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="margin-bottom: 1rem;">
+                <div class="reminder-recipient-badge" id="reminderModalSubtitle"></div>
+                <textarea id="reminderTextarea" class="reminder-textarea" spellcheck="false"></textarea>
+            </div>
+            <div class="reminder-modal-footer">
+                <button class="btn-modal-copy-primary" id="btnCopyFromModal">
+                    <i class="fa-regular fa-copy"></i> <span>Salin Teks</span>
+                </button>
+                <button class="btn-modal-cancel" onclick="closeReminderModal()">Tutup</button>
             </div>
         </div>
     </div>

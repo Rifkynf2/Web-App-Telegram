@@ -660,6 +660,12 @@ function renderTenants(tenants) {
                     <small style="color:${isExpired ? 'var(--danger-color)' : 'var(--text-muted)'}">
                         ${escapeHtml(remainingText)}
                     </small>
+                    ${isExpired ? `
+                        <br>
+                        <button class="btn-reminder-pill btn-action-reminder" title="Lihat Teks Tagihan">
+                            <i class="fa-regular fa-clipboard"></i> <span>Tagihan</span>
+                        </button>
+                    ` : ''}
                 </div>
             </td>
             <td data-label="Actions" style="text-align: right;">
@@ -676,6 +682,16 @@ function renderTenants(tenants) {
         tr.querySelector('.btn-action-renew').onclick = () => showRenewModal(t.bot_id, t.username);
         tr.querySelector('.btn-action-toggle').onclick = (e) => confirmToggleStatus(t.bot_id, t.username, t.status === 'ACTIVE' ? 'suspend' : 'activate', e.currentTarget);
         tr.querySelector('.btn-action-delete').onclick = () => confirmDelete(t.bot_id, t.username);
+
+        if (isExpired) {
+            const btnReminder = tr.querySelector('.btn-action-reminder');
+            if (btnReminder) {
+                btnReminder.onclick = (e) => {
+                    e.stopPropagation();
+                    handlePreviewReminderTelegram(t);
+                };
+            }
+        }
 
         tbody.appendChild(tr);
     });
@@ -838,6 +854,12 @@ function renderWaGroups(groups) {
                     <small style="color:${isExpired ? 'var(--danger-color)' : 'var(--text-muted)'}">
                         ${escapeHtml(remainingText)}
                     </small>
+                    ${isExpired ? `
+                        <br>
+                        <button class="btn-reminder-pill btn-action-reminder-wa" title="Lihat Teks Tagihan">
+                            <i class="fa-regular fa-clipboard"></i> <span>Tagihan</span>
+                        </button>
+                    ` : ''}
                 </div>
             </td>
             <td data-label="Actions" style="text-align: right;">
@@ -854,6 +876,16 @@ function renderWaGroups(groups) {
         tr.querySelector('.btn-action-extend-wa').onclick = () => showWaExtendModal(g);
         tr.querySelector('.btn-action-toggle-wa').onclick = (e) => confirmWaToggleStatus(g, e.currentTarget);
         tr.querySelector('.btn-action-delete-wa').onclick = () => confirmWaDelete(g);
+
+        if (isExpired) {
+            const btnReminderWa = tr.querySelector('.btn-action-reminder-wa');
+            if (btnReminderWa) {
+                btnReminderWa.onclick = (e) => {
+                    e.stopPropagation();
+                    handlePreviewReminderWa(g);
+                };
+            }
+        }
 
         tbody.appendChild(tr);
     });
@@ -1498,6 +1530,275 @@ function closeModal() { modal.classList.remove('active'); }
 modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModal();
 });
+
+// ── Expired Reminder Generator & Modal ──────────────────────────────────────
+const reminderModal = document.getElementById('reminderModal');
+function openReminderModal() { reminderModal?.classList.add('active'); }
+function closeReminderModal() { reminderModal?.classList.remove('active'); }
+
+reminderModal?.addEventListener('click', (e) => {
+    if (e.target === reminderModal) closeReminderModal();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && reminderModal?.classList.contains('active')) {
+        closeReminderModal();
+    }
+});
+
+const btnCopyFromModal = document.getElementById('btnCopyFromModal');
+if (btnCopyFromModal) {
+    btnCopyFromModal.onclick = async () => {
+        const textarea = document.getElementById('reminderTextarea');
+        const text = textarea ? textarea.value : '';
+        if (!text) return;
+        try {
+            await copyToClipboard(text);
+            const orig = btnCopyFromModal.innerHTML;
+            btnCopyFromModal.innerHTML = '<i class="fa-solid fa-check" style="color: #ffffff;"></i> <span>Tersalin ke Clipboard!</span>';
+            btnCopyFromModal.disabled = true;
+            setTimeout(() => {
+                btnCopyFromModal.innerHTML = orig;
+                btnCopyFromModal.disabled = false;
+                closeReminderModal();
+            }, 850);
+            showToast('Teks pengingat berhasil disalin!', 'success');
+        } catch (err) {
+            showToast('Gagal menyalin teks', 'error');
+        }
+    };
+}
+
+function buildTelegramReminderText(tenant) {
+    const username = tenant.username ? tenant.username.replace(/^@/, '') : '';
+    const shopName = tenant.shop_name || 'Bot Member';
+    const botId = tenant.bot_id || '-';
+    const plan = tenant.subscription?.plan || 'Standard';
+
+    let expiryFormatted = '-';
+    if (tenant.subscription?.expiryDate) {
+        const d = new Date(tenant.subscription.expiryDate);
+        if (!isNaN(d.getTime())) {
+            expiryFormatted = d.toLocaleDateString('id-ID', {
+                timeZone: 'Asia/Jakarta',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+    }
+
+    const remainingDays = tenant.subscription?.expiryDate 
+        ? calculateRemainingDaysWib(tenant.subscription.expiryDate) 
+        : (tenant.subscription?.remainingDays ?? null);
+    
+    let statusHari = 'Sudah lewat tempo';
+    if (remainingDays !== null) {
+        if (remainingDays === 0) statusHari = 'Hari ini';
+        else if (remainingDays === -1) statusHari = 'Lewat 1 hari';
+        else if (remainingDays < -1) statusHari = `Lewat ${Math.abs(remainingDays)} hari`;
+        else statusHari = `${remainingDays} hari lagi`;
+    }
+
+    const botUsernameDisplay = username ? `@${username}` : (tenant.shop_name || 'Bot Anda');
+
+    return `Halo Kak 👋
+
+Kami menginformasikan bahwa masa aktif sewa Bot Telegram Anda telah BERAKHIR.
+
+📋 RINCIAN SEWA BOT TELEGRAM:
+• Nama Toko/Bot: ${shopName}
+• Username Bot: ${username ? `@${username}` : '-'}
+• Bot ID: ${botId}
+• Paket Sewa: ${plan}
+• Jatuh Tempo: ${expiryFormatted} (${statusHari})
+• Status Layanan: 🔴 NON-AKTIF / EXPIRED
+
+💳 CARA PERPANJANG MASA SEWA:
+1. Buka bot Anda di Telegram: ${botUsernameDisplay}
+2. Buka /admin
+3. Pilih menu "Perpanjang Sewa Bot" di keyboard button
+4. Lakukan pembayaran invoice via QRIS yang muncul di bot
+5. Setelah pembayaran berhasil, bot Anda otomatis LANGSUNG AKTIF kembali tanpa perlu kirim bukti manual!
+
+⚠️ PENTING: Jika masa expired sudah lebih dari 7 hari dan belum ada perpanjangan sewa, maka seluruh data bot akan DIHAPUS PERMANEN dari sistem.
+
+Terima kasih atas kerja samanya! 🙏
+— Team RNFBOT`;
+}
+
+function buildWaReminderText(group) {
+    const renterName = group.renter_name || 'Kak';
+    const groupName = group.group_name || '-';
+    const groupId = group.target_group_id || group.store_group_id || group.id || '-';
+
+    let expiryFormatted = group.paid_until || '-';
+    if (group.paid_until) {
+        const parts = group.paid_until.split('-');
+        if (parts.length === 3) {
+            const d = new Date(`${parts[0]}-${parts[1]}-${parts[2]}T00:00:00Z`);
+            if (!isNaN(d.getTime())) {
+                expiryFormatted = d.toLocaleDateString('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
+        }
+    }
+
+    const diffDays = group.paid_until ? calculateRemainingDaysWib(group.paid_until) : null;
+    let statusHari = 'Sudah lewat tempo';
+    if (diffDays !== null) {
+        if (diffDays === 0) statusHari = 'Hari ini';
+        else if (diffDays === -1) statusHari = 'Lewat 1 hari';
+        else if (diffDays < -1) statusHari = `Lewat ${Math.abs(diffDays)} hari`;
+        else statusHari = `${diffDays} hari lagi`;
+    }
+
+    return `Halo Kak *${renterName}* 👋
+
+Kami menginformasikan bahwa masa aktif sewa Bot WhatsApp Anda telah *BERAKHIR*.
+
+*📋 RINCIAN SEWA BOT WHATSAPP:*
+- *Nama Grup:* _${groupName}_
+- *ID Grup:* _${groupId}_
+- *Penyewa:* _${renterName}_
+- *Jatuh Tempo:* _${expiryFormatted}_ (${statusHari})
+- *Status Layanan:* 🔴 _EXPIRED / NON-AKTIF_
+
+*💳 CARA PERPANJANG MASA SEWA:*
+1. _Masuk ke grup resmi: *RNF BOT*_
+2. _Ketik \`payment\` di dalam grup_
+3. _Akan muncul tampilan daftar grup, silakan pilih grup Anda (*${groupName}*)_
+4. _Konfirmasi data grup Anda_
+5. _QRIS pembayaran akan otomatis muncul di grup, silakan lakukan pembayaran_
+6. _Fitur bot di grup Anda (*${groupName}*) akan langsung aktif kembali secara otomatis setelah pembayaran sukses!_
+
+*⚠️ PENTING:* _Jika masa expired sudah lebih dari 7 hari dan belum ada perpanjangan sewa, maka seluruh data sewa grup akan DIHAPUS PERMANEN dari sistem._
+
+Terima kasih atas kepercayaannya menyewa bot kami! 🙏
+*— Team RNFBOT*`;
+}
+
+async function handleCopyReminderTelegram(tenant, btn) {
+    const text = buildTelegramReminderText(tenant);
+    try {
+        await copyToClipboard(text);
+        if (btn) {
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check" style="color: #34d399;"></i> <span>Copied!</span>';
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+            }, 1800);
+        }
+        const usernameDisp = tenant.username ? `@${tenant.username.replace(/^@/, '')}` : (tenant.shop_name || 'bot');
+        showToast(`Teks tagihan ${usernameDisp} berhasil disalin!`, 'success');
+    } catch (err) {
+        showToast('Gagal menyalin teks tagihan', 'error');
+    }
+}
+
+function handlePreviewReminderTelegram(tenant) {
+    const text = buildTelegramReminderText(tenant);
+    const subtitle = document.getElementById('reminderModalSubtitle');
+    const textarea = document.getElementById('reminderTextarea');
+    const title = document.getElementById('reminderModalTitle');
+    const copyBtn = document.getElementById('btnCopyFromModal');
+
+    if (title) {
+        title.innerHTML = '<i class="fa-brands fa-telegram" style="color: #38bdf8; margin-right: 8px;"></i>Pratinjau Tagihan Telegram';
+    }
+    if (subtitle) {
+        const usernameDisp = tenant.username ? `@${tenant.username.replace(/^@/, '')}` : (tenant.shop_name || 'Bot Member');
+        subtitle.innerHTML = `
+            <div class="recipient-badge-item">
+                <span class="badge-main">
+                    <i class="fa-solid fa-user-tag" style="color: #38bdf8;"></i>
+                    <span class="badge-label">Penerima:</span>
+                </span>
+                <b class="badge-value">${escapeHtml(usernameDisp)}</b>
+            </div>
+            <span class="recipient-badge-divider">&middot;</span>
+            <div class="recipient-badge-item">
+                <span class="badge-main">
+                    <i class="fa-solid fa-store" style="color: #60a5fa;"></i>
+                    <span class="badge-label">Toko:</span>
+                </span>
+                <b class="badge-value">${escapeHtml(tenant.shop_name || '-')}</b>
+            </div>
+        `;
+    }
+    if (textarea) {
+        textarea.value = text;
+    }
+    if (copyBtn) {
+        copyBtn.className = 'btn-modal-copy-primary theme-tg';
+        copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> <span>Salin Teks</span>';
+    }
+    openReminderModal();
+}
+
+async function handleCopyReminderWa(group, btn) {
+    const text = buildWaReminderText(group);
+    try {
+        await copyToClipboard(text);
+        if (btn) {
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check" style="color: #34d399;"></i> <span>Copied!</span>';
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+            }, 1800);
+        }
+        showToast(`Teks tagihan grup ${group.group_name || ''} berhasil disalin!`, 'success');
+    } catch (err) {
+        showToast('Gagal menyalin teks tagihan', 'error');
+    }
+}
+
+function handlePreviewReminderWa(group) {
+    const text = buildWaReminderText(group);
+    const subtitle = document.getElementById('reminderModalSubtitle');
+    const textarea = document.getElementById('reminderTextarea');
+    const title = document.getElementById('reminderModalTitle');
+    const copyBtn = document.getElementById('btnCopyFromModal');
+
+    if (title) {
+        title.innerHTML = '<i class="fa-brands fa-whatsapp" style="color: #22c55e; margin-right: 8px;"></i>Pratinjau Tagihan WhatsApp';
+    }
+    if (subtitle) {
+        subtitle.innerHTML = `
+            <div class="recipient-badge-item">
+                <span class="badge-main">
+                    <i class="fa-solid fa-user" style="color: #22c55e;"></i>
+                    <span class="badge-label">Penyewa:</span>
+                </span>
+                <b class="badge-value">${escapeHtml(group.renter_name || '-')}</b>
+            </div>
+            <span class="recipient-badge-divider">&middot;</span>
+            <div class="recipient-badge-item">
+                <span class="badge-main">
+                    <i class="fa-solid fa-user-group" style="color: #34d399;"></i>
+                    <span class="badge-label">Grup:</span>
+                </span>
+                <b class="badge-value">${escapeHtml(group.group_name || '-')}</b>
+            </div>
+        `;
+    }
+    if (textarea) {
+        textarea.value = text;
+    }
+    if (copyBtn) {
+        copyBtn.className = 'btn-modal-copy-primary theme-wa';
+        copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> <span>Salin Teks</span>';
+    }
+    openReminderModal();
+}
 
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
