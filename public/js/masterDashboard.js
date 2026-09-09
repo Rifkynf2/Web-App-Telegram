@@ -1603,28 +1603,28 @@ function buildTelegramReminderText(tenant) {
 
     const botUsernameDisplay = username ? `@${username}` : (tenant.shop_name || 'Bot Anda');
 
-    return `Halo Kak 👋
+    return `Halo Kak \u{1F44B}
 
 Kami menginformasikan bahwa masa aktif sewa Bot Telegram Anda telah BERAKHIR.
 
-📋 RINCIAN SEWA BOT TELEGRAM:
+\u{1F4CB} RINCIAN SEWA BOT TELEGRAM:
 • Nama Toko/Bot: ${shopName}
 • Username Bot: ${username ? `@${username}` : '-'}
 • Bot ID: ${botId}
 • Paket Sewa: ${plan}
 • Jatuh Tempo: ${expiryFormatted} (${statusHari})
-• Status Layanan: 🔴 NON-AKTIF / EXPIRED
+• Status Layanan: \u{1F534} NON-AKTIF / EXPIRED
 
-💳 CARA PERPANJANG MASA SEWA:
+\u{1F4B3} CARA PERPANJANG MASA SEWA:
 1. Buka bot Anda di Telegram: ${botUsernameDisplay}
 2. Buka /admin
 3. Pilih menu "Perpanjang Sewa Bot" di keyboard button
 4. Lakukan pembayaran invoice via QRIS yang muncul di bot
 5. Setelah pembayaran berhasil, bot Anda otomatis LANGSUNG AKTIF kembali tanpa perlu kirim bukti manual!
 
-⚠️ PENTING: Jika masa expired sudah lebih dari 7 hari dan belum ada perpanjangan sewa, maka seluruh data bot akan DIHAPUS PERMANEN dari sistem.
+\u{26A0}\u{FE0F} PENTING: Jika masa expired sudah lebih dari 7 hari dan belum ada perpanjangan sewa, maka seluruh data bot akan DIHAPUS PERMANEN dari sistem.
 
-Terima kasih atas kerja samanya! 🙏
+Terima kasih atas kerja samanya! \u{1F64F}
 — Team RNFBOT`;
 }
 
@@ -1658,18 +1658,18 @@ function buildWaReminderText(group) {
         else statusHari = `${diffDays} hari lagi`;
     }
 
-    return `Halo Kak *${renterName}* 👋
+    return `Halo Kak *${renterName}* \u{1F44B}
 
 Kami menginformasikan bahwa masa aktif sewa Bot WhatsApp Anda telah *BERAKHIR*.
 
-*📋 RINCIAN SEWA BOT WHATSAPP:*
+*\u{1F4CB} RINCIAN SEWA BOT WHATSAPP:*
 - *Nama Grup:* _${groupName}_
 - *ID Grup:* _${groupId}_
 - *Penyewa:* _${renterName}_
 - *Jatuh Tempo:* _${expiryFormatted}_ (${statusHari})
-- *Status Layanan:* 🔴 _EXPIRED / NON-AKTIF_
+- *Status Layanan:* \u{1F534} _EXPIRED / NON-AKTIF_
 
-*💳 CARA PERPANJANG MASA SEWA:*
+*\u{1F4B3} CARA PERPANJANG MASA SEWA:*
 1. _Masuk ke grup resmi: *RNF BOT*_
 2. _Ketik \`payment\` di dalam grup_
 3. _Akan muncul tampilan daftar grup, silakan pilih grup Anda (*${groupName}*)_
@@ -1677,9 +1677,9 @@ Kami menginformasikan bahwa masa aktif sewa Bot WhatsApp Anda telah *BERAKHIR*.
 5. _QRIS pembayaran akan otomatis muncul di grup, silakan lakukan pembayaran_
 6. _Fitur bot di grup Anda (*${groupName}*) akan langsung aktif kembali secara otomatis setelah pembayaran sukses!_
 
-*⚠️ PENTING:* _Jika masa expired sudah lebih dari 7 hari dan belum ada perpanjangan sewa, maka seluruh data sewa grup akan DIHAPUS PERMANEN dari sistem._
+*\u{26A0}\u{FE0F} PENTING:* _Jika masa expired sudah lebih dari 7 hari dan belum ada perpanjangan sewa, maka seluruh data sewa grup akan DIHAPUS PERMANEN dari sistem._
 
-Terima kasih atas kepercayaannya menyewa bot kami! 🙏
+Terima kasih atas kepercayaannya menyewa bot kami! \u{1F64F}
 *— Team RNFBOT*`;
 }
 
@@ -1794,7 +1794,13 @@ function handleSendToWhatsApp(group, text) {
         }
     }
 
-    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const encodedText = encodeURIComponent(text);
+    // Hindari redirect wa.me karena bug reverse-proxy Meta yang merusak 4-byte UTF-8 emoji menjadi  (%EF%BF%BD)
+    const waUrl = isMobile
+        ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encodedText}`
+        : `https://web.whatsapp.com/send?phone=${targetPhone}&text=${encodedText}`;
+
     window.open(waUrl, '_blank');
     showToast(`Membuka WhatsApp ke +${targetPhone}...`, 'success');
 }
