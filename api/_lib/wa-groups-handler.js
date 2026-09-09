@@ -62,7 +62,7 @@ module.exports = async function handler(req, res) {
             // Default GET: List groups with only columns needed by the dashboard
             const { data: groups, error: listErr } = await supa
                 .from('managed_groups')
-                .select('id, store_group_id, target_group_id, group_name, renter_name, is_active, paid_until, joined_at, updated_at')
+                .select('id, store_group_id, target_group_id, group_name, renter_name, user_jid, is_active, paid_until, joined_at, updated_at')
                 .order('id', { ascending: false });
 
             if (listErr) throw listErr;
@@ -77,7 +77,7 @@ module.exports = async function handler(req, res) {
 
         // ── PUT Requests ────────────────────────────────────────────────────
         if (req.method === 'PUT') {
-            const { id, days, group_name, renter_name, is_active } = req.body || {};
+            const { id, days, group_name, renter_name, user_jid, is_active } = req.body || {};
 
             if (!id) return error(res, 'Group ID (id) is required');
 
@@ -117,13 +117,18 @@ module.exports = async function handler(req, res) {
                     return error(res, 'group_name and renter_name are required');
                 }
 
+                const editPayload = {
+                    group_name,
+                    renter_name,
+                    updated_at: new Date().toISOString()
+                };
+                if (user_jid !== undefined) {
+                    editPayload.user_jid = user_jid ? String(user_jid).replace(/@.*$/, '').replace(/\D/g, '') : null;
+                }
+
                 const { data: updated, error: updateErr } = await supa
                     .from('managed_groups')
-                    .update({
-                        group_name,
-                        renter_name,
-                        updated_at: new Date().toISOString()
-                    })
+                    .update(editPayload)
                     .eq('id', id)
                     .select()
                     .single();

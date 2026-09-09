@@ -839,7 +839,8 @@ function renderWaGroups(groups) {
             </td>
             <td data-label="Renter Name" style="text-align: center;">
                 <div class="cell-value">
-                    ${escapeHtml(g.renter_name || '-')}
+                    <b>${escapeHtml(g.renter_name || '-')}</b>
+                    ${g.user_jid ? `<br><small style="color: var(--text-muted); font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px; justify-content: center; margin-top: 3px;"><i class="fa-brands fa-whatsapp" style="color: #22c55e;"></i> ${escapeHtml(g.user_jid)}</small>` : ''}
                 </div>
             </td>
             <td data-label="STATUS JOINED" style="text-align: center;">
@@ -1708,6 +1709,11 @@ function handlePreviewReminderTelegram(tenant) {
     const textarea = document.getElementById('reminderTextarea');
     const title = document.getElementById('reminderModalTitle');
     const copyBtn = document.getElementById('btnCopyFromModal');
+    const sendWaBtn = document.getElementById('btnSendWaFromModal');
+
+    if (sendWaBtn) {
+        sendWaBtn.style.display = 'none';
+    }
 
     if (title) {
         title.innerHTML = '<i class="fa-brands fa-telegram" style="color: #38bdf8; margin-right: 8px;"></i>Pratinjau Tagihan Telegram';
@@ -1761,12 +1767,45 @@ async function handleCopyReminderWa(group, btn) {
     }
 }
 
+function formatPhoneNumberForWa(raw) {
+    if (!raw) return null;
+    let digits = String(raw).replace(/@.*$/, '').replace(/\D/g, '');
+    if (!digits) return null;
+    if (digits.startsWith('0')) {
+        digits = '62' + digits.slice(1);
+    } else if (digits.startsWith('8') && digits.length >= 9 && digits.length <= 13) {
+        digits = '62' + digits;
+    }
+    return digits;
+}
+
+function handleSendToWhatsApp(group, text) {
+    let targetPhone = formatPhoneNumberForWa(group.user_jid);
+
+    if (!targetPhone) {
+        const inputNum = prompt(
+            `Nomor WhatsApp untuk grup "${group.group_name || ''}" belum terdaftar di database.\n\nMasukkan nomor WhatsApp tujuan (contoh: 08123456789 atau +60189020700):`
+        );
+        if (!inputNum || !inputNum.trim()) return;
+        targetPhone = formatPhoneNumberForWa(inputNum.trim());
+        if (!targetPhone) {
+            showToast('Nomor WhatsApp yang dimasukkan tidak valid', 'error');
+            return;
+        }
+    }
+
+    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
+    showToast(`Membuka WhatsApp ke +${targetPhone}...`, 'success');
+}
+
 function handlePreviewReminderWa(group) {
     const text = buildWaReminderText(group);
     const subtitle = document.getElementById('reminderModalSubtitle');
     const textarea = document.getElementById('reminderTextarea');
     const title = document.getElementById('reminderModalTitle');
     const copyBtn = document.getElementById('btnCopyFromModal');
+    const sendWaBtn = document.getElementById('btnSendWaFromModal');
 
     if (title) {
         title.innerHTML = '<i class="fa-brands fa-whatsapp" style="color: #22c55e; margin-right: 8px;"></i>Pratinjau Tagihan WhatsApp';
@@ -1788,14 +1827,26 @@ function handlePreviewReminderWa(group) {
                 </span>
                 <b class="badge-value">${escapeHtml(group.group_name || '-')}</b>
             </div>
+            <span class="recipient-badge-divider">&middot;</span>
+            <div class="recipient-badge-item">
+                <span class="badge-main">
+                    <i class="fa-brands fa-whatsapp" style="color: #22c55e;"></i>
+                    <span class="badge-label">Nomor:</span>
+                </span>
+                <b class="badge-value">${escapeHtml(group.user_jid || 'Belum diisi')}</b>
+            </div>
         `;
     }
     if (textarea) {
         textarea.value = text;
     }
     if (copyBtn) {
-        copyBtn.className = 'btn-modal-copy-primary theme-wa';
+        copyBtn.className = 'btn-modal-copy-primary theme-wa-blue';
         copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> <span>Salin Teks</span>';
+    }
+    if (sendWaBtn) {
+        sendWaBtn.style.display = 'inline-flex';
+        sendWaBtn.onclick = () => handleSendToWhatsApp(group, textarea ? textarea.value : text);
     }
     openReminderModal();
 }
