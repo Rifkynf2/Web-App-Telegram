@@ -38,18 +38,31 @@ async function getSubscription(req, res) {
     try {
         const masterDb = getMasterSupabase();
 
-        // Get full subscription details
-        const { data: sub, error: subErr } = await masterDb
-            .from('subscriptions')
-            .select(`
-                id, bot_id, start_date, expiry_date, status, 
-                last_payment_at, is_auto_off,
-                plans(name, price, duration_days, features)
-            `)
-            .eq('bot_id', botId)
-            .order('expiry_date', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+        // 1-Turn Relational Query: fetch subscription, joined plans, and joined tenant in ONE round-trip!
+        // Run rental_invoices in parallel via Promise.all (zero blocking)
+        const [subResult, invResult] = await Promise.all([
+            masterDb
+                .from('subscriptions')
+                .select(`
+                    id, bot_id, start_date, expiry_date, status, 
+                    last_payment_at, is_auto_off,
+                    plans(name, price, duration_days, features),
+                    tenants(username, shop_name, status, created_at)
+                `)
+                .eq('bot_id', botId)
+                .order('expiry_date', { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+            masterDb
+                .from('rental_invoices')
+                .select('id, amount, status, created_at, paid_at')
+                .eq('bot_id', botId)
+                .order('created_at', { ascending: false })
+                .limit(5)
+        ]);
+
+        const { data: sub, error: subErr } = subResult;
+        const { data: invoices } = invResult;
 
         if (subErr) {
             console.error('[API/subscription] DB error:', subErr.message);
@@ -60,12 +73,8 @@ async function getSubscription(req, res) {
             return notFound(res, 'Subscription not found');
         }
 
-        // Get tenant info
-        const { data: tenant } = await masterDb
-            .from('tenants')
-            .select('username, shop_name, status, created_at')
-            .eq('bot_id', botId)
-            .single();
+        // Extract joined tenant info
+        const tenant = sub.tenants || null;
 
         // Calculate remaining days via WIB calendar difference
         const now = new Date();
@@ -83,13 +92,7 @@ async function getSubscription(req, res) {
             if (sub) sub.status = 'EXPIRED';
         }
 
-        // Get recent invoices
-        const { data: invoices } = await masterDb
-            .from('rental_invoices')
-            .select('id, amount, status, created_at, paid_at')
-            .eq('bot_id', botId)
-            .order('created_at', { ascending: false })
-            .limit(5);
+        // (Invoices fetched concurrently in Promise.all above)
 
         return success(res, {
             subscription: {
