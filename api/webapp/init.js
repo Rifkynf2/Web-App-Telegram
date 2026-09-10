@@ -1,6 +1,6 @@
 const { getMasterSupabase } = require('../_lib/masterSupabase');
 const { validateTelegramInitData } = require('../_lib/telegramAuth');
-const { success, error, unauthorized, serverError, handleCors } = require('../_lib/response');
+const { success, error, unauthorized, forbidden, notFound, serverError, handleCors } = require('../_lib/response');
 const crypto = require('crypto');
 
 /**
@@ -81,18 +81,51 @@ module.exports = async function handler(req, res) {
             sessionId = newSession?.id;
         }
 
-        // 4. Get tenant config
-        const { data: config } = await masterDb
-            .from('tenant_configs')
-            .select('supabase_url, supabase_anon_key')
-            .eq('bot_id', bot_id)
-            .single();
+        // 4. Validate tenant status, subscription and get config concurrently
+        const [
+            { data: tenant, error: tErr },
+            { data: sub },
+            { data: config, error: cErr }
+        ] = await Promise.all([
+            masterDb
+                .from('tenants')
+                .select('shop_name, username, status')
+                .eq('bot_id', bot_id)
+                .single(),
+            masterDb
+                .from('subscriptions')
+                .select('expiry_date')
+                .eq('bot_id', bot_id)
+                .order('expiry_date', { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+            masterDb
+                .from('tenant_configs')
+                .select('supabase_url, supabase_anon_key')
+                .eq('bot_id', bot_id)
+                .single()
+        ]);
 
-        const { data: tenant } = await masterDb
-            .from('tenants')
-            .select('shop_name, username, status')
-            .eq('bot_id', bot_id)
-            .single();
+        if (tErr || !tenant) {
+            return notFound(res, 'Toko tidak ditemukan');
+        }
+
+        if (tenant.status !== 'ACTIVE') {
+            const messages = {
+                'SUSPENDED': 'Toko sedang dinonaktifkan sementara',
+                'EXPIRED': 'Masa sewa toko telah habis',
+                'BANNED': 'Toko telah diblokir oleh administrator'
+            };
+            return forbidden(res, messages[tenant.status] || 'Toko tidak aktif');
+        }
+
+        if (sub && new Date(sub.expiry_date) < new Date()) {
+            return forbidden(res, 'Masa sewa toko telah habis. Hubungi pemilik toko.');
+        }
+
+        if (cErr || !config) {
+            return notFound(res, 'Konfigurasi toko tidak ditemukan');
+        }
 
         return success(res, {
             session_id: sessionId,

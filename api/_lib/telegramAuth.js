@@ -96,7 +96,16 @@ async function validateTelegramInitData(initData, botId) {
             .update(dataCheckString)
             .digest('hex');
 
-        if (computedHash !== hash) {
+        let hashBuf;
+        let compBuf;
+        try {
+            hashBuf = Buffer.from(hash, 'hex');
+            compBuf = Buffer.from(computedHash, 'hex');
+        } catch (e) {
+            return { valid: false, error: 'Invalid hash format' };
+        }
+
+        if (hashBuf.length !== compBuf.length || !crypto.timingSafeEqual(hashBuf, compBuf)) {
             return { valid: false, error: 'Invalid hash — initData tampered' };
         }
 

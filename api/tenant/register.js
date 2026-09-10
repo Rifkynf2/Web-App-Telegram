@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
         const masterDb = getMasterSupabase();
         const { data: existingTenant } = await masterDb
             .from('tenants')
-            .select('metadata')
+            .select('metadata, status')
             .eq('bot_id', botId)
             .maybeSingle();
 
@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
             username: username || null,
             shop_name,
             owner_chat_id: parseInt(owner_chat_id),
-            status: 'ACTIVE',
+            status: existingTenant?.status || 'ACTIVE',
             db_url: db_url || null,
             db_anon_key: db_anon_key || null,
         };

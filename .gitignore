@@ -10,3 +10,24 @@ dist/
 
 # Generated files (no longer needed)
 public/js/config.js
+
+# Added by code-review-graph & graphify
+.code-review-graph/
+graphify-out/
+
+# AI Tooling & Local Agent Directories
+.codebuddy/
+.gemini/
+.qoder/
+.kiro/
+
+# IDE Rules & Agent Configuration Files
+.cursorrules
+.windsurfrules
+opencode.jsonc
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+CODEBUDDY.md
+QODER.md
+.github/instructions/
