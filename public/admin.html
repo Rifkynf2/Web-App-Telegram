@@ -17,6 +17,9 @@
 
     <!-- Performance: Preload local self-hosted Outfit font -->
     <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Performance: Preconnect to mock image CDN (saves 300ms on preview LCP) -->
+    <link rel="preconnect" href="https://placehold.co" crossorigin />
+
     <!-- Performance: Preload local Font Awesome solid font -->
     <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
 
@@ -25,7 +28,21 @@
 
     <!-- Local Self-Hosted Stylesheets (Zero External CDN Dependency) -->
     <link href="style/style.css" rel="stylesheet" />
-    <link href="style/fontawesome.min.css" rel="stylesheet" />
+    <link rel="preload" href="style/fontawesome.min.css" as="style" />
+    <link rel="stylesheet" href="style/fontawesome.min.css" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="style/fontawesome.min.css" /></noscript>
+
+    <!-- Instant Preview Detection (Prevents Fallback Flash in Preview Mode) -->
+    <script>
+      if (new URLSearchParams(window.location.search).get('preview') === 'true' || new URLSearchParams(window.location.search).get('preview') === '1') {
+        document.documentElement.classList.add('is-preview');
+      }
+    </script>
+    <style>
+      html.is-preview #telegram-fallback {
+        display: none !important;
+      }
+    </style>
 
     <!-- Deferred Third-Party Libraries (Non Render-Blocking) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
@@ -36,10 +53,15 @@
     <script type="module">
       import { initTheme, toggleTheme } from './js/theme.js';
       initTheme();
-      document.addEventListener('DOMContentLoaded', () => {
+      const bindToggle = () => {
         const btn = document.getElementById('btn-theme-toggle');
         if (btn) btn.addEventListener('click', toggleTheme);
-      });
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindToggle);
+      } else {
+        bindToggle();
+      }
     </script>
     <script type="module" src="js/admin-main.js" defer></script>
   </head>
@@ -114,6 +136,14 @@
               class="w-full py-3 px-5 rounded-2xl ios-glass-pill text-gray-200 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 hover:text-white hover:border-white/20 active:scale-[0.98] transition-all duration-200 decoration-0 border border-white/10">
               <i class="fa-solid fa-book-open text-xs text-indigo-400"></i>
               <span>Dokumentasi Sistem</span>
+            </a>
+
+            <!-- Preview Demo Action -->
+            <a
+              href="/admin?preview=true"
+              class="w-full py-2.5 px-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-indigo-300 hover:text-white font-medium text-xs flex items-center justify-center gap-2 border border-white/10 active:scale-[0.98] transition-all decoration-0">
+              <i class="fa-solid fa-store text-xs text-indigo-400"></i>
+              <span>Buka Pratinjau Toko (Mock Preview)</span>
             </a>
           </div>
 
@@ -296,7 +326,7 @@
           </div>
         </div>
 
-        <div id="admin-product-list" class="flex flex-col gap-3">
+        <div id="admin-product-list" class="flex flex-col gap-3 min-h-[420px]">
           <!-- Admin Product items will be injected here -->
           <div
             class="liquid-glass p-8 flex flex-col items-center justify-center py-10 opacity-50">

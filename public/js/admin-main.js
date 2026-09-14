@@ -1,5 +1,9 @@
 import { initAdminApp } from './adminProducts.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initAdminApp();
+    });
+} else {
     initAdminApp();
-});
+}

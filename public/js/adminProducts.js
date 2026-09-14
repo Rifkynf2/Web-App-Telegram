@@ -154,17 +154,26 @@ export async function initAdminApp() {
 
   // 1. Technical & Environment Check
   const urlAuthToken = urlParams.get('auth');
-  const isPreviewMode = urlParams.get('preview') === 'true';
+  const isPreviewMode = urlParams.get('preview') === 'true' || urlParams.get('preview') === '1';
 
   if (tg && tg.initData) {
-    if (telegramFallback) telegramFallback.classList.add('hidden');
+    if (telegramFallback) {
+      telegramFallback.classList.add('hidden');
+      telegramFallback.style.display = 'none';
+    }
     tg.expand();
     tg.ready();
   } else if (urlAuthToken) {
-    if (telegramFallback) telegramFallback.classList.add('hidden');
+    if (telegramFallback) {
+      telegramFallback.classList.add('hidden');
+      telegramFallback.style.display = 'none';
+    }
     console.log('Accessing from browser with auth token.');
   } else if (isPreviewMode) {
-    if (telegramFallback) telegramFallback.classList.add('hidden');
+    if (telegramFallback) {
+      telegramFallback.classList.add('hidden');
+      telegramFallback.style.display = 'none';
+    }
     console.log('[Admin] Preview mode active — auth bypassed');
   } else {
     console.log('Not in Telegram environment & no auth token.');
@@ -172,9 +181,13 @@ export async function initAdminApp() {
   }
 
   // 2. Resolve Tenant (CRITICAL)
-  // Preview mode tanpa bot_id: skip semua API, render mock data langsung
-  if (isPreviewMode && !urlParams.get('bot_id')) {
+  // Preview mode: render mock data langsung tanpa network calls
+  if (isPreviewMode) {
     hideLoading();
+    if (telegramFallback) {
+      telegramFallback.classList.add('hidden');
+      telegramFallback.style.display = 'none';
+    }
     if (elHeaderShopName) elHeaderShopName.textContent = 'Preview Toko';
     adminCatalogData = sortProductsAlphabetically(MOCK_ADMIN_PRODUCTS);
     renderAdminView(MOCK_ADMIN_STATS);
@@ -288,7 +301,10 @@ export async function refreshAdminData() {
 function renderAdminView(stats = null) {
   stats = stats || latestAdminStats;
   const adminView = document.getElementById('admin-view');
-  if (adminView) adminView.classList.remove('hidden');
+  if (adminView) {
+    adminView.classList.remove('hidden');
+    adminView.style.display = 'flex';
+  }
 
   const products = adminCatalogData;
 
