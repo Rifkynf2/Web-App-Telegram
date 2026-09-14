@@ -8,11 +8,13 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <!-- Performance: Preload local self-hosted Outfit font -->
     <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <!-- Performance: Preload modular Master Dashboard CSS -->
-    <link rel="preload" href="/style/master-dashboard.min.css" as="style">
+    <!-- Performance: Preload modular Master Dashboard CSS with high priority -->
+    <link rel="preload" href="/style/master-dashboard.min.css" as="style" fetchpriority="high">
     <link rel="stylesheet" href="/style/master-dashboard.min.css">
     <!-- Performance: Preload local Font Awesome solid font -->
     <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Performance: Preload LCP header icon with high priority -->
+    <link rel="preload" href="/images/cloud-server.svg" as="image" type="image/svg+xml" fetchpriority="high">
 </head>
 <body>
 
@@ -39,7 +41,7 @@
         <header>
             <div class="header-brand">
                 <div class="header-icon-badge">
-                    <img src="/images/cloud-server.svg" alt="Cloud Server Icon" class="header-icon-svg">
+                    <img src="/images/cloud-server.svg" alt="Cloud Server Icon" class="header-icon-svg" width="42" height="42" fetchpriority="high">
                 </div>
                 <div class="header-right-group">
                     <div class="header-title-group">
