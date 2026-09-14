@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
 import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId } from './store.js';
-import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl } from './utils.js';
+import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl, escapeHtml } from './utils.js';
 import { openStockModal, initAdminStock, initSmoothSelect, syncSmoothSelect } from './adminStock.js';
 
 // ── Mock Data (preview mode) ───────────────────────────────────────────────────
@@ -507,10 +507,10 @@ function createAdminProductRow(product) {
   div.innerHTML = `
         <div class="flex items-center gap-3.5 min-w-0">
             <div class="w-12 h-12 rounded-xl liquid-glass overflow-hidden shrink-0 border border-white/10 p-0.5">
-                <img src="${getImageFallback(product.image_url, product.name)}" class="w-full h-full object-cover rounded-lg">
+                <img src="${getImageFallback(product.image_url, product.name)}" alt="${escapeHtml(product.name)}" width="48" height="48" loading="lazy" decoding="async" class="w-full h-full object-cover rounded-lg">
             </div>
             <div class="text-left min-w-0 flex-1">
-                <h4 class="text-xs font-bold text-white line-clamp-1">${product.name}</h4>
+                <h4 class="text-xs font-bold text-white line-clamp-1">${escapeHtml(product.name)}</h4>
                 <p class="text-[10px] text-gray-400 mt-1">${compactSubText} • ${stockDisplay}</p>
                 <p class="text-[9px] ${product.is_active === false ? 'text-red-400' : 'text-emerald-400'} mt-1 uppercase tracking-widest font-bold flex items-center gap-1">
                   <span class="w-1.5 h-1.5 rounded-full ${product.is_active === false ? 'bg-red-400' : 'bg-emerald-400'}"></span>
@@ -519,14 +519,14 @@ function createAdminProductRow(product) {
             </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-            <button class="btn-action-squircle btn-action-blue btn-stock" title="Kelola Stok">
-                <i class="fa-solid fa-box-open text-xs"></i>
+            <button class="btn-action-squircle btn-action-blue btn-stock" title="Kelola Stok" aria-label="Kelola stok ${escapeHtml(product.name)}">
+                <i class="fa-solid fa-box-open text-xs" aria-hidden="true"></i>
             </button>
-            <button class="btn-action-squircle btn-action-green btn-edit" title="Edit Produk">
-                <i class="fa-solid fa-pen-to-square text-xs"></i>
+            <button class="btn-action-squircle btn-action-green btn-edit" title="Edit Produk" aria-label="Edit produk ${escapeHtml(product.name)}">
+                <i class="fa-solid fa-pen-to-square text-xs" aria-hidden="true"></i>
             </button>
-            <button class="btn-action-squircle btn-action-red btn-delete" title="Hapus Produk">
-                <i class="fa-solid fa-trash-can text-xs"></i>
+            <button class="btn-action-squircle btn-action-red btn-delete" title="Hapus Produk" aria-label="Hapus produk ${escapeHtml(product.name)}">
+                <i class="fa-solid fa-trash-can text-xs" aria-hidden="true"></i>
             </button>
         </div>
     `;

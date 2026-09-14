@@ -9,7 +9,7 @@ export const formatCurrency = (amount) => {
 
 const _pageLoadTime = Date.now();
 
-export const hideLoading = (minDuration = 2000) => {
+export const hideLoading = (minDuration = 0) => {
     const elapsed = Date.now() - _pageLoadTime;
     const remaining = Math.max(0, minDuration - elapsed);
 
@@ -19,7 +19,7 @@ export const hideLoading = (minDuration = 2000) => {
             elLoading.classList.add('fade-out');
             setTimeout(() => {
                 elLoading.classList.add('hidden');
-            }, 350);
+            }, 300);
         }
     }, remaining);
 };
@@ -88,4 +88,14 @@ export const formatRestockDate = (isoString) => {
         year: 'numeric',
         timeZone: 'Asia/Jakarta'
     });
+};
+
+export const escapeHtml = (str) => {
+    return String(str ?? '').replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[m]));
 };

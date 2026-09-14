@@ -3,26 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Admin Panel RNFBOT - Kelola produk digital, inventaris stok, varian harga, dan pemantauan transaksi bot Telegram secara real-time." />
     <title>Admin Panel - RNFBOT</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <!-- Google Fonts: Outfit -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet" />
-    <!-- Tailwind CSS (compiled) -->
+    <link rel="canonical" href="https://app.rnfbot.my.id/admin" />
+
+    <!-- Open Graph / SEO Social Metadata -->
+    <meta property="og:title" content="Admin Panel - RNFBOT" />
+    <meta property="og:description" content="Admin Panel RNFBOT - Kelola produk digital, inventaris stok, varian harga, dan pemantauan transaksi bot Telegram secara real-time." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://app.rnfbot.my.id/admin" />
+    <meta property="og:image" content="https://app.rnfbot.my.id/images/Logo%20RNFBOT.webp" />
+
+    <!-- Performance: Preload local self-hosted Outfit font -->
+    <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Performance: Preload local Font Awesome solid font -->
+    <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Local Self-Hosted Stylesheets (Zero External CDN Dependency) -->
     <link href="style/style.css" rel="stylesheet" />
-    <!-- Font Awesome -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Telegram WebApp SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="style/fontawesome.min.css" rel="stylesheet" />
+
+    <!-- Deferred Third-Party Libraries (Non Render-Blocking) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 
     <!-- Theme: init BEFORE render to avoid flash -->
     <script type="module">
@@ -63,6 +68,9 @@
             <img
               src="images/Logo RNFBOT.webp"
               alt="RNF BOT"
+              width="96"
+              height="96"
+              fetchpriority="high"
               class="w-full h-full object-cover rounded-[18px] sm:rounded-[22px] bg-white shadow-inner" />
           </div>
 
@@ -174,7 +182,8 @@
             <button
               id="btn-theme-toggle"
               class="flex items-center justify-center transition-all active:scale-90 hover:scale-110 shrink-0 cursor-pointer p-1"
-              title="Ganti tema">
+              title="Ganti tema"
+              aria-label="Ganti tema tampilan">
               <i class="fa-solid fa-sun text-amber-400 text-xl"></i>
             </button>
           </div>
@@ -250,9 +259,9 @@
 
         <!-- Manajemen Produk Header & Tambah Button -->
         <div class="flex items-center justify-between mt-4">
-          <h3 class="font-bold text-white text-lg sm:text-xl flex items-center gap-2">
+          <h2 class="font-bold text-white text-lg sm:text-xl flex items-center gap-2">
             <i class="fa-solid fa-boxes-stacked text-indigo-400 text-base"></i> Manajemen Produk
-          </h3>
+          </h2>
           <button
             id="btn-add-product"
             class="btn-liquid-add text-xs font-bold py-1.5 px-3.5 rounded-xl transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer shadow-sm">
@@ -275,7 +284,8 @@
             <button
               id="btn-clear-admin-search"
               class="hidden text-gray-400 hover:text-white transition-colors cursor-pointer pr-1"
-              title="Bersihkan">
+              title="Bersihkan"
+              aria-label="Bersihkan pencarian">
               <i class="fa-solid fa-circle-xmark text-sm"></i>
             </button>
           </div>
@@ -308,7 +318,8 @@
         class="shrink-0 flex items-center gap-3 px-4 py-3 liquid-glass header-running-border border-x-0 border-t-0 rounded-none shadow-lg relative z-10"
         style="border-radius: 0 !important;">
         <button id="btn-back-admin-product"
-          class="btn-back-pulse w-10 h-10 rounded-full text-gray-400 hover:text-white transition-colors shrink-0">
+          class="btn-back-pulse w-10 h-10 rounded-full text-gray-400 hover:text-white transition-colors shrink-0"
+          aria-label="Kembali ke Manajemen Produk">
           <i class="fa-solid fa-chevron-left"></i>
         </button>
         <div class="flex-1 min-w-0">
@@ -353,9 +364,9 @@
         <!-- Dynamic Variant Section -->
         <div class="flex flex-col gap-3">
           <div class="flex items-center justify-between px-1">
-            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
               <i class="fa-solid fa-tags text-indigo-400"></i> Daftar Varian
-            </h4>
+            </h3>
             <button id="btn-add-variant"
               class="text-xs liquid-glass text-indigo-300 hover:text-white px-3.5 py-1.5 rounded-xl transition-all font-bold cursor-pointer hover:border-indigo-500/50"
               style="background: rgba(99, 102, 241, 0.2);">
@@ -389,7 +400,8 @@
         class="shrink-0 flex items-center gap-3 px-4 py-3 liquid-glass header-running-border border-x-0 border-t-0 rounded-none shadow-lg relative z-10"
         style="border-radius: 0 !important;">
         <button id="btn-back-admin-stock"
-          class="btn-back-pulse w-10 h-10 rounded-full text-gray-400 hover:text-white transition-colors shrink-0">
+          class="btn-back-pulse w-10 h-10 rounded-full text-gray-400 hover:text-white transition-colors shrink-0"
+          aria-label="Kembali ke Manajemen Produk">
           <i class="fa-solid fa-chevron-left"></i>
         </button>
         <div class="flex-1 min-w-0">
