@@ -349,7 +349,7 @@ html[data-theme="light"] .header-running-border::after {
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
   cursor: not-allowed;
-  transition: opacity 0.35s ease, visibility 0.35s ease;
+  transition: opacity 0.35s ease;
 }
 
 #loading-state.fade-out {

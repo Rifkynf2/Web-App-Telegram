@@ -510,7 +510,7 @@ function createAdminProductRow(product) {
                 <img src="${getImageFallback(product.image_url, product.name)}" alt="${escapeHtml(product.name)}" width="48" height="48" loading="lazy" decoding="async" class="w-full h-full object-cover rounded-lg">
             </div>
             <div class="text-left min-w-0 flex-1">
-                <h4 class="text-xs font-bold text-white line-clamp-1">${escapeHtml(product.name)}</h4>
+                <h3 class="text-xs font-bold text-white line-clamp-1">${escapeHtml(product.name)}</h3>
                 <p class="text-[10px] text-gray-400 mt-1">${compactSubText} • ${stockDisplay}</p>
                 <p class="text-[9px] ${product.is_active === false ? 'text-red-400' : 'text-emerald-400'} mt-1 uppercase tracking-widest font-bold flex items-center gap-1">
                   <span class="w-1.5 h-1.5 rounded-full ${product.is_active === false ? 'bg-red-400' : 'bg-emerald-400'}"></span>
