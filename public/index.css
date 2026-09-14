@@ -358,6 +358,10 @@ html[data-theme="light"] .header-running-border::after {
   pointer-events: none;
 }
 
+#loading-state.hidden {
+  display: none !important;
+}
+
 html[data-theme="light"] #loading-state {
   background: rgba(242, 240, 255, 0.88);
 }

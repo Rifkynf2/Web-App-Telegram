@@ -19,6 +19,7 @@ export const hideLoading = (minDuration = 0) => {
             elLoading.classList.add('fade-out');
             setTimeout(() => {
                 elLoading.classList.add('hidden');
+                elLoading.style.display = 'none';
             }, 300);
         }
     }, remaining);

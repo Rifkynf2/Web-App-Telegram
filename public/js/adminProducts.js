@@ -1,7 +1,7 @@
-import { supabase } from './supabaseClient.js';
-import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId } from './store.js';
-import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl, escapeHtml } from './utils.js';
-import { openStockModal, initAdminStock, initSmoothSelect, syncSmoothSelect } from './adminStock.js';
+import { supabase } from './supabaseClient.js?v=2.0.1';
+import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId } from './store.js?v=2.0.1';
+import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl, escapeHtml } from './utils.js?v=2.0.1';
+import { openStockModal, initAdminStock, initSmoothSelect, syncSmoothSelect } from './adminStock.js?v=2.0.1';
 
 // ── Mock Data (preview mode) ───────────────────────────────────────────────────
 const MOCK_ADMIN_STATS = {
@@ -181,16 +181,23 @@ export async function initAdminApp() {
   }
 
   // 2. Resolve Tenant (CRITICAL)
-  // Preview mode: render mock data langsung tanpa network calls
   if (isPreviewMode) {
     hideLoading();
-    if (telegramFallback) {
-      telegramFallback.classList.add('hidden');
-      telegramFallback.style.display = 'none';
+    const elLoading = document.getElementById('loading-state');
+    if (elLoading) {
+      elLoading.classList.add('fade-out');
+      elLoading.classList.add('hidden');
+      elLoading.style.display = 'none';
     }
-    if (elHeaderShopName) elHeaderShopName.textContent = 'Preview Toko';
+    const tf = telegramFallback || document.getElementById('telegram-fallback');
+    if (tf) {
+      tf.classList.add('hidden');
+      tf.style.display = 'none';
+    }
+    const headerShop = elHeaderShopName || document.getElementById('header-shop-name');
+    if (headerShop) headerShop.textContent = 'Preview Toko';
     adminCatalogData = sortProductsAlphabetically(MOCK_ADMIN_PRODUCTS);
-    renderAdminView(MOCK_ADMIN_STATS);
+    renderAdminView({ ...MOCK_ADMIN_STATS, is_preview: true });
     initAdminStock();
     setupAdminModalListeners();
     console.log('[Admin] Preview mode — mock data loaded');
@@ -316,7 +323,8 @@ function renderAdminView(stats = null) {
   const eOrderToday = document.getElementById('admin-stat-orders-today');
   const eRevenue = document.getElementById('admin-stat-revenue');
 
-  if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
+  const headerShop = elHeaderShopName || document.getElementById('header-shop-name');
+  if (headerShop && !stats?.is_preview) headerShop.textContent = shopSettings.name;
   const logo = document.getElementById('shop-logo');
   const logoFallback = document.getElementById('shop-initial');
   const logoUrl = stats?.logo_url || shopSettings.logoUrl || '';
@@ -438,7 +446,8 @@ if (btnClearAdminSearch) {
 }
 
 function filterAndRenderAdminProducts() {
-  if (!adminList) return;
+  const container = adminList || document.getElementById('admin-product-list');
+  if (!container) return;
   const allProducts = adminCatalogData || [];
   const filtered = sortProductsAlphabetically(
     currentAdminSearchQuery
@@ -446,11 +455,11 @@ function filterAndRenderAdminProducts() {
       : allProducts
   );
 
-  adminList.innerHTML = '';
+  container.innerHTML = '';
 
   if (filtered.length === 0) {
     if (allProducts.length === 0) {
-      adminList.innerHTML = `
+      container.innerHTML = `
         <div class="liquid-glass p-8 flex flex-col items-center justify-center py-10 opacity-60">
           <i class="fa-solid fa-box-open text-4xl mb-3 text-indigo-400"></i>
           <p class="text-sm font-semibold text-white">Belum ada produk</p>
@@ -458,7 +467,7 @@ function filterAndRenderAdminProducts() {
         </div>
       `;
     } else {
-      adminList.innerHTML = `
+      container.innerHTML = `
         <div class="liquid-glass p-8 flex flex-col items-center justify-center py-10 opacity-70">
           <i class="fa-solid fa-magnifying-glass text-3xl mb-3 text-indigo-400"></i>
           <p class="text-sm font-semibold text-white">Tidak ada produk yang cocok</p>
@@ -471,7 +480,7 @@ function filterAndRenderAdminProducts() {
 
   filtered.forEach((product) => {
     const div = createAdminProductRow(product);
-    adminList.appendChild(div);
+    container.appendChild(div);
   });
   observeAdminCards();
 }
