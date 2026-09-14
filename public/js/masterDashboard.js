@@ -272,11 +272,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── Typing Animation Logic ──────────────────────────────────────────────────
 function initTypingPlaceholder(element, texts) {
     let textIndex = 0;
-    let charIndex = 0;
-    let isDeleting = false;
+    let charIndex = texts[0].length;
+    let isDeleting = true;
     let typingDelay = 100;
     let erasingDelay = 50;
-    let pauseBetween = 1500;
+    let pauseBetween = 2000;
+    let initialDelay = 4000; // Allow initial LCP paint to complete cleanly without DOM mutations
 
     function type() {
         const currentText = texts[textIndex];
@@ -303,7 +304,7 @@ function initTypingPlaceholder(element, texts) {
         setTimeout(type, delay);
     }
 
-    setTimeout(type, 1000); // initial delay
+    setTimeout(type, initialDelay);
 }
 
 // ── Tab Management ──────────────────────────────────────────────────────────
@@ -1245,8 +1246,8 @@ function showRenewModal(botId, username) {
     modalBody.innerHTML = `
         <p style="margin-bottom: 1rem;">Manually inject rent duration for <b>@${escapeHtml(username)}</b>.</p>
         <div class="input-group">
-            <label style="display:block; margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem;">Adding Days</label>
-            <input type="number" id="manualDays" value="31" min="1" max="365">
+            <label for="manualDays" style="display:block; margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem;">Adding Days</label>
+            <input type="number" id="manualDays" aria-label="Adding Days" value="31" min="1" max="365">
         </div>
     `;
 
@@ -1302,8 +1303,8 @@ function showWaExtendModal(g) {
     modalBody.innerHTML = `
         <p style="margin-bottom: 1rem;">Extend rental duration for <b>${escapeHtml(g.group_name)}</b>.</p>
         <div class="input-group">
-            <label style="display:block; margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem;">Adding Days</label>
-            <input type="number" id="waExtendDays" value="31" min="1" max="365">
+            <label for="waExtendDays" style="display:block; margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem;">Adding Days</label>
+            <input type="number" id="waExtendDays" aria-label="Adding Days" value="31" min="1" max="365">
         </div>
     `;
 

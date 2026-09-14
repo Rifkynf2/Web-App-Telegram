@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SaaS Master Dashboard RNFBOT - Monitoring real-time dan kontrol manajemen bot Telegram dan WhatsApp.">
     <title>SaaS Master Dashboard</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <!-- Performance: Preload local self-hosted Outfit font -->
     <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Performance: Preload modular Master Dashboard CSS -->
+    <link rel="preload" href="/style/master-dashboard.min.css" as="style">
+    <link rel="stylesheet" href="/style/master-dashboard.min.css">
     <!-- Performance: Preconnect to Font Awesome CDN -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <!-- Performance: Asynchronous non-blocking Font Awesome -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
-        <link rel="stylesheet" href="/style/master-dashboard.min.css">
 </head>
 <body>
 
@@ -26,7 +28,7 @@
             <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Authenticate to access the SaaS control panel.</p>
             <form id="loginForm">
                 <div class="input-group">
-                    <input type="password" id="adminSecret" placeholder="Enter Admin Dashboard Secret" required>
+                    <input type="password" id="adminSecret" placeholder="Enter Admin Dashboard Secret" aria-label="Admin Dashboard Secret" required>
                 </div>
                 <button type="submit" class="btn" id="loginBtn">
                     <i class="fa-solid fa-lock"></i> Access Dashboard
@@ -36,7 +38,7 @@
     </div>
 
     <!-- Main Dashboard -->
-    <div class="app-container" id="mainApp">
+    <main class="app-container" id="mainApp">
         <header>
             <div class="header-brand">
                 <div class="header-icon-badge">
@@ -60,6 +62,7 @@
         </header>
 
         <!-- Global Stats -->
+        <h2 class="sr-only">Ringkasan Statistik</h2>
         <div class="stats-grid">
             <div class="stat-card glow-blue">
                 <div class="stat-card-top">
@@ -103,7 +106,7 @@
                 <div class="search-wrapper">
                     <div class="search-box" id="searchBoxTelegram">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide-search" style="flex-shrink: 0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                        <input type="search" id="searchTelegram" autocomplete="off">
+                        <input type="search" id="searchTelegram" autocomplete="off" placeholder="Cari Bot ID, Shop Name, @username..." aria-label="Cari Bot ID, Shop Name, atau username Telegram">
                     </div>
                 </div>
                 <div class="tab-header-title-group">
@@ -151,7 +154,7 @@
                 <div class="search-wrapper">
                     <div class="search-box" id="searchBoxWhatsapp">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide-search" style="flex-shrink: 0;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                        <input type="search" id="searchWhatsapp" autocomplete="off">
+                        <input type="search" id="searchWhatsapp" autocomplete="off" placeholder="Cari Group ID, Group Name, Renter..." aria-label="Cari Group ID, Group Name, atau Renter WhatsApp">
                     </div>
                 </div>
                 <div class="tab-header-title-group">
@@ -195,14 +198,14 @@
 
         <!-- Footer -->
         <footer class="app-footer">&copy; 2025-2026 RNFBOT. Made with 💖 by Team RNFBOT</footer>
-    </div>
+    </main>
 
     <!-- Action Modal -->
     <div class="modal" id="actionModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="modalTitle">Modal Title</h3>
-                <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+                <button class="close-btn" onclick="closeModal()" aria-label="Tutup modal"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body" id="modalBody">
                 <!-- Content injected dynamically -->
@@ -220,11 +223,11 @@
                 <h3 class="modal-title" id="reminderModalTitle">
                     <i class="fa-regular fa-clipboard" style="color: var(--warning-color); margin-right: 8px;"></i>Pratinjau Teks Tagihan
                 </h3>
-                <button class="close-btn" onclick="closeReminderModal()"><i class="fa-solid fa-xmark"></i></button>
+                <button class="close-btn" onclick="closeReminderModal()" aria-label="Tutup modal tagihan"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body" style="margin-bottom: 1rem;">
                 <div class="reminder-recipient-badge" id="reminderModalSubtitle"></div>
-                <textarea id="reminderTextarea" class="reminder-textarea" spellcheck="false"></textarea>
+                <textarea id="reminderTextarea" class="reminder-textarea" spellcheck="false" aria-label="Pratinjau Teks Tagihan"></textarea>
             </div>
             <div class="reminder-modal-footer">
                 <button class="btn-modal-send-wa" id="btnSendWaFromModal" style="display: none;">
