@@ -47,10 +47,10 @@
       }
     </style>
 
-    <!-- Deferred Third-Party Libraries (Non Render-Blocking) -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-    <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+    <!-- Core Libraries (Sync Init for Telegram WebApp & Supabase) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <!-- Theme: init BEFORE render to avoid flash -->
     <script type="module">
@@ -66,7 +66,7 @@
         bindToggle();
       }
     </script>
-    <script type="module" src="js/admin-main.js?v=2.0.1" defer></script>
+    <script type="module" src="js/admin-main.js" defer></script>
   </head>
   <body
     class="bg-linear-to-br from-[#020617] via-[#0f0c29] to-[#020617] text-gray-100 min-h-screen text-sm antialiased relative"

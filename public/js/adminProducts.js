@@ -1,7 +1,7 @@
-import { supabase } from './supabaseClient.js?v=2.0.1';
-import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId } from './store.js?v=2.0.1';
-import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl, escapeHtml } from './utils.js?v=2.0.1';
-import { openStockModal, initAdminStock, initSmoothSelect, syncSmoothSelect } from './adminStock.js?v=2.0.1';
+import { supabase } from './supabaseClient.js';
+import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId } from './store.js';
+import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl, escapeHtml } from './utils.js';
+import { openStockModal, initAdminStock, initSmoothSelect, syncSmoothSelect } from './adminStock.js';
 
 // ── Mock Data (preview mode) ───────────────────────────────────────────────────
 const MOCK_ADMIN_STATS = {

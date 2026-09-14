@@ -1,4 +1,4 @@
-import { initAdminApp } from './adminProducts.js?v=2.0.1';
+import { initAdminApp } from './adminProducts.js';
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
