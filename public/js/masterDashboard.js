@@ -222,7 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isPreviewMode) {
         console.log('[MasterDashboard] Preview mode — mock data loaded');
+        if (loginOverlay) loginOverlay.style.display = 'none';
+        if (mainApp) mainApp.style.display = 'block';
         loadStats();
+        loadActiveTab();
         if (btnLogout) btnLogout.addEventListener('click', handleLogout);
         if (btnRefresh) btnRefresh.addEventListener('click', handleRefresh);
         return;
@@ -506,9 +509,11 @@ function renderStats(s) {
 
 async function loadStats() {
     if (isPreviewMode) {
-        if (loginOverlay.style.display !== 'none') {
-            transitionLoginToApp();
-            loadActiveTab();
+        if (loginOverlay && loginOverlay.style.display !== 'none') {
+            loginOverlay.style.display = 'none';
+        }
+        if (mainApp && mainApp.style.display !== 'block') {
+            mainApp.style.display = 'block';
         }
         renderStats(activeTab === 'whatsapp' ? MOCK_WA_STATS : MOCK_STATS);
         return true;
