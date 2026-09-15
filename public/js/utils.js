@@ -10,19 +10,24 @@ export const formatCurrency = (amount) => {
 const _pageLoadTime = Date.now();
 
 export const hideLoading = (minDuration = 0) => {
+    const elLoading = document.getElementById('loading-state');
+    if (!elLoading) return;
+
+    const performHide = () => {
+        elLoading.classList.remove('active');
+        elLoading.classList.add('fade-out');
+        elLoading.classList.add('hidden');
+        elLoading.style.display = 'none';
+    };
+
+    if (minDuration <= 0) {
+        performHide();
+        return;
+    }
+
     const elapsed = Date.now() - _pageLoadTime;
     const remaining = Math.max(0, minDuration - elapsed);
-
-    setTimeout(() => {
-        const elLoading = document.getElementById('loading-state');
-        if (elLoading) {
-            elLoading.classList.add('fade-out');
-            setTimeout(() => {
-                elLoading.classList.add('hidden');
-                elLoading.style.display = 'none';
-            }, 300);
-        }
-    }, remaining);
+    setTimeout(performHide, remaining);
 };
 
 export const setupGlobalErrorHandlers = () => {

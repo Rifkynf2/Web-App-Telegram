@@ -351,7 +351,7 @@ html[data-theme="light"] .specular-accent-border::after {
   }
 }
 
-/* Ambient Glow Decoration */
+/* Ambient Glow Decoration (GPU Composited) */
 .bg-decoration {
   display: block;
   position: fixed;
@@ -359,12 +359,15 @@ html[data-theme="light"] .specular-accent-border::after {
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
+  transform: translateZ(0);
+  will-change: transform;
 }
 .bg-decoration span {
   position: absolute;
   border-radius: 50%;
   filter: blur(140px);
   opacity: 0.32;
+  transform: translateZ(0);
 }
 .bg-decoration span:nth-child(1) {
   top: -12%; left: -10%; width: 50vw; height: 50vw;
@@ -379,12 +382,16 @@ html[data-theme="light"] .specular-accent-border::after {
   background: rgba(6, 182, 212, 0.2);
 }
 
-/* Loading state — liquid glass full-screen overlay */
+/* Loading state — liquid glass full-screen overlay (opt-in via .active) */
 #loading-state {
+  display: none !important;
+}
+
+#loading-state.active {
   position: fixed;
   inset: 0;
   z-index: 999;
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -405,8 +412,36 @@ html[data-theme="light"] .specular-accent-border::after {
   display: none !important;
 }
 
-html[data-theme="light"] #loading-state {
+html[data-theme="light"] #loading-state.active {
   background: rgba(242, 240, 255, 0.88);
+}
+
+/* Liquid Glass Skeleton Placeholder with GPU Composited Shimmer */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  );
+  animation: skeletonShimmerAnim 1.8s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes skeletonShimmerAnim {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* SVG Spinner Loader from Master Dashboard */
