@@ -1044,6 +1044,7 @@ html[data-theme="light"] .custom-select-option.selected {
 }
 
 .detail-page-slide {
+  z-index: 200 !important;
   transform: translateX(100%);
   visibility: hidden;
   pointer-events: none;
@@ -1051,6 +1052,7 @@ html[data-theme="light"] .custom-select-option.selected {
 }
 
 .detail-page-slide.active {
+  z-index: 200 !important;
   transform: translateX(0);
   visibility: visible;
   pointer-events: auto;

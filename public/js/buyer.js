@@ -1083,19 +1083,25 @@ function bindNavEvents() {
 }
 
 // ── Tab Switching ──────────────────────────────────────────────────────────────
+let tabSwitchTimeout = null;
+
 function switchTab(tab) {
   if (!elGrid || !profileView || !navHome || !navProfile) return;
 
   if (detailPage && detailPage.classList.contains('active')) closeDetailPage();
 
+  const isHome = tab === 'home';
   const currentTab = navHome.classList.contains('nav-tab-active') ? 'home' : 'profile';
   if (currentTab === tab) return;
 
-  const outEl = currentTab === 'home' ? elGrid : profileView;
-  const inEl = tab === 'home' ? elGrid : profileView;
+  // Clear any pending tab transition immediately to prevent race conditions
+  if (tabSwitchTimeout) {
+    clearTimeout(tabSwitchTimeout);
+    tabSwitchTimeout = null;
+  }
 
   // Update nav state immediately
-  if (tab === 'home') {
+  if (isHome) {
     navHome.classList.add('nav-tab-active');
     navProfile.classList.remove('nav-tab-active');
   } else {
@@ -1106,18 +1112,36 @@ function switchTab(tab) {
 
   updateNavIndicator(true);
 
-  // Fade out → swap → fade in
-  outEl.style.transition = 'opacity 0.15s ease';
+  const outEl = isHome ? profileView : elGrid;
+  const inEl = isHome ? elGrid : profileView;
+
+  // Fade out current view smoothly
+  outEl.style.transition = 'opacity 0.12s ease';
   outEl.style.opacity = '0';
-  setTimeout(() => {
+
+  tabSwitchTimeout = setTimeout(() => {
     outEl.style.cssText = '';
-    if (currentTab === 'home') outEl.classList.add('hidden');
-    else outEl.classList.replace('flex', 'hidden');
 
-    if (tab === 'home') inEl.classList.remove('hidden');
-    else inEl.classList.replace('hidden', 'flex');
+    // Hide previous
+    if (isHome) {
+      profileView.classList.replace('flex', 'hidden');
+    } else {
+      elGrid.classList.add('hidden');
+    }
 
-    // Trigger observer for newly visible card-scroll elements
-    observeCards();
-  }, 150);
+    // Show next
+    if (isHome) {
+      elGrid.classList.remove('hidden');
+    } else {
+      profileView.classList.replace('hidden', 'flex');
+    }
+
+    // Ensure all cards in the active view are rendered with visible class (never blank)
+    inEl.querySelectorAll('.card-scroll').forEach((el) => {
+      el.classList.add('visible');
+    });
+
+    inEl.style.opacity = '1';
+    tabSwitchTimeout = null;
+  }, 120);
 }

@@ -200,6 +200,7 @@ export async function initAdminApp() {
     renderAdminView({ ...MOCK_ADMIN_STATS, is_preview: true });
     initAdminStock();
     setupAdminModalListeners();
+    bindAdminSearchEvents();
     console.log('[Admin] Preview mode — mock data loaded');
     return;
   }
@@ -293,6 +294,7 @@ export async function initAdminApp() {
 
   initAdminStock();
   setupAdminModalListeners();
+  bindAdminSearchEvents();
   hideLoading();
 }
 
@@ -354,8 +356,8 @@ function renderAdminView(stats = null) {
   filterAndRenderAdminProducts();
 }
 
-const adminSearchInput = document.getElementById('admin-search-products');
-const btnClearAdminSearch = document.getElementById('btn-clear-admin-search');
+let adminSearchInput = null;
+let btnClearAdminSearch = null;
 let currentAdminSearchQuery = '';
 
 // ── Search Bar Dynamic Running Placeholder Animation ────────────────────────
@@ -400,49 +402,57 @@ function typePlaceholder() {
   typewriterTimeout = setTimeout(typePlaceholder, typeSpeed);
 }
 
-if (adminSearchInput) {
-  adminSearchInput.addEventListener('input', (e) => {
-    currentAdminSearchQuery = (e.target.value || '').trim().toLowerCase();
-    if (btnClearAdminSearch) {
-      if (currentAdminSearchQuery.length > 0) {
-        btnClearAdminSearch.classList.remove('hidden');
-      } else {
-        btnClearAdminSearch.classList.add('hidden');
+let isAdminSearchBound = false;
+export function bindAdminSearchEvents() {
+  adminSearchInput = document.getElementById('admin-search-products');
+  btnClearAdminSearch = document.getElementById('btn-clear-admin-search');
+  if (!adminSearchInput) return;
+
+  if (!isAdminSearchBound) {
+    isAdminSearchBound = true;
+    adminSearchInput.addEventListener('input', (e) => {
+      currentAdminSearchQuery = (e.target.value || '').trim().toLowerCase();
+      if (btnClearAdminSearch) {
+        if (currentAdminSearchQuery.length > 0) {
+          btnClearAdminSearch.classList.remove('hidden');
+        } else {
+          btnClearAdminSearch.classList.add('hidden');
+        }
       }
-    }
-    filterAndRenderAdminProducts();
-  });
-
-  adminSearchInput.addEventListener('focus', () => {
-    isSearchInputFocused = true;
-    clearTimeout(typewriterTimeout);
-    adminSearchInput.setAttribute('placeholder', 'Cari nama produk...');
-  });
-
-  adminSearchInput.addEventListener('blur', () => {
-    isSearchInputFocused = false;
-    if (!adminSearchInput.value || adminSearchInput.value.length === 0) {
-      charIndex = 0;
-      isDeleting = 0;
-      clearTimeout(typewriterTimeout);
-      typewriterTimeout = setTimeout(typePlaceholder, 600);
-    }
-  });
-
-  // Start initial typewriter loop after load
-  typewriterTimeout = setTimeout(typePlaceholder, 1000);
-}
-
-if (btnClearAdminSearch) {
-  btnClearAdminSearch.addEventListener('click', () => {
-    if (adminSearchInput) {
-      adminSearchInput.value = '';
-      currentAdminSearchQuery = '';
-      btnClearAdminSearch.classList.add('hidden');
       filterAndRenderAdminProducts();
-      adminSearchInput.focus();
+    });
+
+    adminSearchInput.addEventListener('focus', () => {
+      isSearchInputFocused = true;
+      clearTimeout(typewriterTimeout);
+      adminSearchInput.setAttribute('placeholder', 'Cari nama produk...');
+    });
+
+    adminSearchInput.addEventListener('blur', () => {
+      isSearchInputFocused = false;
+      if (!adminSearchInput.value || adminSearchInput.value.length === 0) {
+        charIndex = 0;
+        isDeleting = 0;
+        clearTimeout(typewriterTimeout);
+        typewriterTimeout = setTimeout(typePlaceholder, 600);
+      }
+    });
+
+    if (btnClearAdminSearch) {
+      btnClearAdminSearch.addEventListener('click', () => {
+        adminSearchInput.value = '';
+        currentAdminSearchQuery = '';
+        btnClearAdminSearch.classList.add('hidden');
+        filterAndRenderAdminProducts();
+        adminSearchInput.focus();
+      });
     }
-  });
+  }
+
+  clearTimeout(typewriterTimeout);
+  charIndex = 0;
+  isDeleting = 0;
+  typewriterTimeout = setTimeout(typePlaceholder, 1000);
 }
 
 function filterAndRenderAdminProducts() {
@@ -617,6 +627,7 @@ function setupAdminModalListeners() {
 
   document.getElementById('btn-back-admin-product')?.addEventListener('click', () => {
     adminProductSlide.classList.remove('active');
+    document.body.classList.remove('overflow-hidden');
   });
   document.getElementById('btn-save-product-header')?.addEventListener('click', () => {
     btnSaveProduct.click();
@@ -967,6 +978,7 @@ function openAdminModal(product = null) {
   }
 
   adminProductSlide.classList.add('active');
+  document.body.classList.add('overflow-hidden');
 }
 
 let isSavingProduct = false;
@@ -1082,6 +1094,7 @@ async function saveProduct(pid, oldName) {
     });
 
     adminProductSlide.classList.remove('active');
+    document.body.classList.remove('overflow-hidden');
   } catch (e) {
     console.error(e);
     Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: e.message, ...getSwalTheme() });

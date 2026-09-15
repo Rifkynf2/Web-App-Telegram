@@ -193,6 +193,7 @@ export function initAdminStock() {
 
     document.getElementById('btn-back-admin-stock')?.addEventListener('click', () => {
         adminStockSlide.classList.remove('active');
+        document.body.classList.remove('overflow-hidden');
     });
 
     document.getElementById('btn-stock-prev')?.addEventListener('click', () => {
@@ -347,6 +348,7 @@ export function openStockModal(product) {
     btnSaveStock.onclick = () => saveStockAction(product);
 
     adminStockSlide.classList.add('active');
+    document.body.classList.add('overflow-hidden');
 }
 
 async function updateStockStats(product) {
@@ -723,6 +725,7 @@ async function finalizeStockSave(lines, variantId, skipped = 0) {
         });
         
         adminStockSlide.classList.remove('active');
+        document.body.classList.remove('overflow-hidden');
     } catch (e) {
         Swal.fire({ icon: 'error', title: 'Gagal Simpan', text: e.message, ...getSwalTheme() });
     }
