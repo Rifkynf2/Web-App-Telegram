@@ -23,6 +23,30 @@ export let tenantInfo = null;
 // API base path (same domain = no CORS issues)
 const API_BASE = '/api';
 
+let supabaseScriptPromise = null;
+
+async function ensureSupabase() {
+    if (window.supabase?.createClient) return;
+    if (supabaseScriptPromise) return supabaseScriptPromise;
+
+    supabaseScriptPromise = new Promise((resolve, reject) => {
+        if (window.supabase?.createClient) return resolve();
+        const existingScript = document.querySelector('script[src*="supabase-js"]');
+        if (existingScript) {
+            existingScript.addEventListener('load', () => resolve());
+            existingScript.addEventListener('error', (err) => reject(err));
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        script.onload = () => resolve();
+        script.onerror = (err) => reject(new Error('Gagal memuat client Supabase'));
+        document.head.appendChild(script);
+    });
+
+    return supabaseScriptPromise;
+}
+
 /**
  * Resolve tenant via secure API Gateway.
  * 
@@ -79,6 +103,7 @@ export async function resolveTenant(botId) {
 
         // Create dynamic connection to tenant DB (anon_key = safe for browser)
         console.log('[Tenant] 🔗 Connecting to:', config.supabase_url);
+        await ensureSupabase();
         supabase = window.supabase.createClient(
             config.supabase_url,
             config.supabase_anon_key
@@ -131,6 +156,7 @@ export async function initSession(botId) {
         
         // If we got tenant config, set up supabase client
         if (data.config && !supabase) {
+            await ensureSupabase();
             supabase = window.supabase.createClient(
                 data.config.supabase_url,
                 data.config.supabase_anon_key

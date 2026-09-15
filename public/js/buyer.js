@@ -494,7 +494,9 @@ function populateUserIdentity() {
   const finalPhoto = tgUser?.photo_url || userPhoto;
 
   // 1. Shop identity in Navbar Pill (Always shop branding, never buyer personal avatar)
-  if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
+  if (elHeaderShopName && elHeaderShopName.textContent !== shopSettings.name) {
+    elHeaderShopName.textContent = shopSettings.name;
+  }
 
   const shopLogoUrl = shopSettings.logoUrl || 'images/Logo RNFBOT.webp';
   if (elHeaderShopLogo) {
@@ -628,13 +630,15 @@ function renderBuyerProducts(overrideData) {
     return;
   }
 
-  products.forEach((product) => {
+  products.forEach((product, idx) => {
     const totalStock = product.stock_count;
     const isOutOfStock = totalStock === 0;
     const lowestPrice = getLowestVariantPrice(product.variants);
     const hasMultiVariant = (product.variants || []).length > 1;
     const priceLabel = formatCurrency(lowestPrice) + (hasMultiVariant ? ' +' : '');
     const imageUrl = getImageFallback(product.image_url, product.name);
+    const isAboveFold = idx < 2;
+    const imgLoadingAttr = isAboveFold ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
 
     const card = document.createElement('div');
     card.className = 'card-scroll liquid-glass glow-top-indigo flex flex-col overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/20 active:scale-98 p-2.5 pb-3';
@@ -646,7 +650,7 @@ function renderBuyerProducts(overrideData) {
                     src="${imageUrl}"
                     alt="${product.name}"
                     class="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-108"
-                    loading="lazy"
+                    ${imgLoadingAttr}
                     onerror="this.src='https://placehold.co/400x300/1e293b/white?text=${encodeURIComponent(product.name)}'">
                 ${
                   isOutOfStock

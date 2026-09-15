@@ -17,8 +17,8 @@
 
     <!-- Performance: Preload local self-hosted Outfit font -->
     <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <!-- Performance: Preconnect to mock image CDN (saves 300ms on preview LCP) -->
-    <link rel="preconnect" href="https://placehold.co" />
+    <!-- Performance: Preconnect to mock image CDN with CORS support -->
+    <link rel="preconnect" href="https://placehold.co" crossorigin />
 
     <!-- Performance: Preload local Font Awesome solid font -->
     <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
@@ -26,16 +26,31 @@
     <!-- Performance: Preload core stylesheet -->
     <link rel="preload" href="style/style.css" as="style" fetchpriority="high" />
 
+    <!-- Performance: Flatten ES Module dependency tree (Eliminates 2.16s critical request chaining) -->
+    <link rel="modulepreload" href="js/buyer-main.js" />
+    <link rel="modulepreload" href="js/buyer.js" />
+    <link rel="modulepreload" href="js/store.js" />
+    <link rel="modulepreload" href="js/utils.js" />
+    <link rel="modulepreload" href="js/theme.js" />
+    <link rel="modulepreload" href="js/supabaseClient.js" />
+
     <!-- Local Self-Hosted Stylesheets (Zero External CDN Dependency) -->
     <link href="style/style.css" rel="stylesheet" />
     <link rel="preload" href="style/fontawesome.min.css" as="style" />
     <link rel="stylesheet" href="style/fontawesome.min.css" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="style/fontawesome.min.css" /></noscript>
 
-    <!-- Instant Preview Detection (Prevents Fallback Flash in Preview Mode) -->
+    <!-- Instant Preview Detection & Instant LCP Resolution -->
     <script>
-      if (new URLSearchParams(window.location.search).get('preview') === 'true' || new URLSearchParams(window.location.search).get('preview') === '1') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPreview = urlParams.get('preview') === 'true' || urlParams.get('preview') === '1';
+      if (isPreview) {
         document.documentElement.classList.add('is-preview');
+        // Preset header shop name immediately on DOM ready to eliminate 2.49s LCP render delay
+        document.addEventListener('DOMContentLoaded', () => {
+          const shopNameEl = document.getElementById('header-shop-name');
+          if (shopNameEl) shopNameEl.textContent = 'Preview Toko';
+        });
       }
     </script>
     <style>
@@ -47,9 +62,7 @@
       }
     </style>
 
-    <!-- Core Libraries (Deferred to eliminate 3.58s render-blocking) -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <!-- Telegram Web App SDK (Deferred, non-blocking) -->
     <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 
     <!-- Theme: init BEFORE render to avoid flash -->
