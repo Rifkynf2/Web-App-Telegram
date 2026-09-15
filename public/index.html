@@ -3,35 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home - RNFBOT</title>
+    <meta name="description" content="RNFBOT Store - Belanja produk digital premium, aplikasi, dan layanan otomatisasi bot Telegram secara cepat, aman, dan instan." />
+    <title>Home - RNFBOT Store</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <!-- Google Fonts: Outfit -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet" />
-    <!-- Tailwind CSS (compiled) -->
+    <link rel="canonical" href="https://app.rnfbot.my.id/" />
+
+    <!-- Open Graph / SEO Social Metadata -->
+    <meta property="og:title" content="Home - RNFBOT Store" />
+    <meta property="og:description" content="RNFBOT Store - Belanja produk digital premium, aplikasi, dan layanan otomatisasi bot Telegram secara cepat, aman, dan instan." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://app.rnfbot.my.id/" />
+    <meta property="og:image" content="https://app.rnfbot.my.id/images/Logo%20RNFBOT.webp" />
+
+    <!-- Performance: Preload local self-hosted Outfit font -->
+    <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Performance: Preconnect to mock image CDN (saves 300ms on preview LCP) -->
+    <link rel="preconnect" href="https://placehold.co" />
+
+    <!-- Performance: Preload local Font Awesome solid font -->
+    <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Performance: Preload core stylesheet -->
+    <link rel="preload" href="style/style.css" as="style" fetchpriority="high" />
+
+    <!-- Local Self-Hosted Stylesheets (Zero External CDN Dependency) -->
     <link href="style/style.css" rel="stylesheet" />
-    <!-- Font Awesome -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Telegram WebApp SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="preload" href="style/fontawesome.min.css" as="style" />
+    <link rel="stylesheet" href="style/fontawesome.min.css" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="style/fontawesome.min.css" /></noscript>
+
+    <!-- Instant Preview Detection (Prevents Fallback Flash in Preview Mode) -->
+    <script>
+      if (new URLSearchParams(window.location.search).get('preview') === 'true' || new URLSearchParams(window.location.search).get('preview') === '1') {
+        document.documentElement.classList.add('is-preview');
+      }
+    </script>
+    <style>
+      html.is-preview #telegram-fallback {
+        display: none !important;
+      }
+      #loading-state:not(.active) {
+        display: none !important;
+      }
+    </style>
+
+    <!-- Core Libraries (Deferred to eliminate 3.58s render-blocking) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 
     <!-- Theme: init BEFORE render to avoid flash -->
     <script type="module">
       import { initTheme, toggleTheme } from './js/theme.js';
       initTheme();
-      document.addEventListener('DOMContentLoaded', () => {
+      const bindToggle = () => {
         const btn = document.getElementById('btn-theme-toggle');
         if (btn) btn.addEventListener('click', toggleTheme);
-      });
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindToggle);
+      } else {
+        bindToggle();
+      }
     </script>
     <script type="module" src="js/buyer-main.js" defer></script>
   </head>
@@ -64,6 +97,9 @@
             <img
               src="images/Logo RNFBOT.webp"
               alt="RNF BOT"
+              width="96"
+              height="96"
+              fetchpriority="high"
               class="w-full h-full object-cover rounded-[18px] sm:rounded-[22px] bg-white shadow-inner" />
           </div>
 
@@ -191,8 +227,8 @@
 
     <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 relative z-10 pt-20">
-      <!-- Loading State -->
-      <div id="loading-state">
+      <!-- Loading State (Hidden by default, opt-in via .active) -->
+      <div id="loading-state" class="hidden" style="display: none !important;">
         <svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve"><path fill="currentColor" d="M10,40c0,0,0-0.4,0-1.1c0-0.3,0-0.8,0-1.3c0-0.3,0-0.5,0-0.8c0-0.3,0.1-0.6,0.1-0.9c0.1-0.6,0.1-1.4,0.2-2.1 c0.2-0.8,0.3-1.6,0.5-2.5c0.2-0.9,0.6-1.8,0.8-2.8c0.3-1,0.8-1.9,1.2-3c0.5-1,1.1-2,1.7-3.1c0.7-1,1.4-2.1,2.2-3.1 c1.6-2.1,3.7-3.9,6-5.6c2.3-1.7,5-3,7.9-4.1c0.7-0.2,1.5-0.4,2.2-0.7c0.7-0.3,1.5-0.3,2.3-0.5c0.8-0.2,1.5-0.3,2.3-0.4l1.2-0.1 l0.6-0.1l0.3,0l0.1,0l0.1,0l0,0c0.1,0-0.1,0,0.1,0c1.5,0,2.9-0.1,4.5,0.2c0.8,0.1,1.6,0.1,2.4,0.3c0.8,0.2,1.5,0.3,2.3,0.5 c3,0.8,5.9,2,8.5,3.6c2.6,1.6,4.9,3.4,6.8,5.4c1,1,1.8,2.1,2.7,3.1c0.8,1.1,1.5,2.1,2.1,3.2c0.6,1.1,1.2,2.1,1.6,3.1 c0.4,1,0.9,2,1.2,3c0.3,1,0.6,1.9,0.8,2.7c0.2,0.9,0.3,1.6,0.5,2.4c0.1,0.4,0.1,0.7,0.2,1c0,0.3,0.1,0.6,0.1,0.9 c0.1,0.6,0.1,1,0.1,1.4C74,39.6,74,40,74,40c0.2,2.2-1.5,4.1-3.7,4.3s-4.1-1.5-4.3-3.7c0-0.1,0-0.2,0-0.3l0-0.4c0,0,0-0.3,0-0.9 c0-0.3,0-0.7,0-1.1c0-0.2,0-0.5,0-0.7c0-0.2-0.1-0.5-0.1-0.8c-0.1-0.6-0.1-1.2-0.2-1.9c-0.1-0.7-0.3-1.4-0.4-2.2 c-0.2-0.8-0.5-1.6-0.7-2.4c-0.3-0.8-0.7-1.7-1.1-2.6c-0.5-0.9-0.9-1.8-1.5-2.7c-0.6-0.9-1.2-1.8-1.9-2.7c-1.4-1.8-3.2-3.4-5.2-4.9 c-2-1.5-4.4-2.7-6.9-3.6c-0.6-0.2-1.3-0.4-1.9-0.6c-0.7-0.2-1.3-0.3-1.9-0.4c-1.2-0.3-2.8-0.4-4.2-0.5l-2,0c-0.7,0-1.4,0.1-2.1,0.1 c-0.7,0.1-1.4,0.1-2,0.3c-0.7,0.1-1.3,0.3-2,0.4c-2.6,0.7-5.2,1.7-7.5,3.1c-2.2,1.4-4.3,2.9-6,4.7c-0.9,0.8-1.6,1.8-2.4,2.7 c-0.7,0.9-1.3,1.9-1.9,2.8c-0.5,1-1,1.9-1.4,2.8c-0.4,0.9-0.8,1.8-1,2.6c-0.3,0.9-0.5,1.6-0.7,2.4c-0.2,0.7-0.3,1.4-0.4,2.1 c-0.1,0.3-0.1,0.6-0.2,0.9c0,0.3-0.1,0.6-0.1,0.8c0,0.5-0.1,0.9-0.1,1.3C10,39.6,10,40,10,40z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 40 40" to="360 40 40" dur="0.8s" repeatCount="indefinite"/></path><path fill="currentColor" d="M62,40.1c0,0,0,0.2-0.1,0.7c0,0.2,0,0.5-0.1,0.8c0,0.2,0,0.3,0,0.5c0,0.2-0.1,0.4-0.1,0.7 c-0.1,0.5-0.2,1-0.3,1.6c-0.2,0.5-0.3,1.1-0.5,1.8c-0.2,0.6-0.5,1.3-0.7,1.9c-0.3,0.7-0.7,1.3-1,2.1c-0.4,0.7-0.9,1.4-1.4,2.1 c-0.5,0.7-1.1,1.4-1.7,2c-1.2,1.3-2.7,2.5-4.4,3.6c-1.7,1-3.6,1.8-5.5,2.4c-2,0.5-4,0.7-6.2,0.7c-1.9-0.1-4.1-0.4-6-1.1 c-1.9-0.7-3.7-1.5-5.2-2.6c-1.5-1.1-2.9-2.3-4-3.7c-0.6-0.6-1-1.4-1.5-2c-0.4-0.7-0.8-1.4-1.2-2c-0.3-0.7-0.6-1.3-0.8-2 c-0.2-0.6-0.4-1.2-0.6-1.8c-0.1-0.6-0.3-1.1-0.4-1.6c-0.1-0.5-0.1-1-0.2-1.4c-0.1-0.9-0.1-1.5-0.1-2c0-0.5,0-0.7,0-0.7 s0,0.2,0.1,0.7c0.1,0.5,0,1.1,0.2,2c0.1,0.4,0.2,0.9,0.3,1.4c0.1,0.5,0.3,1,0.5,1.6c0.2,0.6,0.4,1.1,0.7,1.8 c0.3,0.6,0.6,1.2,0.9,1.9c0.4,0.6,0.8,1.3,1.2,1.9c0.5,0.6,1,1.3,1.6,1.8c1.1,1.2,2.5,2.3,4,3.2c1.5,0.9,3.2,1.6,5,2.1 c1.8,0.5,3.6,0.6,5.6,0.6c1.8-0.1,3.7-0.4,5.4-1c1.7-0.6,3.3-1.4,4.7-2.4c1.4-1,2.6-2.1,3.6-3.3c0.5-0.6,0.9-1.2,1.3-1.8 c0.4-0.6,0.7-1.2,1-1.8c0.3-0.6,0.6-1.2,0.8-1.8c0.2-0.6,0.4-1.1,0.5-1.7c0.1-0.5,0.2-1,0.3-1.5c0.1-0.4,0.1-0.8,0.1-1.2 c0-0.2,0-0.4,0.1-0.5c0-0.2,0-0.4,0-0.5c0-0.3,0-0.6,0-0.8c0-0.5,0-0.7,0-0.7c0-1.1,0.9-2,2-2s2,0.9,2,2C62,40,62,40.1,62,40.1z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 40 40" to="-360 40 40" dur="0.6s" repeatCount="indefinite"/></path></svg>
         <span class="loading-text">Memuat Produk...</span>
       </div>
@@ -208,7 +244,39 @@
 
       <!-- Product Grid — 2 col mobile, 3 tablet, 4 desktop -->
       <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        <!-- Product Cards injected by JS -->
+        <!-- Liquid Glass Skeleton Shimmer Placeholders (Replaced dynamically once data resolves) -->
+        <div class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
+          <div class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
+          <div class="space-y-2 px-1">
+            <div class="h-3.5 bg-white/15 rounded-md w-3/4"></div>
+            <div class="h-3 bg-white/10 rounded-md w-1/2"></div>
+            <div class="h-7 bg-white/10 rounded-xl w-full mt-2"></div>
+          </div>
+        </div>
+        <div class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
+          <div class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
+          <div class="space-y-2 px-1">
+            <div class="h-3.5 bg-white/15 rounded-md w-2/3"></div>
+            <div class="h-3 bg-white/10 rounded-md w-1/3"></div>
+            <div class="h-7 bg-white/10 rounded-xl w-full mt-2"></div>
+          </div>
+        </div>
+        <div class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
+          <div class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
+          <div class="space-y-2 px-1">
+            <div class="h-3.5 bg-white/15 rounded-md w-3/4"></div>
+            <div class="h-3 bg-white/10 rounded-md w-1/2"></div>
+            <div class="h-7 bg-white/10 rounded-xl w-full mt-2"></div>
+          </div>
+        </div>
+        <div class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
+          <div class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
+          <div class="space-y-2 px-1">
+            <div class="h-3.5 bg-white/15 rounded-md w-2/3"></div>
+            <div class="h-3 bg-white/10 rounded-md w-1/3"></div>
+            <div class="h-7 bg-white/10 rounded-xl w-full mt-2"></div>
+          </div>
+        </div>
       </div>
 
       <!-- Profile View -->
@@ -295,7 +363,7 @@
       <!-- Sticky Header -->
       <div
         id="detail-page-header"
-        class="shrink-0 flex items-center gap-3 px-4 py-3 liquid-glass header-running-border border-x-0 border-t-0 rounded-none shadow-lg relative z-10"
+        class="shrink-0 flex items-center gap-3 px-4 py-3 liquid-glass specular-accent-border border-x-0 border-t-0 rounded-none shadow-lg relative z-10"
         style="border-radius: 0 !important;">
         <button
           id="btn-back-catalog"

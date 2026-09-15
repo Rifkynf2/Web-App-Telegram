@@ -192,7 +192,6 @@ export async function initBuyerApp() {
     renderBuyerProducts(currentCatalogList);
     bindDetailPageEvents();
     bindCheckoutModalEvents();
-    bindNavEvents();
     bindSearchEvents();
     hideLoading();
     console.log('[App] Running with MOCK data (no bot_id)');
@@ -210,7 +209,6 @@ export async function initBuyerApp() {
       renderBuyerProducts(currentCatalogList);
       bindDetailPageEvents();
       bindCheckoutModalEvents();
-      bindNavEvents();
       bindSearchEvents();
       hideLoading();
       return;
@@ -242,7 +240,6 @@ export async function initBuyerApp() {
 
   bindDetailPageEvents();
   bindCheckoutModalEvents();
-  bindNavEvents();
   bindSearchEvents();
 
   const botUsername = getBotUsername() || currentBotId;
@@ -1054,8 +1051,9 @@ function updateNavIndicator(animateBalloon = false) {
 
   if (animateBalloon) {
     indicator.classList.remove('glider-balloon');
-    void indicator.offsetWidth; // Force reflow to re-trigger balloon animation
-    indicator.classList.add('glider-balloon');
+    requestAnimationFrame(() => {
+      indicator.classList.add('glider-balloon');
+    });
   }
 
   indicator.style.width = `${width}px`;
@@ -1071,15 +1069,13 @@ function bindNavEvents() {
     if (navHome) navHome.addEventListener('click', () => switchTab('home'));
     if (navProfile) navProfile.addEventListener('click', () => switchTab('profile'));
 
-    window.addEventListener('resize', () => updateNavIndicator(false));
+    window.addEventListener('resize', () => updateNavIndicator(false), { passive: true });
     if (document.fonts?.ready) {
       document.fonts.ready.then(() => updateNavIndicator(false));
     }
   }
 
   requestAnimationFrame(() => updateNavIndicator(false));
-  setTimeout(() => updateNavIndicator(false), 50);
-  setTimeout(() => updateNavIndicator(false), 150);
 }
 
 // ── Tab Switching ──────────────────────────────────────────────────────────────
