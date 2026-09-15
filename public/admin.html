@@ -18,7 +18,7 @@
     <!-- Performance: Preload local self-hosted Outfit font -->
     <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
     <!-- Performance: Preconnect to mock image CDN (saves 300ms on preview LCP) -->
-    <link rel="preconnect" href="https://placehold.co" crossorigin />
+    <link rel="preconnect" href="https://placehold.co" />
 
     <!-- Performance: Preload local Font Awesome solid font -->
     <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
@@ -47,10 +47,10 @@
       }
     </style>
 
-    <!-- Core Libraries (Sync Init for Telegram WebApp & Supabase) -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Core Libraries (Deferred to eliminate 1.69s render-blocking) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 
     <!-- Theme: init BEFORE render to avoid flash -->
     <script type="module">
@@ -318,6 +318,7 @@
               type="search"
               id="admin-search-products"
               placeholder="Cari nama produk..."
+              aria-label="Cari nama produk"
               autocomplete="off" />
             <button
               id="btn-clear-admin-search"
@@ -353,7 +354,7 @@
 
       <!-- Sticky Header -->
       <div id="admin-product-slide-header"
-        class="shrink-0 flex items-center gap-3 px-4 py-3 liquid-glass header-running-border border-x-0 border-t-0 rounded-none shadow-lg relative z-10"
+        class="shrink-0 flex items-center gap-3 px-4 py-3 liquid-glass specular-accent-border border-x-0 border-t-0 rounded-none shadow-lg relative z-10"
         style="border-radius: 0 !important;">
         <button id="btn-back-admin-product"
           class="btn-back-pulse w-10 h-10 rounded-full text-gray-400 hover:text-white transition-colors shrink-0"
@@ -376,14 +377,14 @@
         <!-- Global Product Info -->
         <div class="flex flex-col gap-4">
           <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold pl-1">Nama Produk (*)</label>
+            <label for="admin-input-name" class="text-[10px] uppercase tracking-widest text-slate-300 font-bold pl-1">Nama Produk (*)</label>
             <input type="text" id="admin-input-name" placeholder="Netflix Premium"
               class="liquid-glass border border-white/10 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors" />
           </div>
 
           <div class="flex flex-col gap-1.5">
             <div class="flex items-center justify-between px-1">
-              <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">URL Gambar</label>
+              <label for="admin-input-image" class="text-[10px] uppercase tracking-widest text-slate-300 font-bold">URL Gambar</label>
               <button id="btn-tutorial-cdn" class="text-xs text-blue-400 hover:text-blue-300 font-semibold cursor-pointer">
                 <i class="fa-solid fa-circle-question"></i> Cara Ambil Link
               </button>
@@ -393,7 +394,7 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold pl-1">Deskripsi Tambahan</label>
+            <label for="admin-input-desc" class="text-[10px] uppercase tracking-widest text-slate-300 font-bold pl-1">Deskripsi Tambahan</label>
             <textarea id="admin-input-desc" rows="2" placeholder="Penjelasan opsional produk..."
               class="liquid-glass border border-white/10 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors"></textarea>
           </div>
@@ -435,7 +436,7 @@
 
       <!-- Sticky Header -->
       <div id="admin-stock-slide-header"
-        class="shrink-0 flex items-center gap-3 px-4 py-3 liquid-glass header-running-border border-x-0 border-t-0 rounded-none shadow-lg relative z-10"
+        class="shrink-0 flex items-center gap-3 px-4 py-3 liquid-glass specular-accent-border border-x-0 border-t-0 rounded-none shadow-lg relative z-10"
         style="border-radius: 0 !important;">
         <button id="btn-back-admin-stock"
           class="btn-back-pulse w-10 h-10 rounded-full text-gray-400 hover:text-white transition-colors shrink-0"
@@ -453,7 +454,7 @@
 
         <!-- Variant Selection -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold pl-1">Pilih Varian</label>
+          <label for="stock-input-variant" class="text-[10px] uppercase tracking-widest text-slate-300 font-bold pl-1">Pilih Varian</label>
           <select id="stock-input-variant"
             class="liquid-glass border border-white/10 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer">
             <!-- Options injected by JS -->
@@ -480,7 +481,7 @@
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center justify-between px-1">
             <div class="flex items-center gap-2">
-              <label class="text-[10px] uppercase tracking-widest text-indigo-300 font-bold">Tambah Stok Baru</label>
+              <label for="stock-input-bulk" class="text-[10px] uppercase tracking-widest text-indigo-300 font-bold">Tambah Stok Baru</label>
               <button type="button" id="btn-tutorial-format"
                 class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 cursor-pointer" title="Panduan Format Stok">
                 <i class="fa-solid fa-circle-question"></i>
@@ -498,7 +499,7 @@
               class="flex items-center justify-center gap-1.5 text-xs font-bold text-gray-400 liquid-glass border border-white/10 rounded-xl py-2.5 px-4 hover:text-red-400 hover:border-red-500/40 hover:bg-red-500/10 active:scale-95 transition-all cursor-pointer">
               <i class="fa-solid fa-trash-can"></i> Bersihkan
             </button>
-            <input type="file" id="stock-input-file" accept=".txt" class="hidden">
+            <input type="file" id="stock-input-file" accept=".txt" class="hidden" aria-label="Upload file stok TXT">
           </div>
           <textarea id="stock-input-bulk" rows="5" placeholder="1 baris = 1 stok"
             class="liquid-glass border border-white/10 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition-colors font-mono"></textarea>
@@ -526,11 +527,13 @@
           <!-- Pagination Controls -->
           <div id="stock-pagination" class="hidden items-center justify-between gap-2 pt-1">
             <button id="btn-stock-prev"
+              aria-label="Halaman stok sebelumnya"
               class="px-3.5 py-2 rounded-xl liquid-glass border border-white/10 text-xs text-gray-300 hover:text-white transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer active:scale-95">
               ← Prev
             </button>
             <span id="stock-page-info" class="text-xs text-gray-400 font-medium">Hal 1 / 1</span>
             <button id="btn-stock-next"
+              aria-label="Halaman stok berikutnya"
               class="px-3.5 py-2 rounded-xl liquid-glass border border-white/10 text-xs text-gray-300 hover:text-white transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer active:scale-95">
               Next →
             </button>

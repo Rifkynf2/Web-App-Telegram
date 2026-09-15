@@ -628,14 +628,14 @@ function addTierRow(container, tier = null) {
   row.className = 'flex items-end gap-2 tier-row';
   row.innerHTML = `
         <div class="flex flex-col gap-1.5 flex-1">
-            <label class="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Qty Min</label>
-            <input type="number" min="2" value="${tier?.min_qty ?? ''}" placeholder="10" class="tier-min-qty w-full liquid-glass border border-indigo-500/30 rounded-xl px-3 py-2 text-center text-white text-xs focus:outline-none focus:border-indigo-400">
+            <label class="text-[9px] uppercase tracking-wider text-slate-300 font-bold">Qty Min</label>
+            <input type="number" min="2" value="${tier?.min_qty ?? ''}" placeholder="10" aria-label="Kuantitas minimal grosir" class="tier-min-qty w-full liquid-glass border border-indigo-500/30 rounded-xl px-3 py-2 text-center text-white text-xs focus:outline-none focus:border-indigo-400">
         </div>
         <div class="flex flex-col gap-1.5 flex-1">
-            <label class="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Harga/Pcs</label>
-            <input type="number" min="0" value="${tier?.price ?? ''}" placeholder="2000" class="tier-price w-full liquid-glass border border-indigo-500/30 rounded-xl px-3 py-2 text-center text-white text-xs focus:outline-none focus:border-indigo-400">
+            <label class="text-[9px] uppercase tracking-wider text-slate-300 font-bold">Harga/Pcs</label>
+            <input type="number" min="0" value="${tier?.price ?? ''}" placeholder="2000" aria-label="Harga satuan grosir" class="tier-price w-full liquid-glass border border-indigo-500/30 rounded-xl px-3 py-2 text-center text-white text-xs focus:outline-none focus:border-indigo-400">
         </div>
-        <button type="button" class="btn-remove-tier btn-liquid-danger w-9 h-9 shrink-0 rounded-xl flex items-center justify-center transition-all active:scale-90 cursor-pointer shadow-sm" title="Hapus Tier">
+        <button type="button" class="btn-remove-tier btn-liquid-danger w-9 h-9 shrink-0 rounded-xl flex items-center justify-center transition-all active:scale-90 cursor-pointer shadow-sm" title="Hapus Tier" aria-label="Hapus tier harga grosir ini">
             <i class="fa-solid fa-minus text-xs"></i>
         </button>
     `;
@@ -651,31 +651,31 @@ function addVariantBlock(variant = null) {
   const defaultData = variant || { name: '', price: '', fulfillment: '', description: '', min_qty: 1, max_qty: 999, qty_per_purchase: 1, snk: '', is_active: true };
 
   div.innerHTML = `
-        <button class="absolute top-3 right-3 text-red-400 hover:text-red-300 transition-colors btn-remove-variant" title="Hapus Varian">
+        <button class="absolute top-3 right-3 text-red-400 hover:text-red-300 transition-colors btn-remove-variant" title="Hapus Varian" aria-label="Hapus Varian">
             <i class="fa-solid fa-circle-minus"></i>
         </button>
         <div class="mt-1 flex items-center justify-between gap-2 pr-8">
-            <div class="text-[10px] uppercase tracking-[0.25em] text-slate-400 font-bold">Varian</div>
+            <div class="text-[10px] uppercase tracking-[0.25em] text-slate-300 font-bold">Varian</div>
             <span class="variant-status-badge inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em]"></span>
         </div>
         
         <div class="grid grid-cols-2 gap-3 mt-2">
             <div class="flex flex-col gap-1.5 col-span-2 sm:col-span-1">
-                <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Nama Varian (*)</label>
-                <input type="text" value="${defaultData.name}" class="var-name bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500">
+                <label class="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Nama Varian (*)</label>
+                <input type="text" value="${defaultData.name}" aria-label="Nama Varian" class="var-name bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500">
             </div>
             <div class="flex flex-col gap-1.5 col-span-2 sm:col-span-1">
-                <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Harga Rp (*)</label>
-                <input type="number" value="${defaultData.price}" class="var-price bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500">
+                <label class="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Harga Rp (*)</label>
+                <input type="number" value="${defaultData.price}" aria-label="Harga Varian" class="var-price bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500">
             </div>
         </div>
         
         <div class="flex flex-col gap-1.5">
             <div class="flex items-center justify-between">
-                <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Fulfillment (Metode)</label>
+                <label class="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Fulfillment (Metode)</label>
                 <button type="button" class="btn-tutorial-fulfill text-blue-400 hover:text-blue-300 transition-colors text-[10px] flex items-center gap-1 font-bold"><i class="fa-solid fa-circle-question"></i> Penjelasan</button>
             </div>
-            <select class="var-fulfillment bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500 appearance-none">
+            <select aria-label="Opsi Metode Fulfillment" class="var-fulfillment bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500 appearance-none">
                 <option value="" disabled ${!defaultData.fulfillment ? 'selected' : ''} class="bg-slate-900">-- Pilih Opsi Fulfillment --</option>
                 <option value="ACCOUNT" ${defaultData.fulfillment === 'ACCOUNT' ? 'selected' : ''} class="bg-slate-900">ACCOUNT (Kirim List Akun)</option>
                 <option value="CODE" ${defaultData.fulfillment === 'CODE' ? 'selected' : ''} class="bg-slate-900">CODE (Kirim Kode Voucher)</option>
@@ -684,13 +684,13 @@ function addVariantBlock(variant = null) {
         </div>
 
         <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Deskripsi Varian (Dilihat Buyer)</label>
-            <input type="text" value="${defaultData.description || ''}" placeholder="Misal: Durasi 30 Hari, Garansi Full..." class="var-desc bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500">
+            <label class="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Deskripsi Varian (Dilihat Buyer)</label>
+            <input type="text" value="${defaultData.description || ''}" placeholder="Misal: Durasi 30 Hari, Garansi Full..." aria-label="Deskripsi Varian" class="var-desc bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500">
         </div>
 
         <div class="flex flex-col gap-1.5">
-            <label class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Syarat & Ketentuan (Template)</label>
-            <button type="button" class="btn-manage-snk w-full py-2.5 bg-white/5 border border-white/10 hover:bg-indigo-500/10 hover:border-indigo-500/50 rounded-xl text-xs text-gray-300 hover:text-indigo-300 transition-all flex items-center justify-center gap-2">
+            <label class="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Syarat & Ketentuan (Template)</label>
+            <button type="button" class="btn-manage-snk w-full py-2.5 bg-white/5 border border-white/10 hover:bg-indigo-500/10 hover:border-indigo-500/50 rounded-xl text-xs text-gray-300 hover:text-indigo-300 transition-all flex items-center justify-center gap-2" aria-label="Atur Syarat dan Ketentuan Varian">
                 <i class="fa-solid fa-file-lines"></i>
                 <span class="btn-snk-label">${defaultData.snk ? 'Edit SNK (Sudah Terisi)' : 'Tambah SNK (Kosong)'}</span>
             </button>
@@ -700,25 +700,25 @@ function addVariantBlock(variant = null) {
         <div class="grid grid-cols-3 gap-2">
             <div class="flex flex-col gap-1.5 col-span-3">
                 <div class="flex items-center justify-between border-b border-white/5 pb-1">
-                    <label class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Aturan Pembelian</label>
+                    <label class="text-[9px] uppercase tracking-widest text-slate-300 font-bold">Aturan Pembelian</label>
                     <button type="button" class="btn-tutorial-qty text-blue-400 hover:text-blue-300 text-[10px] flex items-center gap-1 font-bold" title="Penjelasan Aturan Pembelian"><i class="fa-solid fa-circle-question"></i> Penjelasan</button>
                 </div>
             </div>
             <div class="flex flex-col gap-1.5">
-                <label class="text-[9px] text-gray-400">Min Qty</label>
-                <input type="number" value="${defaultData.min_qty}" min="1" class="var-min bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
+                <label class="text-[9px] text-slate-300 font-medium">Min Qty</label>
+                <input type="number" value="${defaultData.min_qty}" min="1" aria-label="Minimal Pembelian" class="var-min bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
             </div>
             <div class="flex flex-col gap-1.5">
-                <label class="text-[9px] text-gray-400">Max Qty</label>
-                <input type="number" value="${defaultData.max_qty}" min="1" class="var-max bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
+                <label class="text-[9px] text-slate-300 font-medium">Max Qty</label>
+                <input type="number" value="${defaultData.max_qty}" min="1" aria-label="Maksimal Pembelian" class="var-max bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
             </div>
             <div class="flex flex-col gap-1.5">
-                <label class="text-[9px] text-gray-400">Bulk/Paket</label>
-                <input type="number" value="${defaultData.qty_per_purchase}" min="1" class="var-qpp bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
+                <label class="text-[9px] text-slate-300 font-medium">Bulk/Paket</label>
+                <input type="number" value="${defaultData.qty_per_purchase}" min="1" aria-label="Kuantitas per Paket" class="var-qpp bg-white/5 border border-indigo-500/30 rounded-lg px-2 py-1.5 text-center text-white text-xs">
             </div>
             <div class="flex flex-col gap-1.5 col-span-3">
                 <div class="flex items-center justify-between border-b border-white/5 pb-1">
-                    <label class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Harga Grosir (Opsional)</label>
+                    <label class="text-[9px] uppercase tracking-widest text-slate-300 font-bold">Harga Grosir (Opsional)</label>
                     <button type="button" class="btn-tutorial-wholesale text-blue-400 hover:text-blue-300 text-[10px] flex items-center gap-1 font-bold" title="Penjelasan Harga Grosir"><i class="fa-solid fa-circle-question"></i> Penjelasan</button>
                 </div>
                 <div class="var-tiers-container flex flex-col gap-2"></div>
@@ -727,8 +727,8 @@ function addVariantBlock(variant = null) {
                 </button>
             </div>
             <div class="flex flex-col gap-1.5 col-span-3">
-                <label class="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Status Varian</label>
-                <select class="var-status bg-white/5 border border-indigo-500/30 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500 appearance-none">
+                <label class="text-[9px] uppercase tracking-widest text-slate-300 font-bold">Status Varian</label>
+                <select aria-label="Status Keaktifan Varian" class="var-status bg-white/5 border border-indigo-500/30 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-indigo-500 appearance-none">
                     <option value="true" ${defaultData.is_active !== false ? 'selected' : ''} class="bg-slate-900">Aktif</option>
                     <option value="false" ${defaultData.is_active === false ? 'selected' : ''} class="bg-slate-900">Nonaktif</option>
                 </select>
