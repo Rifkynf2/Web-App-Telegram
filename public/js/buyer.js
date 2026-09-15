@@ -602,7 +602,7 @@ function renderBuyerProducts(overrideData) {
     const isSearching = query.length > 0;
     elGrid.innerHTML = `
       <div class="col-span-full py-16 px-4 flex flex-col items-center justify-center text-center">
-        <div class="w-16 h-16 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center justify-center mb-4 text-gray-400 shadow-xl">
+        <div class="w-16 h-16 rounded-2xl bg-white/6 border border-white/10 flex items-center justify-center mb-4 text-gray-400 shadow-xl">
           <i class="fa-solid ${isSearching ? 'fa-magnifying-glass' : 'fa-box-open'} text-2xl text-indigo-400"></i>
         </div>
         <h3 class="text-base font-bold text-white mb-1.5">

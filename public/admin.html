@@ -79,14 +79,14 @@
       
       <!-- Ambient Lighting Glow (Subtle & Calming) -->
       <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div class="absolute top-[10%] left-1/2 -translate-x-1/2 w-[500px] h-[350px] rounded-full bg-linear-to-b from-indigo-600/20 via-purple-600/10 to-transparent blur-[130px]"></div>
-        <div class="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-[400px] h-[300px] rounded-full bg-blue-600/10 blur-[130px]"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:24px_24px] opacity-60"></div>
+        <div class="absolute top-[10%] left-1/2 -translate-x-1/2 w-125 h-87.5 rounded-full bg-linear-to-b from-indigo-600/20 via-purple-600/10 to-transparent blur-[130px]"></div>
+        <div class="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-100 h-75 rounded-full bg-blue-600/10 blur-[130px]"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[24px_24px] opacity-60"></div>
       </div>
 
       <!-- Center Card: Simple & Elegant iOS Liquid Glass with Masked Running Border -->
       <div class="relative z-10 w-full max-w-md my-auto">
-        <div class="ios-glass-card card-running-border rounded-[32px] p-6 sm:p-9 text-center relative overflow-hidden shadow-2xl">
+        <div class="ios-glass-card card-running-border rounded-4xl p-6 sm:p-9 text-center relative overflow-hidden shadow-2xl">
           
           <!-- Specular Highlight Line on Top Border -->
           <div class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/40 to-transparent"></div>
@@ -103,7 +103,7 @@
           </div>
 
           <!-- Status Indicator Pill -->
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.06] border border-white/10 text-gray-300 text-[11px] font-semibold mb-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/6 border border-white/10 text-gray-300 text-[11px] font-semibold mb-4">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span class="tracking-wide">Ekosistem Bot Telegram</span>
           </div>
@@ -144,14 +144,14 @@
             <!-- Preview Demo Action -->
             <a
               href="/admin?preview=true"
-              class="w-full py-2.5 px-5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-indigo-300 hover:text-white font-medium text-xs flex items-center justify-center gap-2 border border-white/10 active:scale-[0.98] transition-all decoration-0">
+              class="w-full py-2.5 px-5 rounded-2xl bg-white/4 hover:bg-white/8 text-indigo-300 hover:text-white font-medium text-xs flex items-center justify-center gap-2 border border-white/10 active:scale-[0.98] transition-all decoration-0">
               <i class="fa-solid fa-store text-xs text-indigo-400"></i>
               <span>Buka Pratinjau Toko (Mock Preview)</span>
             </a>
           </div>
 
           <!-- Subtle Footer Note -->
-          <div class="mt-6 pt-5 border-t border-white/[0.08] flex items-center justify-between text-[11px] text-gray-400">
+          <div class="mt-6 pt-5 border-t border-white/8 flex items-center justify-between text-[11px] text-gray-400">
             <a href="https://t.me/rnf_shopp" target="_blank" rel="noopener noreferrer" class="hover:text-gray-300 transition-colors flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5 text-sky-400 shrink-0 fill-current" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.12.03-2.05 1.31-5.79 3.83-.55.38-1.05.57-1.5.56-.49-.01-1.44-.28-2.14-.51-.86-.28-1.54-.43-1.48-.91.03-.25.38-.51 1.05-.78 4.12-1.79 6.87-2.97 8.26-3.54 3.93-1.62 4.74-1.9 5.28-1.91.12 0 .38.03.55.17.14.12.18.28.2.46-.01.07.01.24 0 .33z"/>
@@ -330,7 +330,7 @@
           </div>
         </div>
 
-        <div id="admin-product-list" class="flex flex-col gap-3 min-h-[420px]">
+        <div id="admin-product-list" class="flex flex-col gap-3 min-h-105">
           <!-- Liquid Glass Skeleton Shimmer Placeholder (Replaced dynamically on data resolution) -->
           <div class="card-scroll visible liquid-glass skeleton-shimmer p-3 flex items-center justify-between gap-3 border border-white/5 rounded-2xl">
             <div class="flex items-center gap-3.5 min-w-0 flex-1">
@@ -530,7 +530,7 @@
               <span>Lihat Daftar Stok Tersedia</span>
             </button>
             <button type="button" id="btn-delete-all-stock"
-              class="hidden flex items-center justify-center gap-1.5 text-xs font-bold text-red-400 liquid-glass border border-red-500/25 rounded-xl py-2.5 px-3.5 hover:text-white hover:bg-red-600/25 hover:border-red-400/50 active:scale-95 transition-all cursor-pointer">
+              class="hidden items-center justify-center gap-1.5 text-xs font-bold text-red-400 liquid-glass border border-red-500/25 rounded-xl py-2.5 px-3.5 hover:text-white hover:bg-red-600/25 hover:border-red-400/50 active:scale-95 transition-all cursor-pointer">
               <i class="fa-solid fa-trash-can text-sm"></i> Hapus Semua
             </button>
           </div>

@@ -136,12 +136,18 @@ export function initAdminStock() {
             const isHidden = stockListContainer.classList.contains('hidden');
             if (isHidden) {
                 stockListContainer.classList.replace('hidden', 'flex');
-                if (btnDeleteAllStock) btnDeleteAllStock.classList.remove('hidden');
+                if (btnDeleteAllStock) {
+                    btnDeleteAllStock.classList.remove('hidden');
+                    btnDeleteAllStock.classList.add('flex');
+                }
                 btnToggleStockList.innerHTML = '<i class="fa-solid fa-eye-slash text-sm"></i> <span>Tutup Daftar Stok</span>';
                 renderStockItems();
             } else {
                 stockListContainer.classList.replace('flex', 'hidden');
-                if (btnDeleteAllStock) btnDeleteAllStock.classList.add('hidden');
+                if (btnDeleteAllStock) {
+                    btnDeleteAllStock.classList.remove('flex');
+                    btnDeleteAllStock.classList.add('hidden');
+                }
                 btnToggleStockList.innerHTML = '<i class="fa-solid fa-list-check text-sm"></i> <span>Lihat Daftar Stok Tersedia</span>';
             }
         });
@@ -332,7 +338,10 @@ export function openStockModal(product) {
     
     // Reset stock list view
     stockListContainer.classList.replace('flex', 'hidden');
-    if (btnDeleteAllStock) btnDeleteAllStock.classList.add('hidden');
+    if (btnDeleteAllStock) {
+        btnDeleteAllStock.classList.remove('flex');
+        btnDeleteAllStock.classList.add('hidden');
+    }
     btnToggleStockList.innerHTML = '<i class="fa-solid fa-list-check text-sm"></i> <span>Lihat Daftar Stok Tersedia</span>';
 
     // Reset page saat ganti produk
