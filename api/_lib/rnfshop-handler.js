@@ -15,6 +15,38 @@ const { success, error, serverError, handleCors } = require('./response');
  * - GET apps
  * - POST save_app
  * - POST import_batch
+/**
+ * Helper to fetch all rows in chunks of batchSize to safely bypass PostgREST max_rows limit.
+ * Very lightweight and memory-efficient as callers only project required columns.
+ */
+async function fetchAllRows(queryBuilder, batchSize = 1000) {
+    const all = [];
+    let from = 0;
+    while (true) {
+        const { data, error } = await queryBuilder.range(from, from + batchSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < batchSize) break;
+        from += batchSize;
+    }
+    return all;
+}
+
+/**
+ * /api/admin/rnfshop handler
+ * Secure backend API gateway for RNF Shop finance and product management.
+ * Protected by X-Admin-Secret header.
+ * 
+ * Supports:
+ * - GET overview
+ * - GET transactions
+ * - POST add_transaction
+ * - PUT update_transaction
+ * - DELETE delete_transaction
+ * - GET apps
+ * - POST save_app
+ * - POST import_batch
  */
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
@@ -56,9 +88,10 @@ module.exports = async function handler(req, res) {
                     query = query.lte('trx_date', endDate);
                 }
 
-                const { data: trxs, error: dbErr } = await query.order('trx_date', { ascending: false });
+                query = query.order('trx_date', { ascending: false });
 
-                if (dbErr) throw dbErr;
+                // Stream all rows in chunks of 1000 to bypass Supabase 1000 rows limit safely
+                const trxs = await fetchAllRows(query);
 
                 let totalIncoming = 0;
                 let totalOutgoing = 0;
@@ -67,7 +100,7 @@ module.exports = async function handler(req, res) {
                 const dailyIncomeMap = {};
                 const dailyOutgoingMap = {};
 
-                (trxs || []).forEach(t => {
+                trxs.forEach(t => {
                     const amt = Number(t.amount || 0);
                     const appName = t.apps?.name || 'Lainnya';
                     const dateStr = t.trx_date || 'Unknown';
@@ -88,12 +121,12 @@ module.exports = async function handler(req, res) {
                         totalIncoming,
                         totalOutgoing,
                         netProfit: totalIncoming - totalOutgoing,
-                        totalCount: (trxs || []).length,
+                        totalCount: trxs.length,
                         appIncomeMap,
                         appSalesCountMap,
                         dailyIncomeMap,
                         dailyOutgoingMap,
-                        recentTransactions: (trxs || []).slice(0, 6)
+                        recentTransactions: trxs.slice(0, 6)
                     }
                 });
             }
@@ -129,7 +162,18 @@ module.exports = async function handler(req, res) {
 
                 const from = (page - 1) * pageSize;
                 const to = from + pageSize - 1;
-                query = query.order('trx_date', { ascending: false }).order('created_at', { ascending: false }).range(from, to);
+
+                const sortBy = req.query.sortBy || 'date_desc';
+                if (sortBy === 'date_asc') {
+                    query = query.order('trx_date', { ascending: true }).order('created_at', { ascending: true });
+                } else if (sortBy === 'amount_desc') {
+                    query = query.order('amount', { ascending: false }).order('trx_date', { ascending: false });
+                } else if (sortBy === 'amount_asc') {
+                    query = query.order('amount', { ascending: true }).order('trx_date', { ascending: false });
+                } else {
+                    query = query.order('trx_date', { ascending: false }).order('created_at', { ascending: false });
+                }
+                query = query.range(from, to);
 
                 const { data, count, error: dbErr } = await query;
                 if (dbErr) throw dbErr;
@@ -143,13 +187,34 @@ module.exports = async function handler(req, res) {
             }
 
             if (action === 'apps') {
-                const { data, error: dbErr } = await supa
+                const appsQuery = supa
                     .from('apps')
                     .select('*')
                     .order('name', { ascending: true });
 
-                if (dbErr) throw dbErr;
-                return success(res, { apps: data || [] });
+                const appsData = await fetchAllRows(appsQuery);
+
+                // Fetch incoming transactions count per app without 1000 row cutoff
+                const incomingQuery = supa
+                    .from('transactions')
+                    .select('app_id')
+                    .eq('trx_type', 'incoming');
+
+                const incomingTrxs = await fetchAllRows(incomingQuery);
+
+                const salesCountMap = {};
+                incomingTrxs.forEach(t => {
+                    if (t.app_id) {
+                        salesCountMap[t.app_id] = (salesCountMap[t.app_id] || 0) + 1;
+                    }
+                });
+
+                const appsWithSold = appsData.map(a => ({
+                    ...a,
+                    sold_count: salesCountMap[a.id] || 0
+                }));
+
+                return success(res, { apps: appsWithSold });
             }
 
             return error(res, `Unknown GET action: ${action}`, 400);
@@ -185,18 +250,18 @@ module.exports = async function handler(req, res) {
             }
 
             if (action === 'save_app') {
-                const { id, name, icon_url, is_active } = req.body;
-                if (!name) return error(res, 'Nama aplikasi wajib diisi', 400);
+                const { id, name, is_active } = req.body;
 
                 if (id) {
+                    const updatePayload = {
+                        updated_at: new Date().toISOString()
+                    };
+                    if (name) updatePayload.name = name.trim().toUpperCase();
+                    if (is_active !== undefined) updatePayload.is_active = is_active;
+
                     const { data, error: dbErr } = await supa
                         .from('apps')
-                        .update({
-                            name: name.trim().toUpperCase(),
-                            icon_url: icon_url || null,
-                            is_active: is_active !== undefined ? is_active : true,
-                            updated_at: new Date().toISOString()
-                        })
+                        .update(updatePayload)
                         .eq('id', id)
                         .select()
                         .single();
@@ -204,11 +269,12 @@ module.exports = async function handler(req, res) {
                     if (dbErr) throw dbErr;
                     return success(res, { message: 'Aplikasi berhasil diperbarui', app: data });
                 } else {
+                    if (!name || !name.trim()) return error(res, 'Nama aplikasi wajib diisi', 400);
+
                     const { data, error: dbErr } = await supa
                         .from('apps')
                         .insert([{
                             name: name.trim().toUpperCase(),
-                            icon_url: icon_url || null,
                             is_active: is_active !== undefined ? is_active : true
                         }])
                         .select()

@@ -33,21 +33,26 @@ export async function renderAppsView() {
 
     const apps = await fetchApps(true);
 
-    // Compute sales count per app from transactions
-    const salesMap = {};
-    const trxs = isRnfPreviewMode() ? MOCK_TRANSACTIONS : [];
-    trxs.forEach(t => {
-        if (t.trx_type === 'incoming') {
-            const name = t.apps?.name || t.app_name || '';
-            if (name) salesMap[name] = (salesMap[name] || 0) + 1;
-            if (t.app_id) salesMap[t.app_id] = (salesMap[t.app_id] || 0) + 1;
-        }
-    });
-
-    cachedApps = (apps || []).map(a => ({
-        ...a,
-        sold_count: salesMap[a.name] || salesMap[a.id] || 0
-    }));
+    // Compute sales count per app: in live mode, backend calculates it accurately from all transactions
+    if (isRnfPreviewMode()) {
+        const salesMap = {};
+        MOCK_TRANSACTIONS.forEach(t => {
+            if (t.trx_type === 'incoming') {
+                const name = t.apps?.name || t.app_name || '';
+                if (name) salesMap[name] = (salesMap[name] || 0) + 1;
+                if (t.app_id) salesMap[t.app_id] = (salesMap[t.app_id] || 0) + 1;
+            }
+        });
+        cachedApps = (apps || []).map(a => ({
+            ...a,
+            sold_count: salesMap[a.name] || salesMap[a.id] || 0
+        }));
+    } else {
+        cachedApps = (apps || []).map(a => ({
+            ...a,
+            sold_count: Number(a.sold_count || 0)
+        }));
+    }
 
     if (!cachedApps || cachedApps.length === 0) {
         container.innerHTML = `

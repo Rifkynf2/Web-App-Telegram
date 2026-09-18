@@ -130,14 +130,17 @@ export async function loadDashboardOverview() {
     }
 
     // ── Count Sales for Top Best Sellers Leaderboard ──────────────
-    const appSalesCountMap = {};
-    const salesSource = isRnfPreviewMode() ? MOCK_TRANSACTIONS : recentTransactions;
-    salesSource.forEach(t => {
-        if (t.trx_type === 'incoming') {
-            const appName = t.apps?.name || t.app_name || 'Lainnya';
-            appSalesCountMap[appName] = (appSalesCountMap[appName] || 0) + 1;
-        }
-    });
+    let appSalesCountMap = {};
+    if (isRnfPreviewMode()) {
+        MOCK_TRANSACTIONS.forEach(t => {
+            if (t.trx_type === 'incoming') {
+                const appName = t.apps?.name || t.app_name || 'Lainnya';
+                appSalesCountMap[appName] = (appSalesCountMap[appName] || 0) + 1;
+            }
+        });
+    } else {
+        appSalesCountMap = stats.appSalesCountMap || {};
+    }
 
     // ── Update Metric Cards ───────────────────────────────────────
     const elIn = document.getElementById('rnf-stat-incoming');
@@ -501,12 +504,12 @@ async function renderCharts(dailyIn, dailyOut, appMap) {
     const trendCanvas = document.getElementById('rnf-chart-trend');
     if (!trendCanvas) return;
 
-    // Lazy load Chart.js from CDN
+    // Load Chart.js (either preloaded via UMD on window.Chart or dynamic auto/+esm)
     let ChartConstructor = window.Chart;
     if (!ChartConstructor) {
         try {
-            const chartModule = await import('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/+esm');
-            ChartConstructor = chartModule.Chart;
+            const chartModule = await import('https://cdn.jsdelivr.net/npm/chart.js@4.4.1/auto/+esm');
+            ChartConstructor = chartModule.Chart || chartModule.default;
             window.Chart = ChartConstructor;
         } catch (err) {
             console.error('[RNFSHOP] Chart.js lazy load failed:', err);
@@ -514,14 +517,36 @@ async function renderCharts(dailyIn, dailyOut, appMap) {
         }
     }
 
-    // Sort last 14 dates
-    const allDates = Array.from(new Set([...Object.keys(dailyIn), ...Object.keys(dailyOut)])).sort().slice(-14);
+    // Safely destroy existing instances from canvas to prevent "Canvas is already in use"
+    const existingTrend = ChartConstructor.getChart ? ChartConstructor.getChart(trendCanvas) : null;
+    if (existingTrend) {
+        try { existingTrend.destroy(); } catch (_) {}
+    }
+    if (chartInstanceTrend) {
+        try { chartInstanceTrend.destroy(); } catch (_) {}
+        chartInstanceTrend = null;
+    }
+
+    const appsCanvas = document.getElementById('rnf-chart-apps');
+    if (appsCanvas) {
+        const existingApps = ChartConstructor.getChart ? ChartConstructor.getChart(appsCanvas) : null;
+        if (existingApps) {
+            try { existingApps.destroy(); } catch (_) {}
+        }
+        if (chartInstanceApps) {
+            try { chartInstanceApps.destroy(); } catch (_) {}
+            chartInstanceApps = null;
+        }
+    }
+
+    // Sort last 14 dates with safe fallback
+    let allDates = Array.from(new Set([...Object.keys(dailyIn || {}), ...Object.keys(dailyOut || {})])).sort().slice(-14);
+    if (allDates.length === 0) {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        allDates = [todayStr];
+    }
     const inData = allDates.map(d => dailyIn[d] || 0);
     const outData = allDates.map(d => dailyOut[d] || 0);
-
-    // Destroy existing instances if any
-    if (chartInstanceTrend) chartInstanceTrend.destroy();
-    if (chartInstanceApps) chartInstanceApps.destroy();
 
     const chartDefaults = {
         responsive: true,
