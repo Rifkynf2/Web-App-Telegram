@@ -99,3 +99,20 @@ FROM public.transactions t
 LEFT JOIN public.apps a ON t.app_id = a.id;
 
 GRANT SELECT ON public.transactions_view TO anon, authenticated, service_role;
+
+-- View: rnf_apps_summary (Aggregasi Total Terjual Produk per Aplikasi)
+CREATE OR REPLACE VIEW public.rnf_apps_summary
+WITH (security_invoker = true)
+AS
+SELECT a.id,
+    a.name,
+    a.is_active,
+    a.created_at,
+    a.updated_at,
+    COALESCE(count(t.id), 0::bigint)::integer AS sold_count
+FROM public.apps a
+LEFT JOIN public.transactions t ON a.id = t.app_id AND t.trx_type = 'incoming'::transaction_type
+GROUP BY a.id, a.name, a.is_active, a.created_at, a.updated_at
+ORDER BY a.name;
+
+GRANT SELECT ON public.rnf_apps_summary TO anon, authenticated, service_role;
