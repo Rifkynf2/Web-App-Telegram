@@ -624,7 +624,6 @@ async function renderCharts(dailyIn, dailyOut, appMap) {
     });
 
     // 2. Apps Breakdown Chart (Only if canvas present)
-    const appsCanvas = document.getElementById('rnf-chart-apps');
     if (appsCanvas) {
         const appLabels = Object.keys(appMap).slice(0, 7);
         const appValues = appLabels.map(k => appMap[k]);
