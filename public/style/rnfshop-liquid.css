@@ -1084,10 +1084,9 @@ html.is-preview-mode #mainApp { display: flex !important; }
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  background: rgba(4, 7, 16, 0.78);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background-color: #070a13;
   padding: 1rem;
+  overflow: hidden;
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1148,6 +1147,7 @@ html.is-preview-mode #mainApp { display: flex !important; }
   position: relative;
   z-index: 10;
   padding: 1.5rem;
+  background: transparent !important;
 }
 
 @media (min-width: 640px) {
@@ -1177,6 +1177,7 @@ html.is-preview-mode #mainApp { display: flex !important; }
     grid-column: span 5 / span 5;
     padding: 3.5rem;
     border-right: none !important; /* No rigid divider between form and graphic */
+    background: transparent !important;
   }
 
   .auth-brand-header {
@@ -1191,15 +1192,16 @@ html.is-preview-mode #mainApp { display: flex !important; }
     justify-content: center;
     padding: 3rem 4rem;
     overflow: hidden;
-    background: rgba(6, 10, 20, 0.55) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    /* Seamless horizontal transition from 0% transparent to smooth dark-cyan tint */
+    background: linear-gradient(90deg, transparent 0%, rgba(6, 10, 22, 0.22) 40%, rgba(4, 7, 16, 0.48) 100%) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 
 /* Radial Glow Behind Isometric Graphic */
 .hero-radial-glow {
-  background: radial-gradient(circle at center, rgba(6, 182, 212, 0.16) 0%, rgba(30, 58, 138, 0.09) 45%, transparent 70%);
+  background: radial-gradient(circle at center, rgba(6, 182, 212, 0.16) 0%, rgba(30, 58, 138, 0.08) 50%, transparent 75%);
 }
 
 /* Custom Showcase Admin Secret Key Input */

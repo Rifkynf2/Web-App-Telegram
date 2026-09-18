@@ -21,8 +21,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Compiled Tailwind CSS & Liquid Glass Stylesheets -->
-    <link rel="stylesheet" href="/style/style.css?v=3.0">
-    <link rel="stylesheet" href="/style/rnfshop-liquid.css?v=3.0">
+    <link rel="stylesheet" href="/style/style.css?v=3.1">
+    <link rel="stylesheet" href="/style/rnfshop-liquid.css?v=3.1">
     <!-- Google Material Symbols Outlined (for reference icons) -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
 
@@ -54,8 +54,20 @@
 <!-- LOGIN OVERLAY                                                -->
 <!-- ════════════════════════════════════════════════════════════ -->
 <div id="loginOverlay">
+    <!-- Ambient Aurora & Tech Dot Grid Matrix for Login Background (Same as Dashboard) -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+        <!-- Top-Left Cyan Ambient Glow -->
+        <div class="absolute -top-[20%] left-[8%] w-162.5 h-130 rounded-full bg-cyan-500/10 blur-[130px]"></div>
+        <!-- Top-Right Indigo/Violet Ambient Glow -->
+        <div class="absolute -top-[15%] right-[5%] w-150 h-137.5 rounded-full bg-indigo-600/10 blur-[150px]"></div>
+        <!-- Center-Bottom Subtle Teal Accent -->
+        <div class="absolute bottom-[0%] left-[28%] w-137.5 h-100 rounded-full bg-teal-500/6 blur-[130px]"></div>
+        <!-- Delicate Tech Dot Grid Matrix -->
+        <div class="absolute inset-0 bg-dot-grid opacity-75"></div>
+    </div>
+
     <!-- BEGIN: SplitCanvasCard -->
-    <div class="auth-split-card" data-purpose="auth-container">
+    <div class="auth-split-card relative z-10" data-purpose="auth-container">
         <!-- Subtle corner edge decorative accent -->
         <div class="auth-specular-accent"></div>
 
