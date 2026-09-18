@@ -1234,12 +1234,24 @@ html.is-preview-mode #mainApp { display: flex !important; }
   letter-spacing: 0.15em !important;
 }
 
-#loginOverlay .group:focus-within .group-focus-within\:text-cyan-400 {
-  color: #22d3ee !important;
+#loginOverlay .auth-input-lock {
+  color: #22d3ee !important; /* Crisp, high-contrast cyan */
+  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.35));
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-#loginOverlay .group:focus-within .group-focus-within\:text-slate-400 {
+#loginOverlay .group:focus-within .auth-input-lock {
+  color: #67e8f9 !important; /* Bright electric cyan on focus */
+  filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.75));
+}
+
+#loginOverlay #toggle-visibility-btn {
   color: #94a3b8 !important;
+  transition: color 0.2s ease;
+}
+
+#loginOverlay #toggle-visibility-btn:hover {
+  color: #22d3ee !important;
 }
 
 /* Solid Cyan CTA Button with Liquid Glass Highlight */
