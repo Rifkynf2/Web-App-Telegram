@@ -502,6 +502,7 @@ function setupTabListeners() {
 
 // ── Sidebar & Unified Multi-View Router ────────────────────────────────────
 let currentActiveView = 'telegram';
+let isSwitchingView = false;
 
 function setupSidebarNavigation() {
     const navItems = document.querySelectorAll('.nav-item[data-view]');
@@ -530,137 +531,145 @@ function setupSidebarNavigation() {
 }
 
 async function switchView(viewName) {
-    if (!viewName) return;
+    if (!viewName || isSwitchingView) return;
+    if (currentActiveView === viewName && document.getElementById(`view-${viewName}`)?.classList.contains('active')) {
+        return;
+    }
+    isSwitchingView = true;
     currentActiveView = viewName;
 
-    const isRental = viewName === 'telegram' || viewName === 'whatsapp';
+    try {
+        const isRental = viewName === 'telegram' || viewName === 'whatsapp';
 
-    // 1. Update Mode Switcher visual button states & sidebar section visibility
-    const btnSaas = document.getElementById('btnModeSaas');
-    const btnShop = document.getElementById('btnModeShop');
-    const groupRental = document.getElementById('sidebar-group-rental');
-    const groupShop = document.getElementById('sidebar-group-shop');
+        // 1. Update Mode Switcher visual button states & sidebar section visibility
+        const btnSaas = document.getElementById('btnModeSaas');
+        const btnShop = document.getElementById('btnModeShop');
+        const groupRental = document.getElementById('sidebar-group-rental');
+        const groupShop = document.getElementById('sidebar-group-shop');
 
-    if (isRental) {
-        if (groupRental) groupRental.style.display = 'block';
-        if (groupShop) groupShop.style.display = 'none';
-
-        if (btnSaas) {
-            btnSaas.className = 'py-1.5 px-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-600/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.18)] transition-all flex items-center justify-center gap-1.5';
-            const icon = btnSaas.querySelector('i');
-            if (icon) icon.className = 'fa-solid fa-display text-cyan-400 text-xs';
-        }
-        if (btnShop) {
-            btnShop.className = 'py-1.5 px-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all flex items-center justify-center gap-1.5 border border-transparent';
-            const icon = btnShop.querySelector('i');
-            if (icon) icon.className = 'fa-solid fa-circle-dollar-to-slot text-slate-400 text-xs';
-        }
-    } else {
-        if (groupRental) groupRental.style.display = 'none';
-        if (groupShop) groupShop.style.display = 'block';
-
-        if (btnShop) {
-            btnShop.className = 'py-1.5 px-2 rounded-lg bg-gradient-to-r from-violet-500/20 to-indigo-600/20 text-violet-300 border border-violet-500/30 shadow-[0_0_12px_rgba(139,92,246,0.18)] transition-all flex items-center justify-center gap-1.5';
-            const icon = btnShop.querySelector('i');
-            if (icon) icon.className = 'fa-solid fa-circle-dollar-to-slot text-violet-400 text-xs';
-        }
-        if (btnSaas) {
-            btnSaas.className = 'py-1.5 px-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all flex items-center justify-center gap-1.5 border border-transparent';
-            const icon = btnSaas.querySelector('i');
-            if (icon) icon.className = 'fa-solid fa-display text-slate-400 text-xs';
-        }
-    }
-
-    // 2. Toggle Refresh Button (Visible for Rental, Hidden for Shop)
-    const refreshBtn = document.getElementById('btnRefresh');
-    if (refreshBtn) {
         if (isRental) {
-            refreshBtn.classList.remove('hidden');
-            refreshBtn.style.display = 'inline-flex';
+            if (groupRental) groupRental.style.display = 'block';
+            if (groupShop) groupShop.style.display = 'none';
+
+            if (btnSaas) {
+                btnSaas.className = 'py-1.5 px-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-600/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.18)] transition-all flex items-center justify-center gap-1.5';
+                const icon = btnSaas.querySelector('i');
+                if (icon) icon.className = 'fa-solid fa-display text-cyan-400 text-xs';
+            }
+            if (btnShop) {
+                btnShop.className = 'py-1.5 px-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all flex items-center justify-center gap-1.5 border border-transparent';
+                const icon = btnShop.querySelector('i');
+                if (icon) icon.className = 'fa-solid fa-circle-dollar-to-slot text-slate-400 text-xs';
+            }
         } else {
-            refreshBtn.classList.add('hidden');
-            refreshBtn.style.display = 'none';
-        }
-    }
+            if (groupRental) groupRental.style.display = 'none';
+            if (groupShop) groupShop.style.display = 'block';
 
-    // 3. Update active state on sidebar items (Floating Island Glass style)
-    document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
-        const isMatch = btn.getAttribute('data-view') === viewName;
-        // Remove all active variants first
-        btn.classList.remove(
-            'active', 'active-shop',
-            'nav-item-active',
-            'bg-gradient-to-r', 'from-cyan-500/[0.18]', 'via-cyan-500/[0.06]', 'to-transparent',
-            'text-white', 'font-semibold', 'border-cyan-500/30',
-            'from-violet-500/[0.18]', 'border-violet-500/30'
-        );
-        btn.classList.add('text-slate-300', 'border-transparent');
-
-        if (isMatch) {
-            const isShop = viewName.startsWith('rnf-');
-            btn.classList.add('nav-item-active', 'text-white', 'font-semibold');
-            btn.classList.remove('text-slate-300', 'border-transparent');
-            if (isShop) {
-                btn.classList.add(
-                    'bg-gradient-to-r', 'from-violet-500/[0.18]', 'via-violet-500/[0.06]', 'to-transparent',
-                    'border', 'border-violet-500/30'
-                );
-                btn.classList.add('active-shop');
-            } else {
-                btn.classList.add(
-                    'bg-gradient-to-r', 'from-cyan-500/[0.18]', 'via-cyan-500/[0.06]', 'to-transparent',
-                    'border', 'border-cyan-500/30'
-                );
-                btn.classList.add('active');
+            if (btnShop) {
+                btnShop.className = 'py-1.5 px-2 rounded-lg bg-gradient-to-r from-violet-500/20 to-indigo-600/20 text-violet-300 border border-violet-500/30 shadow-[0_0_12px_rgba(139,92,246,0.18)] transition-all flex items-center justify-center gap-1.5';
+                const icon = btnShop.querySelector('i');
+                if (icon) icon.className = 'fa-solid fa-circle-dollar-to-slot text-violet-400 text-xs';
+            }
+            if (btnSaas) {
+                btnSaas.className = 'py-1.5 px-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all flex items-center justify-center gap-1.5 border border-transparent';
+                const icon = btnSaas.querySelector('i');
+                if (icon) icon.className = 'fa-solid fa-display text-slate-400 text-xs';
             }
         }
-    });
 
-    // 4. Toggle Metric Strips
-    const rentalMetrics = document.getElementById('metrics-rental');
-    const rnfMetrics = document.getElementById('metrics-rnfshop');
+        // 2. Toggle Refresh Button (Visible for Rental, Hidden for Shop)
+        const refreshBtn = document.getElementById('btnRefresh');
+        if (refreshBtn) {
+            if (isRental) {
+                refreshBtn.classList.remove('hidden');
+                refreshBtn.style.display = 'inline-flex';
+            } else {
+                refreshBtn.classList.add('hidden');
+                refreshBtn.style.display = 'none';
+            }
+        }
 
-    if (rentalMetrics) rentalMetrics.style.display = isRental ? 'grid' : 'none';
-    if (rnfMetrics) rnfMetrics.style.display = isRental ? 'none' : 'grid';
+        // 3. Update active state on sidebar items (Floating Island Glass style)
+        document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
+            const isMatch = btn.getAttribute('data-view') === viewName;
+            // Remove all active variants first
+            btn.classList.remove(
+                'active', 'active-shop',
+                'nav-item-active',
+                'bg-gradient-to-r', 'from-cyan-500/[0.18]', 'via-cyan-500/[0.06]', 'to-transparent',
+                'text-white', 'font-semibold', 'border-cyan-500/30',
+                'from-violet-500/[0.18]', 'border-violet-500/30'
+            );
+            btn.classList.add('text-slate-300', 'border-transparent');
 
-    // 5. Update Breadcrumbs
-    const secEl = document.getElementById('breadcrumbSection');
-    const currEl = document.getElementById('breadcrumbCurrent');
-    if (secEl && currEl) {
+            if (isMatch) {
+                const isShop = viewName.startsWith('rnf-');
+                btn.classList.add('nav-item-active', 'text-white', 'font-semibold');
+                btn.classList.remove('text-slate-300', 'border-transparent');
+                if (isShop) {
+                    btn.classList.add(
+                        'bg-gradient-to-r', 'from-violet-500/[0.18]', 'via-violet-500/[0.06]', 'to-transparent',
+                        'border', 'border-violet-500/30'
+                    );
+                    btn.classList.add('active-shop');
+                } else {
+                    btn.classList.add(
+                        'bg-gradient-to-r', 'from-cyan-500/[0.18]', 'via-cyan-500/[0.06]', 'to-transparent',
+                        'border', 'border-cyan-500/30'
+                    );
+                    btn.classList.add('active');
+                }
+            }
+        });
+
+        // 4. Toggle Metric Strips
+        const rentalMetrics = document.getElementById('metrics-rental');
+        const rnfMetrics = document.getElementById('metrics-rnfshop');
+
+        if (rentalMetrics) rentalMetrics.style.display = isRental ? 'grid' : 'none';
+        if (rnfMetrics) rnfMetrics.style.display = isRental ? 'none' : 'grid';
+
+        // 5. Update Breadcrumbs
+        const secEl = document.getElementById('breadcrumbSection');
+        const currEl = document.getElementById('breadcrumbCurrent');
+        if (secEl && currEl) {
+            if (isRental) {
+                secEl.innerText = 'Bot Rental';
+                currEl.innerText = viewName === 'telegram' ? 'Bot Telegram' : 'Bot WhatsApp';
+            } else {
+                secEl.innerText = 'RNF Shop';
+                const nameMap = {
+                    'rnf-overview': 'Overview & Grafik',
+                    'rnf-transactions': 'Data Transaksi',
+                    'rnf-apps': 'Master Apps',
+                    'rnf-sheets': 'Google Sheets Sync'
+                };
+                currEl.innerText = nameMap[viewName] || 'Keuangan Toko';
+            }
+        }
+
+        // 6. Toggle Views
+        document.querySelectorAll('.view-section').forEach(sec => {
+            sec.classList.toggle('active', sec.id === `view-${viewName}`);
+        });
+
+        // 7. Trigger Data Loading
         if (isRental) {
-            secEl.innerText = 'Bot Rental';
-            currEl.innerText = viewName === 'telegram' ? 'Bot Telegram' : 'Bot WhatsApp';
+            activeTab = viewName;
+            updateStatsHeader();
+            loadStats();
+            loadActiveTab();
         } else {
-            secEl.innerText = 'RNF Shop';
-            const nameMap = {
-                'rnf-overview': 'Overview & Grafik',
-                'rnf-transactions': 'Data Transaksi',
-                'rnf-apps': 'Master Apps',
-                'rnf-sheets': 'Google Sheets Sync'
-            };
-            currEl.innerText = nameMap[viewName] || 'Keuangan Toko';
+            try {
+                const { onRnfViewActivated } = await import('../rnfshop/main.js');
+                await onRnfViewActivated(viewName);
+            } catch (err) {
+                console.error('[MasterDashboard] Error loading RNF Shop view:', err);
+                showToast('Gagal memuat modul RNF Shop: ' + err.message, 'error');
+            }
         }
-    }
-
-    // 6. Toggle Views
-    document.querySelectorAll('.view-section').forEach(sec => {
-        sec.classList.toggle('active', sec.id === `view-${viewName}`);
-    });
-
-    // 7. Trigger Data Loading
-    if (isRental) {
-        activeTab = viewName;
-        updateStatsHeader();
-        loadStats();
-        loadActiveTab();
-    } else {
-        try {
-            const { onRnfViewActivated } = await import('../rnfshop/main.js');
-            await onRnfViewActivated(viewName);
-        } catch (err) {
-            console.error('[MasterDashboard] Error loading RNF Shop view:', err);
-            showToast('Gagal memuat modul RNF Shop: ' + err.message, 'error');
-        }
+    } finally {
+        isSwitchingView = false;
     }
 }
 

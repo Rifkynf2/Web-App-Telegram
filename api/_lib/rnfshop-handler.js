@@ -116,6 +116,21 @@ module.exports = async function handler(req, res) {
                     }
                 });
 
+                let lifetimeAppSalesCountMap = {};
+                if (!startDate && !endDate && (!trxType || trxType === 'all')) {
+                    lifetimeAppSalesCountMap = appSalesCountMap;
+                } else {
+                    const lifetimeQuery = supa
+                        .from('transactions')
+                        .select('app_id, apps(name)')
+                        .eq('trx_type', 'incoming');
+                    const lifetimeIncoming = await fetchAllRows(lifetimeQuery);
+                    lifetimeIncoming.forEach(t => {
+                        const name = t.apps?.name || 'Lainnya';
+                        lifetimeAppSalesCountMap[name] = (lifetimeAppSalesCountMap[name] || 0) + 1;
+                    });
+                }
+
                 return success(res, {
                     stats: {
                         totalIncoming,
@@ -123,7 +138,7 @@ module.exports = async function handler(req, res) {
                         netProfit: totalIncoming - totalOutgoing,
                         totalCount: trxs.length,
                         appIncomeMap,
-                        appSalesCountMap,
+                        appSalesCountMap: lifetimeAppSalesCountMap,
                         dailyIncomeMap,
                         dailyOutgoingMap,
                         recentTransactions: trxs.slice(0, 6)

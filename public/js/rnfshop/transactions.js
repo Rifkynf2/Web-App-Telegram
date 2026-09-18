@@ -19,7 +19,6 @@ let currentFilter = {
 export async function initTransactionsView() {
     bindTransactionEvents();
     await populateAppFilterDropdown();
-    await loadTransactions();
 }
 
 async function populateAppFilterDropdown() {

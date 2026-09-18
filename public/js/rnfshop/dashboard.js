@@ -166,7 +166,7 @@ export async function loadDashboardOverview() {
     const overviewSec = document.getElementById('view-rnf-overview');
     if (overviewSec && overviewSec.classList.contains('active')) {
         try {
-            await renderCharts(dailyIncomeMap, dailyOutgoingMap, appIncomeMap);
+            await renderCharts(dailyIncomeMap, dailyOutgoingMap, periodSelect, typeFilter);
         } catch (chartErr) {
             console.error('[RNFSHOP] Error rendering charts:', chartErr);
         }
@@ -500,7 +500,7 @@ export function initPeriodFilters() {
     });
 }
 
-async function renderCharts(dailyIn, dailyOut, appMap) {
+async function renderCharts(dailyIn = {}, dailyOut = {}, period = 'month', typeFilter = 'all') {
     const trendCanvas = document.getElementById('rnf-chart-trend');
     if (!trendCanvas) return;
 
@@ -527,138 +527,128 @@ async function renderCharts(dailyIn, dailyOut, appMap) {
         chartInstanceTrend = null;
     }
 
-    const appsCanvas = document.getElementById('rnf-chart-apps');
-    if (appsCanvas) {
-        const existingApps = ChartConstructor.getChart ? ChartConstructor.getChart(appsCanvas) : null;
-        if (existingApps) {
-            try { existingApps.destroy(); } catch (_) {}
-        }
-        if (chartInstanceApps) {
-            try { chartInstanceApps.destroy(); } catch (_) {}
-            chartInstanceApps = null;
-        }
-    }
+    // Determine aggregation mode matching Dashboard_RNF_SHOP
+    const mode = (period === '6months' || period === '1year') ? 'month' : 'day';
 
-    // Sort last 14 dates with safe fallback
-    let allDates = Array.from(new Set([...Object.keys(dailyIn || {}), ...Object.keys(dailyOut || {})])).sort().slice(-14);
+    // Aggregate values
+    const groups = new Map();
+    const allDates = Array.from(new Set([...Object.keys(dailyIn || {}), ...Object.keys(dailyOut || {})])).sort();
+
     if (allDates.length === 0) {
         const todayStr = new Date().toISOString().slice(0, 10);
-        allDates = [todayStr];
-    }
-    const inData = allDates.map(d => dailyIn[d] || 0);
-    const outData = allDates.map(d => dailyOut[d] || 0);
+        const key = mode === 'month' ? todayStr.slice(0, 7) : todayStr;
+        groups.set(key, 0);
+    } else {
+        for (const dateStr of allDates) {
+            const key = mode === 'month' ? String(dateStr).slice(0, 7) : String(dateStr);
+            const prev = groups.get(key) || 0;
+            const inAmt = Number(dailyIn[dateStr] || 0);
+            const outAmt = Number(dailyOut[dateStr] || 0);
 
-    const chartDefaults = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top',
-                labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }, padding: 12, usePointStyle: true, pointStyleWidth: 8 }
-            },
-            tooltip: {
-                backgroundColor: 'rgba(7,10,18,0.95)',
-                titleColor: '#f1f5f9',
-                bodyColor: '#94a3b8',
-                borderColor: 'rgba(255,255,255,0.1)',
-                borderWidth: 1,
-                padding: 12,
-                boxPadding: 6,
-                usePointStyle: true,
+            let netAmt = 0;
+            if (typeFilter === 'incoming') {
+                netAmt = inAmt;
+            } else if (typeFilter === 'outgoing') {
+                netAmt = outAmt;
+            } else {
+                netAmt = inAmt - outAmt;
             }
+            groups.set(key, prev + netAmt);
         }
-    };
+    }
 
-    // 1. Trend Chart (Full Width)
+    const labels = Array.from(groups.keys()).sort();
+    const values = labels.map(k => groups.get(k));
+
+    // Determine dataset styling matching Dashboard_RNF_SHOP
+    let label = 'Net Profit (IDR)';
+    let primaryColor = '#06b6d4'; // Cyan default
+    if (typeFilter === 'incoming') {
+        label = 'Income (IDR)';
+        primaryColor = '#10b981'; // Emerald
+    } else if (typeFilter === 'outgoing') {
+        label = 'Expense (IDR)';
+        primaryColor = '#f43f5e'; // Rose
+    }
+
+    const ctx = trendCanvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+    if (typeFilter === 'incoming') {
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+        gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+    } else if (typeFilter === 'outgoing') {
+        gradient.addColorStop(0, 'rgba(244, 63, 94, 0.35)');
+        gradient.addColorStop(1, 'rgba(244, 63, 94, 0.0)');
+    } else {
+        gradient.addColorStop(0, 'rgba(6, 182, 212, 0.35)');
+        gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
+    }
+
     chartInstanceTrend = new ChartConstructor(trendCanvas, {
-        type: 'bar',
+        type: 'line',
         data: {
-            labels: allDates.map(d => d.slice(5)), // MM-DD
+            labels,
             datasets: [
                 {
-                    label: 'Incoming (IN)',
-                    data: inData,
-                    backgroundColor: 'rgba(16,185,129,0.8)',
-                    hoverBackgroundColor: '#10b981',
-                    borderRadius: 6,
-                    borderSkipped: false
-                },
-                {
-                    label: 'Outgoing (OUT)',
-                    data: outData,
-                    backgroundColor: 'rgba(244,63,94,0.8)',
-                    hoverBackgroundColor: '#f43f5e',
-                    borderRadius: 6,
-                    borderSkipped: false
+                    label,
+                    data: values,
+                    borderWidth: 2,
+                    borderColor: primaryColor,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: mode === 'month' ? 4 : 3,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: primaryColor,
+                    pointBorderColor: '#0c1222',
+                    pointBorderWidth: 2
                 }
             ]
         },
         options: {
-            ...chartDefaults,
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: {
-                ...chartDefaults.plugins,
+                legend: { display: false },
                 tooltip: {
-                    ...chartDefaults.plugins.tooltip,
+                    backgroundColor: 'rgba(7, 10, 18, 0.95)',
+                    titleColor: '#f1f5f9',
+                    bodyColor: '#94a3b8',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    padding: 10,
                     callbacks: {
                         label: function(context) {
-                            return ` ${context.dataset.label}: ${formatRupiah(context.parsed.y)}`;
+                            const v = context.parsed.y ?? 0;
+                            return ` ${context.dataset.label}: Rp ${Number(v).toLocaleString('id-ID')}`;
                         }
                     }
                 }
             },
             scales: {
-                x: {
-                    ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 10 } },
-                    grid: { display: false }
-                },
                 y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                    border: { display: false },
                     ticks: {
-                        color: '#64748b',
+                        color: '#94a3b8',
                         font: { family: 'Plus Jakarta Sans', size: 10 },
-                        callback: (v) => v >= 1000000 ? 'Rp ' + (v/1000000) + 'jt' : v >= 1000 ? 'Rp ' + (v/1000) + 'rb' : 'Rp ' + v
-                    },
-                    grid: { color: 'rgba(255,255,255,0.04)' }
+                        callback: (v) => 'Rp ' + Number(v).toLocaleString('id-ID')
+                    }
+                },
+                x: {
+                    grid: { display: false, drawBorder: false },
+                    border: { display: false },
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { family: 'Plus Jakarta Sans', size: 10 },
+                        maxTicksLimit: 8
+                    }
                 }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
             }
         }
     });
-
-    // 2. Apps Breakdown Chart (Only if canvas present)
-    if (appsCanvas) {
-        const appLabels = Object.keys(appMap).slice(0, 7);
-        const appValues = appLabels.map(k => appMap[k]);
-
-        chartInstanceApps = new ChartConstructor(appsCanvas, {
-            type: 'doughnut',
-            data: {
-                labels: appLabels,
-                datasets: [{
-                    data: appValues,
-                    backgroundColor: ['#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#3b82f6', '#14b8a6'],
-                    borderColor: '#070a12',
-                    borderWidth: 3,
-                    hoverOffset: 8
-                }]
-            },
-            options: {
-                ...chartDefaults,
-                cutout: '72%',
-                plugins: {
-                    ...chartDefaults.plugins,
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 10 }, padding: 10, boxWidth: 10, usePointStyle: true }
-                    },
-                    tooltip: {
-                        ...chartDefaults.plugins.tooltip,
-                        callbacks: {
-                            label: function(context) {
-                                return ` ${context.label}: ${formatRupiah(context.parsed)}`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
 }
