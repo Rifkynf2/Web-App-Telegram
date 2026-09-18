@@ -8,6 +8,11 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="canonical" href="https://app.rnfbot.my.id/admin" />
 
+    <!-- Cache-Busting & Freshness Directives for Mobile WebViews -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
     <!-- Open Graph / SEO Social Metadata -->
     <meta property="og:title" content="Admin Panel - RNFBOT" />
     <meta property="og:description" content="Admin Panel RNFBOT - Kelola produk digital, inventaris stok, varian harga, dan pemantauan transaksi bot Telegram secara real-time." />
@@ -24,10 +29,10 @@
     <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
 
     <!-- Performance: Preload core stylesheet -->
-    <link rel="preload" href="style/style.css" as="style" fetchpriority="high" />
+    <link rel="preload" href="style/style.css?v=2.2" as="style" fetchpriority="high" />
 
     <!-- Local Self-Hosted Stylesheets (Zero External CDN Dependency) -->
-    <link href="style/style.css" rel="stylesheet" />
+    <link href="style/style.css?v=2.2" rel="stylesheet" />
     <link rel="preload" href="style/fontawesome.min.css" as="style" />
     <link rel="stylesheet" href="style/fontawesome.min.css" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="style/fontawesome.min.css" /></noscript>
@@ -68,7 +73,7 @@
         bindToggle();
       }
     </script>
-    <script type="module" src="js/tenant-admin/admin-main.js" defer></script>
+    <script type="module" src="js/tenant-admin/admin-main.js?v=2.2" defer></script>
   </head>
   <body
     class="bg-linear-to-br from-[#020617] via-[#0f0c29] to-[#020617] text-gray-100 min-h-screen text-sm antialiased relative"

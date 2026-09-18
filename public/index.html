@@ -8,6 +8,11 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="canonical" href="https://app.rnfbot.my.id/" />
 
+    <!-- Cache-Busting & Freshness Directives for Mobile WebViews -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
     <!-- Open Graph / SEO Social Metadata -->
     <meta property="og:title" content="Home - RNFBOT Store" />
     <meta property="og:description" content="RNFBOT Store - Belanja produk digital premium, aplikasi, dan layanan otomatisasi bot Telegram secara cepat, aman, dan instan." />
@@ -27,10 +32,10 @@
     <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
 
     <!-- Performance: Preload core stylesheet -->
-    <link rel="preload" href="style/style.css" as="style" fetchpriority="high" />
+    <link rel="preload" href="style/style.css?v=2.2" as="style" fetchpriority="high" />
 
     <!-- Performance: Flatten ES Module dependency tree (Eliminates 2.16s critical request chaining) -->
-    <link rel="modulepreload" href="js/buyer/buyer-main.js" />
+    <link rel="modulepreload" href="js/buyer/buyer-main.js?v=2.2" />
     <link rel="modulepreload" href="js/buyer/buyer.js" />
     <link rel="modulepreload" href="js/shared/store.js" />
     <link rel="modulepreload" href="js/shared/utils.js" />
@@ -90,7 +95,7 @@
     <script type="module" src="js/buyer/buyer-main.js?v=2.2" defer></script>
 
     <!-- Local Self-Hosted Stylesheets (Zero External CDN Dependency) -->
-    <link href="style/style.css" rel="stylesheet" />
+    <link href="style/style.css?v=2.2" rel="stylesheet" />
     <link rel="preload" href="style/fontawesome.min.css" as="style" />
     <link rel="stylesheet" href="style/fontawesome.min.css" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="style/fontawesome.min.css" /></noscript>
