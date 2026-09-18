@@ -2,10 +2,10 @@
 # RNF SaaS Multi-Tenant Web App & API Gateway System
 ## Unified Multi-Tenant Bot Ecosystem & Finance Super-Dashboard
 
-- **Version**: 2.5.0
+- **Version**: 2.6.0
 - **Status**: Production / Active
 - **System Architecture**: Multi-Tenant Telegram Mini App + Centralized Vercel API Gateway + Triple Supabase (Master, WA, RNF Shop)
-- **Date**: 2026-09-18
+- **Date**: 2026-09-19
 - **Maintainer**: RNF System
 
 ---
@@ -109,9 +109,14 @@
 ### 3.1 Technology Stack
 - **Frontend Layer**:
   - HTML5 Semantik, Vanilla JavaScript (Modular ES Modules & Class Controllers).
-  - Styling: Tailwind CSS v4 (`@tailwindcss/cli` build & minify ke `public/style/style.css`).
-  - Komponen UI & Ikonografi: Font Awesome 6 Pro/Free, SweetAlert2 (dialog konfirmasi/alert), Canvas Confetti.
+  - Styling:
+    - **Tailwind CSS v4** (`@tailwindcss/cli` build & minify → `public/style/style.css`): Sistem utility class utama untuk seluruh halaman.
+    - **`rnfshop-liquid.css`** (Liquid Glass Design System): Stylesheet custom untuk Master Super-Dashboard. Mengimplementasikan efek *True Liquid Glass* (`backdrop-filter: blur`, gradient border, aurora mesh ambient glow, dot-grid background pattern), komponen login overlay split-canvas, form input Admin Secret Key bergaya neon, serta animasi micro-interaction premium. Tidak bergantung pada Tailwind.
+    - **`master-dashboard.min.css`**: Output minified CSS khusus komponen Master Dashboard yang di-compile terpisah dari `style.css` untuk cache-busting optimal.
+    - **`fontawesome.min.css`** + **`/webfonts/`**: Font Awesome 6 self-hosted lokal (woff2) sebagai fallback/pengganti CDN untuk reliabilitas ikonografi di lingkungan tanpa koneksi eksternal.
+  - Komponen UI & Ikonografi: Font Awesome 6 (self-hosted via `/style/fontawesome.min.css` + `/webfonts/`), SweetAlert2 (dialog konfirmasi/alert), Google Material Symbols Outlined (ikon referensi), Canvas Confetti.
   - Runtime Eksternal: Telegram WebApp SDK (`telegram-web-app.js`).
+  - Tipografi: **Plus Jakarta Sans** (Google Fonts CDN) sebagai font utama dashboard, **JetBrains Mono** (monospace) untuk input kode/kunci.
 - **Backend / API Gateway Layer**:
   - Node.js (Vercel Serverless Functions).
   - Kriptografi Native: `node:crypto` (HMAC-SHA256, `timingSafeEqual`, SHA-256 Hashes).
@@ -119,6 +124,7 @@
   - Database Client: `@supabase/supabase-js` (Connection pooling, RPC invocations, RLS bypass via service keys).
 - **Timezone & Date Processing**:
   - `Intl.DateTimeFormat` engine (`Asia/Jakarta`) zero-dependency tanpa `moment` atau `dayjs`.
+  - Helper khusus `api/_lib/wibDate.js` untuk kalkulasi selisih hari WIB dan sinkronisasi midnight 00:00:00 WIB.
 - **Database Engine**:
   - PostgreSQL di Supabase dengan RLS terisolasi, Enum Types, Triggers `updated_at`, dan PL/pgSQL Stored Functions.
 
@@ -198,6 +204,7 @@
 
 ### FR-6: Master SaaS Administrative Dashboard (Rental Mode)
 - **FR-6.1**: Akses terpusat di `/master` dengan proteksi `X-Admin-Secret`.
+  - **Login Overlay Liquid Glass**: Halaman dilindungi oleh overlay login split-canvas (`#loginOverlay`) dengan desain *True Liquid Glass*. Sisi kiri berisi form input Admin Secret Key (JetBrains Mono, neon lock icon, animasi focus glow), sisi kanan menampilkan visual showcase kartu produk cloud server dengan efek float animation. Background menggunakan dot-grid pattern dan aurora ambient mesh (identik dengan tampilan dashboard utama). Transisi antara form dan showcase menggunakan `linear-gradient` seamless tanpa border keras.
 - **FR-6.2**: Monitoring Metrik SaaS Master:
   - Ringkasan kartu real-time: Total Tenant, Tenant Aktif (termasuk verifikasi aktif kalender), Tenant Expired, Segera Expired (<= 3 hari), Total Pendapatan Sewa (PAID invoices), Sesi Aktif Mini App, dan Total Pengguna Telegram.
 - **FR-6.3**: Manajemen Tenant Telegram:
@@ -477,6 +484,7 @@ CRON_SECRET=your_vercel_cron_bearer_secret
 ```
 
 ### 9.2 Vercel Configuration (`vercel.json`)
+- **Production Branch**: `master` (satu-satunya branch aktif; branch `main` dihapus).
 - **Clean URLs**: `true`.
 - **Redirects**: `/public/master-dashboard.html` dan `/master-dashboard.html` diarahkan secara permanen (301) ke `/master`.
 - **Rewrites**:
@@ -487,6 +495,7 @@ CRON_SECRET=your_vercel_cron_bearer_secret
   - `/api/(.*)`: `Cache-Control: no-store`, mengizinkan header `Content-Type, X-Bot-Id, X-Timestamp, X-Signature, X-Telegram-Init-Data, X-Admin-Secret`.
   - `/(fonts|webfonts)/(.*)`: `Cache-Control: public, max-age=31536000, immutable`.
   - `/images/(.*)`: `Cache-Control: public, max-age=86400, stale-while-revalidate=604800`.
+  - `/assets/(.*)`: `Cache-Control: public, max-age=86400, stale-while-revalidate=604800`.
   - `/(style|js)/(.*)`: `Cache-Control: public, max-age=0, must-revalidate`.
 - **Crons Terjadwal**:
   - Path: `/api/admin/cron-expire`
@@ -529,42 +538,57 @@ Web App/
 ├── public/
 │   ├── admin.html                   # Antarmuka Admin Toko Tenant (Katalog & Stok)
 │   ├── index.html                   # Antarmuka Storefront Buyer Telegram Mini App
-│   ├── master-dashboard.html        # Antarmuka Master SaaS Super-Dashboard (Rental SaaS & Shop Finance)
+│   ├── master-dashboard.html        # Antarmuka Master SaaS Super-Dashboard (Rental SaaS & Shop Finance) + Login Overlay Liquid Glass
 │   ├── favicon.svg                  # Favicon aplikasi
-│   ├── index.css                    # Tailwind CSS source input
+│   ├── index.css                    # Tailwind CSS source input (v4)
+│   ├── assets/
+│   │   └── apps/                    # Ikon aplikasi digital RNF Shop (*.webp)
+│   ├── fonts/
+│   │   ├── outfit-latin.woff2       # Font Outfit self-hosted (latin)
+│   │   └── outfit-latin-ext.woff2   # Font Outfit self-hosted (latin-ext)
+│   ├── images/
+│   │   ├── Logo RNFBOT.webp         # Logo resmi RNFBOT
+│   │   └── cloud-server.svg         # Ilustrasi SVG cloud server (login showcase panel)
 │   ├── style/
-│   │   └── style.css                # Minified output Tailwind CSS v4
+│   │   ├── style.css                # Minified output Tailwind CSS v4 (generated dari index.css)
+│   │   ├── rnfshop-liquid.css       # Liquid Glass Design System: login overlay, aurora mesh, dot-grid, input neon, glass cards
+│   │   ├── master-dashboard.min.css # CSS minified komponen master dashboard (cache-busting terpisah)
+│   │   └── fontawesome.min.css      # Font Awesome 6 self-hosted (loader CSS, bundled dengan /webfonts/)
+│   ├── webfonts/
+│   │   ├── fa-brands-400.woff2      # Font Awesome brands icons
+│   │   ├── fa-regular-400.woff2     # Font Awesome regular icons
+│   │   └── fa-solid-900.woff2       # Font Awesome solid icons
 │   ├── js/
 │   │   ├── buyer/
 │   │   │   ├── buyer-main.js        # Entrypoint buyer app
 │   │   │   └── buyer.js             # Logika interaktif storefront buyer
 │   │   ├── master/
-│   │   │   ├── masterDashboard.js   # Logika master dashboard controller
-│   │   │   └── masterDashboard.min.js
+│   │   │   ├── masterDashboard.js   # Logika master dashboard controller (source)
+│   │   │   └── masterDashboard.min.js # Minified production build master dashboard
 │   │   ├── rnfshop/                 # Modul Finansial & Operasional RNF Shop
-│   │   │   ├── apiClient.js         # API gateway fetch client
-│   │   │   ├── apps.js              # Manajemen aplikasi digital
-│   │   │   ├── config.js            # Konfigurasi frontend shop
-│   │   │   ├── dashboard.js         # Overview metrik & analitik laba bersih
-│   │   │   ├── import.js            # Parser struk & mutasi bank batch
-│   │   │   ├── main.js              # Controller modul shop
-│   │   │   ├── mockData.js          # Mock data dev/testing
-│   │   │   ├── sheets.js            # Integrasi Google Sheets
-│   │   │   ├── supabaseClient.js    # Client supabase helper
-│   │   │   ├── transactions.js      # CRUD & pagination transaksi
-│   │   │   └── utils.js             # Formatting & helper finansial
+│   │   │   ├── apiClient.js         # API gateway fetch client (rnfFetch dengan X-Admin-Secret)
+│   │   │   ├── apps.js              # Manajemen katalog aplikasi digital
+│   │   │   ├── config.js            # Konfigurasi endpoint & konstanta frontend shop
+│   │   │   ├── dashboard.js         # Overview metrik & analitik laba bersih + Chart.js
+│   │   │   ├── import.js            # Parser struk & mutasi bank batch (regex engine + alias mapping)
+│   │   │   ├── main.js              # Controller & router modul shop (tab switcher, event binding)
+│   │   │   ├── mockData.js          # Mock data mode preview/dev testing
+│   │   │   ├── sheets.js            # Integrasi pratinjau Google Sheets sync
+│   │   │   ├── supabaseClient.js    # Supabase client singleton khusus RNF Shop frontend
+│   │   │   ├── transactions.js      # CRUD, filter, pagination transaksi finansial
+│   │   │   └── utils.js             # Formatting Rupiah, date ID, icon URL, escaping HTML
 │   │   ├── shared/
-│   │   │   ├── store.js             # State management buyer/tenant
-│   │   │   ├── supabaseClient.js    # Client dynamic initialization
-│   │   │   ├── theme.js             # Theme switcher dark/light
-│   │   │   └── utils.js             # Utility helpers
+│   │   │   ├── store.js             # State management buyer/tenant (catalog cache, session)
+│   │   │   ├── supabaseClient.js    # Dynamic Supabase client init (tenant anon key)
+│   │   │   ├── theme.js             # Theme switcher dark/light sinkron Telegram client
+│   │   │   └── utils.js             # Utility helpers: formatRupiah, escapeHtml, toast notif
 │   │   └── tenant-admin/
-│   │       ├── admin-main.js        # Entrypoint tenant admin
-│   │       ├── adminProducts.js     # Manajemen produk & wholesale
-│   │       └── adminStock.js        # Manajemen stok & deduplikasi
+│   │       ├── admin-main.js        # Entrypoint tenant admin portal
+│   │       ├── adminProducts.js     # Manajemen produk, multi-varian & wholesale tier builder
+│   │       └── adminStock.js        # Manajemen stok massal & deduplikasi otomatis
 ├── master_supabase_schema.sql       # Skema DDL lengkap Master Supabase (v2) + Stored Procedures
 ├── rnfshop_supabase_schema.sql      # Skema DDL lengkap RNF Shop Finance Database
-├── package.json                     # Konfigurasi dependencies & build scripts
+├── package.json                     # Konfigurasi dependencies & build scripts (Tailwind CLI)
 ├── vercel.json                      # Konfigurasi hosting Vercel (routing, rewrites, headers, crons)
 ├── prd.md                           # Product Requirements Document (Dokumen Ini)
 └── README.md                        # Dokumentasi ringkas repositori
