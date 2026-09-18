@@ -149,23 +149,20 @@ function updateVariantStatusBadge(block) {
 }
 
 export async function initAdminApp() {
-  console.log('[App] Version: 1.1.0-tenant-resolver');
+  console.log('[App] Version: 1.1.1-tenant-guard');
   const telegramFallback = document.getElementById('telegram-fallback');
 
   // 1. Technical & Environment Check
   const urlAuthToken = urlParams.get('auth');
   const isPreviewMode = urlParams.get('preview') === 'true' || urlParams.get('preview') === '1';
+  const hasBotId = Boolean(urlParams.get('bot_id'));
 
   const activeTg = window.Telegram?.WebApp || refreshTelegramData() || tg;
-  const isInTelegram = Boolean(
-    activeTg && (
-      activeTg.initData ||
-      (activeTg.platform && activeTg.platform !== 'unknown') ||
-      activeTg.version
-    )
+  const isTelegramAuthorized = Boolean(
+    activeTg && (activeTg.initData || activeTg.version) && (hasBotId || urlAuthToken)
   );
 
-  if (isInTelegram) {
+  if (isTelegramAuthorized || urlAuthToken || isPreviewMode) {
     if (telegramFallback) {
       telegramFallback.classList.add('hidden');
       telegramFallback.style.display = 'none';
@@ -174,20 +171,10 @@ export async function initAdminApp() {
       activeTg?.expand?.();
       activeTg?.ready?.();
     } catch (_) {}
-  } else if (urlAuthToken) {
-    if (telegramFallback) {
-      telegramFallback.classList.add('hidden');
-      telegramFallback.style.display = 'none';
-    }
-    console.log('Accessing from browser with auth token.');
-  } else if (isPreviewMode) {
-    if (telegramFallback) {
-      telegramFallback.classList.add('hidden');
-      telegramFallback.style.display = 'none';
-    }
-    console.log('[Admin] Preview mode active — auth bypassed');
   } else {
-    console.log('Not in Telegram environment & no auth token.');
+    // Akses di luar bot Telegram atau tanpa token auth resmi: biarkan fallback resmi tampil
+    console.log('[Admin] Access outside authorized Telegram bot context — displaying official fallback.');
+    hideLoading();
     return;
   }
 
@@ -216,97 +203,122 @@ export async function initAdminApp() {
     return;
   }
 
-  const tenantResolved = await initTenant();
-  if (!tenantResolved) {
-    // Preview dengan bot_id tapi gagal: tampilkan shell kosong
-    if (isPreviewMode) {
+  // 3. Failsafe Watchdog Timer (7s) to prevent perpetual hanging
+  const watchdog = setTimeout(() => {
+    const elLoading = document.getElementById('loading-state');
+    if (elLoading && !elLoading.classList.contains('hidden')) {
+      console.warn('[Admin] Watchdog: Admin load timed out after 7s');
       hideLoading();
-      if (elHeaderShopName) elHeaderShopName.textContent = 'Preview Admin';
-      console.warn('[Admin] Tenant failed in preview mode, showing empty shell');
-      return;
+      Swal.fire({
+        title: 'Koneksi Lambat',
+        text: 'Waktu memuat admin panel melebihi 7 detik. Silakan periksa koneksi lalu coba muat ulang.',
+        icon: 'warning',
+        confirmButtonText: 'Muat Ulang',
+        ...getSwalTheme()
+      }).then(() => window.location.reload());
     }
-    hideLoading();
-    if (telegramFallback) telegramFallback.classList.add('hidden');
-    const errorState = document.getElementById('error-state');
-    const errorTitle = document.getElementById('error-title');
-    const errorMessage = document.getElementById('error-message');
-
-    if (errorState) errorState.classList.replace('hidden', 'flex');
-    if (errorTitle) errorTitle.textContent = 'Konfigurasi Tenant Gagal';
-    if (errorMessage) {
-      const bId = urlParams.get('bot_id') || 'KOSONG';
-      errorMessage.innerHTML = `Bot ID: <b>${bId}</b>. Link Admin tidak lengkap atau bot belum terdaftar di Master DB.<br><br>Gunakan link /admin yang diberikan oleh bot.`;
-    }
-    return;
-  }
-
-  // 3. Security Gate (Token Verification - now reads from TENANT DB)
-  let dbAuthToken = null;
-  console.log('[Security] Validating token for URL:', urlAuthToken ? urlAuthToken.substring(0, 15) + '...' : 'MISSING');
+  }, 7000);
 
   try {
-    const { data, error } = await supabase.from('settings').select('value').eq('key', 'ADMIN_AUTH_TOKEN').maybeSingle();
+    const tenantResolved = await initTenant();
+    if (!tenantResolved) {
+      clearTimeout(watchdog);
+      hideLoading();
+      if (telegramFallback) {
+        telegramFallback.classList.add('hidden');
+        telegramFallback.style.display = 'none';
+      }
+      const errorState = document.getElementById('error-state');
+      const errorTitle = document.getElementById('error-title');
+      const errorMessage = document.getElementById('error-message');
 
-    if (data) dbAuthToken = data.value;
-    console.log('[Security] Database token found:', dbAuthToken ? dbAuthToken.substring(0, 15) + '...' : 'NOT FOUND');
-  } catch (e) {
-    console.error('[Security] Database fetch failed', e);
-  }
+      if (errorState) errorState.classList.replace('hidden', 'flex');
+      if (errorTitle) errorTitle.textContent = 'Konfigurasi Tenant Gagal';
+      if (errorMessage) {
+        const bId = urlParams.get('bot_id') || 'KOSONG';
+        errorMessage.innerHTML = `Bot ID: <b>${escapeHtml(bId)}</b>. Link Admin tidak lengkap atau bot belum terdaftar di Master DB.<br><br>Gunakan link /admin yang diberikan oleh bot.`;
+      }
+      return;
+    }
 
-  // Validate Token
-  if (!urlAuthToken || urlAuthToken !== dbAuthToken) {
-    console.error('[Security] ❌ TOKEN MISMATCH!');
+    // 4. Security Gate (Token Verification - now reads from TENANT DB)
+    let dbAuthToken = null;
+    console.log('[Security] Validating token for URL:', urlAuthToken ? urlAuthToken.substring(0, 15) + '...' : 'MISSING');
+
+    try {
+      const { data, error } = await supabase.from('settings').select('value').eq('key', 'ADMIN_AUTH_TOKEN').maybeSingle();
+      if (data) dbAuthToken = data.value;
+      console.log('[Security] Database token found:', dbAuthToken ? dbAuthToken.substring(0, 15) + '...' : 'NOT FOUND');
+    } catch (e) {
+      console.error('[Security] Database fetch failed', e);
+    }
+
+    // Validate Token
+    if (!urlAuthToken || urlAuthToken !== dbAuthToken) {
+      clearTimeout(watchdog);
+      console.error('[Security] ❌ TOKEN MISMATCH!');
+      hideLoading();
+      Swal.fire({
+        title: '🔐 Keamanan: Akses Ditolak',
+        text: 'Token keamanan tidak valid atau sudah kedaluwarsa. Silakan ambil link baru dari bot.',
+        icon: 'warning',
+        confirmButtonText: 'Kembali Ke Bot',
+        ...getSwalTheme(),
+        allowOutsideClick: false,
+      }).then(() => {
+        window.location.href = `https://t.me/rnf_shopp`;
+      });
+      return;
+    }
+
+    // 5. Identity Check (Admin Role)
+    const isAdmin = await checkIsAdmin(tgUser?.id);
+
+    if (!isAdmin && tgUser?.id) {
+      clearTimeout(watchdog);
+      hideLoading();
+      Swal.fire({
+        title: 'Akses Ditolak',
+        text: 'ID Telegram Anda (' + tgUser.id + ') tidak terdaftar sebagai Admin.',
+        icon: 'error',
+        confirmButtonText: 'Tutup',
+        ...getSwalTheme(),
+      }).then(() => {
+        tg?.close?.();
+      });
+      return;
+    }
+
+    if (!isAdmin && !tgUser?.id && !urlAuthToken) {
+      clearTimeout(watchdog);
+      hideLoading();
+      return;
+    }
+
+    // 6. Fetch Live Data in Parallel (Super Irit & Cepat)
+    console.log('[Stats] Fetching data...');
+    const [_, adminData] = await Promise.all([fetchShopSettings(), refreshAdminData()]);
+    clearTimeout(watchdog);
+    console.log('[Stats] Received:', adminData?.stats);
+
+    if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
+
+    initAdminStock();
+    setupAdminModalListeners();
+    bindAdminSearchEvents();
+    hideLoading();
+  } catch (err) {
+    clearTimeout(watchdog);
+    console.error('[Admin] Fatal load error:', err);
     hideLoading();
     Swal.fire({
-      title: '🔐 Keamanan: Akses Ditolak',
-      text: 'Token keamanan tidak valid atau sudah kedaluwarsa. Silakan ambil link baru dari bot.',
-      icon: 'warning',
-      confirmButtonText: 'Kembali Ke Bot',
-      ...getSwalTheme(),
-      allowOutsideClick: false,
-    }).then(() => {
-      window.location.href = `https://t.me/rnf_shopp`;
-    });
-    return;
-  }
-
-  // 4. Identity Check (Admin Role)
-  const isAdmin = await checkIsAdmin(tgUser?.id);
-
-  // Keamanan Cerdas:
-  // Jika di Telegram: Wajib terdaftar ID-nya.
-  // Jika di Browser: Asalkan Token valid, boleh masuk (karena link token itu rahasia).
-  if (!isAdmin && tgUser?.id) {
-    hideLoading();
-    Swal.fire({
-      title: 'Akses Ditolak',
-      text: 'ID Telegram Anda (' + tgUser.id + ') tidak terdaftar sebagai Admin.',
+      title: 'Gagal Memuat Admin',
+      text: err.message || 'Terjadi kesalahan sistem saat menghubungkan ke database toko.',
       icon: 'error',
-      confirmButtonText: 'Tutup',
-      ...getSwalTheme(),
-    }).then(() => {
-      tg.close();
-    });
-    return;
+      confirmButtonText: 'Muat Ulang',
+      ...getSwalTheme()
+    }).then(() => window.location.reload());
   }
-
-  if (!isAdmin && !tgUser?.id && !urlAuthToken) {
-    // Jika tidak ada ID dan tidak ada token (akses ilegal langsung ke URL)
-    hideLoading();
-    return;
-  }
-
-  // 5. Fetch Live Data in Parallel (Super Irit & Cepat)
-  console.log('[Stats] Fetching data...');
-  const [_, adminData] = await Promise.all([fetchShopSettings(), refreshAdminData()]);
-  console.log('[Stats] Received:', adminData?.stats);
-
-  if (elHeaderShopName) elHeaderShopName.textContent = shopSettings.name;
-
-  initAdminStock();
-  setupAdminModalListeners();
-  bindAdminSearchEvents();
-  hideLoading();
 }
 
 export async function refreshAdminData() {
