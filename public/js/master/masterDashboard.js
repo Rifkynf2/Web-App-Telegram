@@ -152,6 +152,29 @@ function handleLogout() {
     showToast('Logged out successfully', 'success');
 }
 
+// Password Visibility Toggle
+function setupPasswordVisibilityToggle() {
+    const toggleBtn = document.getElementById('toggle-visibility-btn');
+    const secretInput = document.getElementById('adminSecret');
+    const eyeIcon = document.getElementById('eye-icon');
+
+    if (!toggleBtn || !secretInput) return;
+
+    toggleBtn.addEventListener('click', () => {
+        const isPassword = secretInput.type === 'password';
+        secretInput.type = isPassword ? 'text' : 'password';
+        if (eyeIcon) {
+            if (isPassword) {
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        }
+    });
+}
+
 // Initialization
 function initMasterApp() {
     loginOverlay = document.getElementById('loginOverlay');
@@ -162,6 +185,7 @@ function initMasterApp() {
 
     setupTabListeners();
     setupSidebarNavigation();
+    setupPasswordVisibilityToggle();
     switchView('telegram');
 
     // ── Search Event Listeners ──────────────────────────────────────────────────
@@ -238,7 +262,7 @@ function initMasterApp() {
             setTimeout(() => {
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-lock"></i> Access Dashboard';
+                    btn.innerHTML = '<span>Access Dashboard</span> <i class="fa-solid fa-arrow-right text-xs"></i>';
                 }
                 showToast('Login successful — Welcome to Master Dashboard', 'success');
                 transitionLoginToApp();
@@ -315,14 +339,14 @@ function initMasterApp() {
                 showToast('Invalid Secret Key', 'error');
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-lock"></i> Access Dashboard';
+                    btn.innerHTML = '<span>Access Dashboard</span> <i class="fa-solid fa-arrow-right text-xs"></i>';
                 }
             }
         }).catch(err => {
             showToast('Connection failed: ' + (err.message || 'Server error'), 'error');
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-lock"></i> Access Dashboard';
+                btn.innerHTML = '<span>Access Dashboard</span> <i class="fa-solid fa-arrow-right text-xs"></i>';
             }
         });
     });
@@ -1810,11 +1834,19 @@ function transitionAppToLogin() {
 
         // Reset password input & verify button state
         const secretInput = document.getElementById('adminSecret');
-        if (secretInput) secretInput.value = '';
+        if (secretInput) {
+            secretInput.value = '';
+            secretInput.type = 'password';
+            const eyeIcon = document.getElementById('eye-icon');
+            if (eyeIcon) {
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        }
         const btn = document.getElementById('loginBtn');
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-lock"></i> Access Dashboard';
+            btn.innerHTML = '<span>Access Dashboard</span> <i class="fa-solid fa-arrow-right text-xs"></i>';
         }
     }
 
