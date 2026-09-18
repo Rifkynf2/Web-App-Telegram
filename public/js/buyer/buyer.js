@@ -171,15 +171,12 @@ export async function initBuyerApp() {
   const isPreviewMode = urlParams.get('preview') === 'true' || urlParams.get('preview') === '1';
   const hasBotId = Boolean(urlParams.get('bot_id'));
 
-  const isInTelegram = Boolean(
-    activeTg && (
-      activeTg.initData ||
-      (activeTg.platform && activeTg.platform !== 'unknown') ||
-      activeTg.version
-    )
+  // Valid Telegram context requires active WebApp and bot_id (or preview mode)
+  const isTelegramAuthorized = Boolean(
+    activeTg && (activeTg.initData || activeTg.version) && hasBotId
   );
 
-  if (isInTelegram || isPreviewMode) {
+  if (isTelegramAuthorized || isPreviewMode) {
     if (telegramFallback) {
       telegramFallback.classList.add('hidden');
       telegramFallback.style.display = 'none';
@@ -189,7 +186,9 @@ export async function initBuyerApp() {
       activeTg?.ready?.();
     } catch (_) {}
   } else {
-    console.log('Not in Telegram environment.');
+    // Di luar Telegram atau akses langsung tanpa bot_id: biarkan fallback resmi tetap tampil
+    console.log('[App] Access outside valid Telegram bot context — displaying official fallback.');
+    hideLoading();
     return;
   }
 
@@ -207,26 +206,6 @@ export async function initBuyerApp() {
     bindSearchEvents();
     hideLoading();
     console.log('[App] Running with MOCK data (no bot_id)');
-    return;
-  }
-
-  // 2. Validate bot_id
-  if (!hasBotId && !isPreviewMode) {
-    hideLoading();
-    if (telegramFallback) {
-      telegramFallback.classList.add('hidden');
-      telegramFallback.style.display = 'none';
-    }
-    const grid = document.getElementById('product-grid');
-    if (grid) grid.innerHTML = '';
-    const errorState = document.getElementById('error-state');
-    const errorTitle = document.getElementById('error-title');
-    const errorMessage = document.getElementById('error-message');
-    if (errorState) errorState.classList.replace('hidden', 'flex');
-    if (errorTitle) errorTitle.textContent = 'Link Toko Belum Lengkap';
-    if (errorMessage) {
-      errorMessage.innerHTML = `Bot ID belum tertera pada tautan yang Anda buka.<br><br>Silakan buka Web App melalui <b>tombol menu di bot toko Telegram Anda</b> agar katalog toko dapat dimuat.`;
-    }
     return;
   }
 
