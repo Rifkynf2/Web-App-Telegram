@@ -21,8 +21,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 
     <!-- Compiled Tailwind CSS & Liquid Glass Stylesheets -->
-    <link rel="stylesheet" href="/style/style.css?v=2.8">
-    <link rel="stylesheet" href="/style/rnfshop-liquid.css?v=2.8">
+    <link rel="stylesheet" href="/style/style.css?v=2.9">
+    <link rel="stylesheet" href="/style/rnfshop-liquid.css?v=2.9">
     <!-- Google Material Symbols Outlined (for reference icons) -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
 
@@ -54,59 +54,53 @@
 <!-- LOGIN OVERLAY                                                -->
 <!-- ════════════════════════════════════════════════════════════ -->
 <div id="loginOverlay">
-    <div class="login-split-card grid grid-cols-1 lg:grid-cols-12">
+    <div class="login-split-card">
         <!-- Left Column: Authentication Form -->
-        <div class="lg:col-span-5 p-7 sm:p-9 lg:p-11 flex flex-col justify-center">
-            <!-- Mobile Brand Indicator -->
-            <div class="flex items-center gap-2.5 mb-6 lg:hidden">
-                <img src="/images/cloud-server.svg" alt="Cloud Server" class="w-7 h-7 object-contain drop-shadow-[0_0_10px_rgba(0,242,254,0.6)]">
-                <span class="text-xs font-bold uppercase tracking-widest text-cyan-400">RNFBOT &amp; RNF SHOP</span>
+        <div class="login-split-left">
+            <!-- Brand Header -->
+            <div class="login-brand-header">
+                <img src="/images/cloud-server.svg" alt="Cloud Server" class="login-brand-icon">
+                <span class="login-brand-title">RNFBOT &amp; RNF SHOP</span>
             </div>
 
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-[1.18] mb-3">
+            <h1 class="login-title">
                 Sign in to Super<br>Dashboard
             </h1>
-            <p class="text-sm text-slate-400 leading-relaxed mb-8 font-normal">
+            <p class="login-subtitle">
                 Enter your admin secret key to access bot rental management and RNF SHOP store cashflow.
             </p>
 
-            <form id="loginForm" class="space-y-5">
-                <div>
-                    <label class="block text-[11px] font-bold tracking-widest text-slate-400 uppercase mb-2">
-                        ADMIN SECRET KEY
-                    </label>
-                    <div class="relative flex items-center bg-[#070b14] rounded-xl border border-slate-700/60 input-focus-glow transition-all">
-                        <span class="pl-4 text-slate-500 flex items-center justify-center pointer-events-none">
-                            <i class="fa-solid fa-lock text-sm"></i>
+            <form id="loginForm" class="login-form">
+                <div class="login-field-group">
+                    <label class="login-field-label">ADMIN SECRET KEY</label>
+                    <div class="login-input-wrapper">
+                        <span class="login-input-icon">
+                            <i class="fa-solid fa-lock"></i>
                         </span>
                         <input type="password" id="adminSecret"
-                               class="w-full bg-transparent px-3.5 py-3.5 text-white font-mono text-sm placeholder-slate-600 focus:outline-none tracking-widest"
                                placeholder="••••••••••••••••••••" autocomplete="current-password" required>
-                        <button type="button" id="toggle-visibility-btn" class="pr-4 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer focus:outline-none" title="Toggle Secret Visibility" aria-label="Toggle password visibility">
-                            <i id="eye-icon" class="fa-regular fa-eye text-sm"></i>
+                        <button type="button" id="toggle-visibility-btn" class="login-toggle-btn" title="Toggle Secret Visibility" aria-label="Toggle password visibility">
+                            <i id="eye-icon" class="fa-regular fa-eye"></i>
                         </button>
                     </div>
                 </div>
 
-                <button type="submit" id="loginBtn"
-                        class="w-full py-3.5 px-6 rounded-xl font-extrabold text-sm tracking-wide interactive-login-btn flex items-center justify-center gap-2 cursor-pointer">
+                <button type="submit" id="loginBtn" class="login-cta-btn">
                     <span>Access Dashboard</span>
-                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                    <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </form>
         </div>
 
         <!-- Right Column: Visual Showcase (Cloud Server Node) -->
-        <div class="hidden lg:flex lg:col-span-7 bg-[#070b14] border-t lg:border-t-0 lg:border-l border-slate-800/80 items-center justify-center p-8 lg:p-12 relative overflow-hidden hero-radial-glow">
-            <!-- Center Radial Ambient Light -->
-            <div class="absolute w-80 h-80 rounded-full bg-cyan-500/10 blur-[90px] pointer-events-none"></div>
+        <div class="login-split-right">
+            <!-- Ambient Radial Glow -->
+            <div class="login-showcase-glow"></div>
 
             <!-- Server Graphic + Pedestal -->
-            <div class="relative z-10 flex flex-col items-center justify-center">
-                <img src="/images/cloud-server.svg" alt="Cloud Server Node"
-                     class="w-[280px] sm:w-[320px] lg:w-[350px] max-w-full h-auto object-contain select-none drop-shadow-[0_25px_40px_rgba(0,0,0,0.85)] hover:scale-105 transition-transform duration-500">
-                <!-- Subtle Pedestal Glow / Shadow -->
-                <div class="w-52 h-6 bg-cyan-950/40 rounded-[100%] blur-md mt-4 pointer-events-none"></div>
+            <div class="login-showcase-content">
+                <img src="/images/cloud-server.svg" alt="Cloud Server Node" class="login-server-img">
+                <div class="login-server-pedestal"></div>
             </div>
         </div>
     </div>
