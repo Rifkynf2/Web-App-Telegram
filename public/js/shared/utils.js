@@ -105,3 +105,6 @@ export const escapeHtml = (str) => {
         "'": '&#39;'
     }[m]));
 };
+
+export const escAttr = escapeHtml;
+

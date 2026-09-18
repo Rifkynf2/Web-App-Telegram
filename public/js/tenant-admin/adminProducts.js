@@ -1,5 +1,5 @@
 import { supabase } from '../shared/supabaseClient.js';
-import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId } from '../shared/store.js';
+import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId, refreshTelegramData } from '../shared/store.js';
 import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl, escapeHtml } from '../shared/utils.js';
 import { openStockModal, initAdminStock, initSmoothSelect, syncSmoothSelect } from './adminStock.js';
 
@@ -156,13 +156,24 @@ export async function initAdminApp() {
   const urlAuthToken = urlParams.get('auth');
   const isPreviewMode = urlParams.get('preview') === 'true' || urlParams.get('preview') === '1';
 
-  if (tg && tg.initData) {
+  const activeTg = window.Telegram?.WebApp || refreshTelegramData() || tg;
+  const isInTelegram = Boolean(
+    activeTg && (
+      activeTg.initData ||
+      (activeTg.platform && activeTg.platform !== 'unknown') ||
+      activeTg.version
+    )
+  );
+
+  if (isInTelegram) {
     if (telegramFallback) {
       telegramFallback.classList.add('hidden');
       telegramFallback.style.display = 'none';
     }
-    tg.expand();
-    tg.ready();
+    try {
+      activeTg?.expand?.();
+      activeTg?.ready?.();
+    } catch (_) {}
   } else if (urlAuthToken) {
     if (telegramFallback) {
       telegramFallback.classList.add('hidden');

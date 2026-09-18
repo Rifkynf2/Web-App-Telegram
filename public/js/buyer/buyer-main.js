@@ -1,5 +1,10 @@
 import { initBuyerApp } from './buyer.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initBuyerApp();
+    });
+} else {
     initBuyerApp();
-});
+}
+

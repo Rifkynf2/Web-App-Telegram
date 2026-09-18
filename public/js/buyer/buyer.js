@@ -1,5 +1,5 @@
-import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant, urlParams } from '../shared/store.js';
-import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, formatRestockDate, resolveTierPrice } from '../shared/utils.js';
+import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant, urlParams, refreshTelegramData } from '../shared/store.js';
+import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, formatRestockDate, resolveTierPrice, escAttr } from '../shared/utils.js';
 
 // ── Mock Catalog (preview mode tanpa API) ──────────────────────────────────────
 const MOCK_CATALOG = [
@@ -164,24 +164,36 @@ let isRunningPlaceholderActive = true;
 
 // ── Init ───────────────────────────────────────────────────────────────────────
 export async function initBuyerApp() {
-  console.log('[App] Version: 1.2.0-ui-overhaul');
+  console.log('[App] Version: 1.2.2-resilient');
 
-  const isPreviewMode = urlParams.get('preview') === 'true';
-  const hasBotId = !!urlParams.get('bot_id');
+  // 1. Resolve Telegram WebApp context safely
+  const activeTg = window.Telegram?.WebApp || refreshTelegramData() || tg;
+  const isPreviewMode = urlParams.get('preview') === 'true' || urlParams.get('preview') === '1';
+  const hasBotId = Boolean(urlParams.get('bot_id'));
 
-  if (tg && tg.initData) {
-    if (telegramFallback) telegramFallback.classList.add('hidden');
-    tg.expand();
-    tg.ready();
-  } else if (isPreviewMode) {
-    if (telegramFallback) telegramFallback.classList.add('hidden');
-    console.log('[App] Preview mode active — Telegram check bypassed');
+  const isInTelegram = Boolean(
+    activeTg && (
+      activeTg.initData ||
+      (activeTg.platform && activeTg.platform !== 'unknown') ||
+      activeTg.version
+    )
+  );
+
+  if (isInTelegram || isPreviewMode) {
+    if (telegramFallback) {
+      telegramFallback.classList.add('hidden');
+      telegramFallback.style.display = 'none';
+    }
+    try {
+      activeTg?.expand?.();
+      activeTg?.ready?.();
+    } catch (_) {}
   } else {
     console.log('Not in Telegram environment.');
     return;
   }
 
-  // Initialize navigation glider immediately so there is no layout lag or glitch line during loading
+  // Initialize navigation glider immediately
   bindNavEvents();
 
   // Preview tanpa bot_id → pakai mock data, skip semua API/Supabase calls
@@ -198,66 +210,136 @@ export async function initBuyerApp() {
     return;
   }
 
-  const tenantResolved = await initTenant();
-  if (!tenantResolved) {
-    // Preview dengan bot_id tapi tenant gagal → tetap pakai mock
-    if (isPreviewMode) {
-      console.warn('[App] Tenant failed in preview mode, falling back to mock data');
-      shopSettings.name = 'Preview Toko';
-      currentCatalogList = [...MOCK_CATALOG];
-      populateUserIdentity();
-      renderBuyerProducts(currentCatalogList);
-      bindDetailPageEvents();
-      bindCheckoutModalEvents();
-      bindSearchEvents();
-      hideLoading();
-      return;
-    }
-
+  // 2. Validate bot_id
+  if (!hasBotId && !isPreviewMode) {
     hideLoading();
-    if (telegramFallback) telegramFallback.classList.add('hidden');
+    if (telegramFallback) {
+      telegramFallback.classList.add('hidden');
+      telegramFallback.style.display = 'none';
+    }
+    const grid = document.getElementById('product-grid');
+    if (grid) grid.innerHTML = '';
     const errorState = document.getElementById('error-state');
     const errorTitle = document.getElementById('error-title');
     const errorMessage = document.getElementById('error-message');
     if (errorState) errorState.classList.replace('hidden', 'flex');
-    if (errorTitle) errorTitle.textContent = 'Konfigurasi Belum Lengkap';
+    if (errorTitle) errorTitle.textContent = 'Link Toko Belum Lengkap';
     if (errorMessage) {
-      const bId = urlParams.get('bot_id') || 'KOSONG';
-      errorMessage.innerHTML = `Bot ID: <b>${bId}</b> belum terdaftar atau link tidak lengkap.<br><br>Pastikan URL di BotFather sudah menyertakan <b>?bot_id=...</b>`;
+      errorMessage.innerHTML = `Bot ID belum tertera pada tautan yang Anda buka.<br><br>Silakan buka Web App melalui <b>tombol menu di bot toko Telegram Anda</b> agar katalog toko dapat dimuat.`;
     }
     return;
   }
 
-  await Promise.all([fetchShopSettings(), fetchCatalog()]);
-  currentCatalogList = [...catalogData];
-
-  populateUserIdentity();
-  renderBuyerProducts(currentCatalogList);
-  subscribeToInventoryChanges(() => {
-    currentCatalogList = [...catalogData];
-    renderBuyerProducts(currentCatalogList);
-  });
-
-  bindDetailPageEvents();
-  bindCheckoutModalEvents();
-  bindSearchEvents();
-
-  const botUsername = getBotUsername() || currentBotId;
-  if (btnBackToBot && botUsername) {
-    const telegramBotUrl = `https://t.me/${botUsername}`;
-    btnBackToBot.href = telegramBotUrl;
-    btnBackToBot.addEventListener('click', (event) => {
-      event.preventDefault();
-      try {
-        if (tg?.openTelegramLink) tg.openTelegramLink(telegramBotUrl);
-        else window.location.href = telegramBotUrl;
-      } finally {
-        if (tg?.close) setTimeout(() => tg.close(), 150);
+  // 3. Failsafe Watchdog Timer (7s) to prevent perpetual hanging/skeletons
+  const watchdog = setTimeout(() => {
+    const grid = document.getElementById('product-grid');
+    const hasSkeletons = grid?.querySelector('.skeleton-shimmer');
+    if (hasSkeletons && (!currentCatalogList || currentCatalogList.length === 0)) {
+      console.warn('[BuyerApp] Watchdog: Catalog load timed out after 7s');
+      hideLoading();
+      if (telegramFallback) {
+        telegramFallback.classList.add('hidden');
+        telegramFallback.style.display = 'none';
       }
-    });
-  }
+      if (grid) grid.innerHTML = '';
+      const errorState = document.getElementById('error-state');
+      const errorTitle = document.getElementById('error-title');
+      const errorMessage = document.getElementById('error-message');
+      if (errorState) errorState.classList.replace('hidden', 'flex');
+      if (errorTitle) errorTitle.textContent = 'Koneksi Lambat atau Terputus';
+      if (errorMessage) {
+        errorMessage.innerHTML = `Gagal memuat katalog dalam 7 detik. Periksa koneksi internet Anda lalu muat ulang.<br><br><button type="button" onclick="window.location.reload()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"><i class="fa-solid fa-rotate-right"></i> Muat Ulang</button>`;
+      }
+    }
+  }, 7000);
 
-  hideLoading();
+  // 4. Resolve Tenant & Load Catalog with Top-Level Error Handling
+  try {
+    const tenantResolved = await initTenant();
+    if (!tenantResolved) {
+      clearTimeout(watchdog);
+      if (isPreviewMode) {
+        console.warn('[App] Tenant failed in preview mode, falling back to mock data');
+        shopSettings.name = 'Preview Toko';
+        currentCatalogList = [...MOCK_CATALOG];
+        populateUserIdentity();
+        renderBuyerProducts(currentCatalogList);
+        bindDetailPageEvents();
+        bindCheckoutModalEvents();
+        bindSearchEvents();
+        hideLoading();
+        return;
+      }
+
+      hideLoading();
+      if (telegramFallback) {
+        telegramFallback.classList.add('hidden');
+        telegramFallback.style.display = 'none';
+      }
+      const grid = document.getElementById('product-grid');
+      if (grid) grid.innerHTML = '';
+      const errorState = document.getElementById('error-state');
+      const errorTitle = document.getElementById('error-title');
+      const errorMessage = document.getElementById('error-message');
+      if (errorState) errorState.classList.replace('hidden', 'flex');
+      if (errorTitle) errorTitle.textContent = 'Konfigurasi Belum Lengkap';
+      if (errorMessage) {
+        const bId = urlParams.get('bot_id') || 'KOSONG';
+        errorMessage.innerHTML = `Bot ID: <b>${escAttr(bId)}</b> belum terdaftar atau masa sewa telah habis.<br><br>Pastikan URL di BotFather sudah menyertakan <b>?bot_id=...</b>`;
+      }
+      return;
+    }
+
+    await Promise.all([fetchShopSettings(), fetchCatalog()]);
+    clearTimeout(watchdog);
+    currentCatalogList = [...catalogData];
+
+    populateUserIdentity();
+    renderBuyerProducts(currentCatalogList);
+    subscribeToInventoryChanges(() => {
+      currentCatalogList = [...catalogData];
+      renderBuyerProducts(currentCatalogList);
+    });
+
+    bindDetailPageEvents();
+    bindCheckoutModalEvents();
+    bindSearchEvents();
+
+    const botUsername = getBotUsername() || currentBotId;
+    if (btnBackToBot && botUsername) {
+      const telegramBotUrl = `https://t.me/${botUsername}`;
+      btnBackToBot.href = telegramBotUrl;
+      btnBackToBot.addEventListener('click', (event) => {
+        event.preventDefault();
+        try {
+          if (activeTg?.openTelegramLink) activeTg.openTelegramLink(telegramBotUrl);
+          else window.location.href = telegramBotUrl;
+        } finally {
+          if (activeTg?.close) setTimeout(() => activeTg.close(), 150);
+        }
+      });
+    }
+
+    hideLoading();
+  } catch (err) {
+    clearTimeout(watchdog);
+    console.error('[BuyerApp] Fatal load error:', err);
+    hideLoading();
+    if (telegramFallback) {
+      telegramFallback.classList.add('hidden');
+      telegramFallback.style.display = 'none';
+    }
+    const grid = document.getElementById('product-grid');
+    if (grid) grid.innerHTML = '';
+    const errorState = document.getElementById('error-state');
+    const errorTitle = document.getElementById('error-title');
+    const errorMessage = document.getElementById('error-message');
+    if (errorState) errorState.classList.replace('hidden', 'flex');
+    if (errorTitle) errorTitle.textContent = 'Gagal Menghubungkan ke Toko';
+    if (errorMessage) {
+      errorMessage.innerHTML = `Terjadi kendala saat menghubungkan ke database toko: <b>${escAttr(err.message || 'Kesalahan sistem')}</b><br><br><button type="button" onclick="window.location.reload()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"><i class="fa-solid fa-rotate-right"></i> Muat Ulang Halaman</button>`;
+    }
+  }
 }
 
 // ── Helper: Sort Alphabetical A-Z ─────────────────────────────────────────────

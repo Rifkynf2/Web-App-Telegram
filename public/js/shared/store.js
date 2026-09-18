@@ -4,10 +4,23 @@ export const urlParams = new URLSearchParams(window.location.search);
 export const currentBotId = urlParams.get('bot_id');
 export const isAdminParams = urlParams.get('admin') === 'true';
 
-// Telegram WebApp Data
-export const tg = window.Telegram?.WebApp;
-export const tgUser = tg?.initDataUnsafe?.user;
-export const telegramUserId = tgUser?.id || null;
+// Telegram WebApp Data (Dynamic and resilient to script load order)
+export let tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+export let tgUser = tg?.initDataUnsafe?.user || null;
+export let telegramUserId = tgUser?.id || null;
+
+export function refreshTelegramData() {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+        tg = window.Telegram.WebApp;
+        tgUser = tg.initDataUnsafe?.user || null;
+        telegramUserId = tgUser?.id || null;
+    }
+    return tg;
+}
+
+export function getTg() {
+    return (typeof window !== 'undefined' && window.Telegram?.WebApp) || tg || null;
+}
 
 // User Identity from URL
 export const userName = urlParams.get('name') || 'Guest User';
