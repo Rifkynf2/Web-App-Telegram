@@ -2,6 +2,7 @@
 import { rnfFetch } from './apiClient.js';
 import { showAlert, showConfirm, renderAppLogo, escAttr } from './utils.js';
 import { MOCK_APPS, MOCK_TRANSACTIONS, isRnfPreviewMode } from './mockData.js';
+import { enhanceSelect } from './dashboard.js';
 
 let cachedApps = [];
 
@@ -21,6 +22,7 @@ export async function fetchApps(forceRefresh = false) {
 }
 
 export async function renderAppsView() {
+    bindAppSearchFilter();
     const container = document.getElementById('rnf-apps-grid');
     if (!container) return;
 
@@ -196,9 +198,16 @@ function renderAppsFiltered() {
 }
 
 let _appSearchBound = false;
-function bindAppSearchFilter() {
+export function bindAppSearchFilter() {
     if (_appSearchBound) return;
     _appSearchBound = true;
+
+    // Enhance sort dropdown with liquid glass styling and animations
+    if (typeof enhanceSelect === 'function') {
+        enhanceSelect('rnf-apps-sort');
+    } else if (window.enhanceSelect) {
+        window.enhanceSelect('rnf-apps-sort');
+    }
 
     let debounce;
     document.getElementById('rnf-apps-search')?.addEventListener('input', () => {
@@ -212,7 +221,10 @@ function bindAppSearchFilter() {
         const searchInput = document.getElementById('rnf-apps-search');
         const sortSelect = document.getElementById('rnf-apps-sort');
         if (searchInput) searchInput.value = '';
-        if (sortSelect) sortSelect.value = 'sold_desc';
+        if (sortSelect) {
+            sortSelect.value = 'sold_desc';
+            sortSelect.dispatchEvent(new Event('change'));
+        }
         renderAppsFiltered();
     });
 }

@@ -56,6 +56,7 @@ export async function loadDashboardOverview() {
     let dailyIncomeMap = {};
     let dailyOutgoingMap = {};
     let recentTransactions = [];
+    let appSalesCountMap = {};
 
     // Calculate effective start and end dates
     let effectiveStartDate = dateFromInput || getStartDate(periodSelect);
@@ -120,6 +121,7 @@ export async function loadDashboardOverview() {
             netProfit = stats.netProfit || (totalIncoming - totalOutgoing);
             totalCount = stats.totalCount || 0;
             appIncomeMap = stats.appIncomeMap || {};
+            appSalesCountMap = stats.appSalesCountMap || {};
             dailyIncomeMap = stats.dailyIncomeMap || {};
             dailyOutgoingMap = stats.dailyOutgoingMap || {};
             recentTransactions = stats.recentTransactions || [];
@@ -130,16 +132,14 @@ export async function loadDashboardOverview() {
     }
 
     // ── Count Sales for Top Best Sellers Leaderboard ──────────────
-    let appSalesCountMap = {};
     if (isRnfPreviewMode()) {
+        appSalesCountMap = {};
         MOCK_TRANSACTIONS.forEach(t => {
             if (t.trx_type === 'incoming') {
                 const appName = t.apps?.name || t.app_name || 'Lainnya';
                 appSalesCountMap[appName] = (appSalesCountMap[appName] || 0) + 1;
             }
         });
-    } else {
-        appSalesCountMap = stats.appSalesCountMap || {};
     }
 
     // ── Update Metric Cards ───────────────────────────────────────

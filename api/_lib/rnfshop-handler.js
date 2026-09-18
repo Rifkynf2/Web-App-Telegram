@@ -236,11 +236,7 @@ module.exports = async function handler(req, res) {
                         app_id,
                         customer_name: customer_name || '',
                         amount: Number(amount),
-                        fee_qris: Number(fee_qris || 0),
-                        net_amount: Number(net_amount || amount),
-                        payment_method: payment_method || 'QRIS',
-                        note: note || '',
-                        is_synced: Boolean(is_synced)
+                        note: note || ''
                     }])
                     .select()
                     .single();
@@ -297,11 +293,7 @@ module.exports = async function handler(req, res) {
                     app_id: r.app_id,
                     customer_name: r.customer_name || '',
                     amount: Number(r.amount || 0),
-                    fee_qris: Number(r.fee_qris || 0),
-                    net_amount: Number(r.net_amount || r.amount || 0),
-                    payment_method: r.payment_method || 'QRIS',
-                    note: r.note || '',
-                    is_synced: false
+                    note: r.note || ''
                 }));
 
                 const { data, error: dbErr } = await supa
@@ -318,7 +310,7 @@ module.exports = async function handler(req, res) {
 
         // ── 3. PUT Requests ───────────────────────────────────────────────────
         if (req.method === 'PUT') {
-            const { id, trx_date, trx_type, app_id, customer_name, amount, fee_qris, net_amount, payment_method, note, is_synced } = req.body;
+            const { id, trx_date, trx_type, app_id, customer_name, amount, note } = req.body;
             if (!id) return error(res, 'Transaction ID is required', 400);
 
             const updatePayload = { updated_at: new Date().toISOString() };
@@ -327,11 +319,7 @@ module.exports = async function handler(req, res) {
             if (app_id !== undefined) updatePayload.app_id = app_id;
             if (customer_name !== undefined) updatePayload.customer_name = customer_name;
             if (amount !== undefined) updatePayload.amount = Number(amount);
-            if (fee_qris !== undefined) updatePayload.fee_qris = Number(fee_qris);
-            if (net_amount !== undefined) updatePayload.net_amount = Number(net_amount);
-            if (payment_method !== undefined) updatePayload.payment_method = payment_method;
             if (note !== undefined) updatePayload.note = note;
-            if (is_synced !== undefined) updatePayload.is_synced = is_synced;
 
             const { data, error: dbErr } = await supa
                 .from('transactions')

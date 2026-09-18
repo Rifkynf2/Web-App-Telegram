@@ -2,7 +2,7 @@
 import { loadDashboardOverview, initPeriodFilters } from './dashboard.js';
 import { initTransactionsView, loadTransactions } from './transactions.js';
 import { parseReceiptText } from './import.js';
-import { fetchApps, renderAppsView, saveApp } from './apps.js';
+import { fetchApps, renderAppsView, saveApp, bindAppSearchFilter } from './apps.js';
 import { batchSyncToGoogleSheets } from './sheets.js';
 import { rnfFetch } from './apiClient.js';
 import { MOCK_TRANSACTIONS, isRnfPreviewMode } from './mockData.js';
@@ -32,16 +32,29 @@ export async function initRnfShop() {
 
     // 5. Init Period Filters & Overview quick actions
     initPeriodFilters();
+
+    // 6. Bind Master Apps Search, Filter & Enhanced Dropdown
+    bindAppSearchFilter();
 }
 
 export async function onRnfViewActivated(viewName) {
-    await initRnfShop();
-    await loadDashboardOverview();
+    try {
+        await initRnfShop();
+    } catch (err) {
+        console.error('[RNFSHOP] Error initializing RNF Shop:', err);
+    }
 
     if (viewName === 'rnf-transactions') {
         await loadTransactions(1);
     } else if (viewName === 'rnf-apps') {
         await renderAppsView();
+    }
+
+    // Safely update overview stats & metric cards without blocking view activation
+    try {
+        await loadDashboardOverview();
+    } catch (overviewErr) {
+        console.error('[RNFSHOP] Error loading dashboard overview stats:', overviewErr);
     }
 }
 
