@@ -152,25 +152,30 @@ function handleLogout() {
     showToast('Logged out successfully', 'success');
 }
 
-// Password Visibility Toggle
+// Password Visibility Toggle (Aligned with Reference SVG)
 function setupPasswordVisibilityToggle() {
     const toggleBtn = document.getElementById('toggle-visibility-btn');
     const secretInput = document.getElementById('adminSecret');
     const eyeIcon = document.getElementById('eye-icon');
 
-    if (!toggleBtn || !secretInput) return;
+    if (!toggleBtn || !secretInput || !eyeIcon) return;
 
     toggleBtn.addEventListener('click', () => {
         const isPassword = secretInput.type === 'password';
         secretInput.type = isPassword ? 'text' : 'password';
-        if (eyeIcon) {
-            if (isPassword) {
-                eyeIcon.classList.remove('fa-eye');
-                eyeIcon.classList.add('fa-eye-slash');
-            } else {
-                eyeIcon.classList.remove('fa-eye-slash');
-                eyeIcon.classList.add('fa-eye');
-            }
+
+        if (isPassword) {
+            eyeIcon.innerHTML = `
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                <line x1="2" y1="2" x2="22" y2="22"></line>
+            `;
+        } else {
+            eyeIcon.innerHTML = `
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            `;
         }
     });
 }
@@ -262,7 +267,11 @@ function initMasterApp() {
             setTimeout(() => {
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<span>Access Dashboard</span> <i class="fa-solid fa-arrow-right text-xs"></i>';
+                    btn.innerHTML = `<span>Access Dashboard</span>
+<svg class="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+    <line x1="5" x2="19" y1="12" y2="12"></line>
+    <polyline points="12 5 19 12 12 19"></polyline>
+</svg>`;
                 }
                 showToast('Login successful — Welcome to Master Dashboard', 'success');
                 transitionLoginToApp();
@@ -339,14 +348,22 @@ function initMasterApp() {
                 showToast('Invalid Secret Key', 'error');
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<span>Access Dashboard</span> <i class="fa-solid fa-arrow-right text-xs"></i>';
+                    btn.innerHTML = `<span>Access Dashboard</span>
+<svg class="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+    <line x1="5" x2="19" y1="12" y2="12"></line>
+    <polyline points="12 5 19 12 12 19"></polyline>
+</svg>`;
                 }
             }
         }).catch(err => {
             showToast('Connection failed: ' + (err.message || 'Server error'), 'error');
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = '<span>Access Dashboard</span> <i class="fa-solid fa-arrow-right text-xs"></i>';
+                btn.innerHTML = `<span>Access Dashboard</span>
+<svg class="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+    <line x1="5" x2="19" y1="12" y2="12"></line>
+    <polyline points="12 5 19 12 12 19"></polyline>
+</svg>`;
             }
         });
     });
@@ -1839,14 +1856,20 @@ function transitionAppToLogin() {
             secretInput.type = 'password';
             const eyeIcon = document.getElementById('eye-icon');
             if (eyeIcon) {
-                eyeIcon.classList.remove('fa-eye-slash');
-                eyeIcon.classList.add('fa-eye');
+                eyeIcon.innerHTML = `
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                `;
             }
         }
         const btn = document.getElementById('loginBtn');
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<span>Access Dashboard</span> <i class="fa-solid fa-arrow-right text-xs"></i>';
+            btn.innerHTML = `<span>Access Dashboard</span>
+<svg class="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+    <line x1="5" x2="19" y1="12" y2="12"></line>
+    <polyline points="12 5 19 12 12 19"></polyline>
+</svg>`;
         }
     }
 
