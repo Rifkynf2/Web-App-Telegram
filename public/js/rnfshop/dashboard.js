@@ -7,6 +7,14 @@ let chartInstanceTrend = null;
 let chartInstanceApps = null;
 let isUpdatingFromDateInput = false;
 
+// ── In-Memory Cache for Overview Filters (Instant 0ms switching) ──────────────
+const overviewCache = new Map();
+const CACHE_TTL_MS = 30000; // 30 seconds TTL
+
+export function invalidateOverviewCache() {
+    overviewCache.clear();
+}
+
 function getStartDate(range) {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -42,7 +50,7 @@ function getStartDate(range) {
     return `${yyyy}-${mm}-${dd}`;
 }
 
-export async function loadDashboardOverview() {
+export async function loadDashboardOverview(forceRefresh = false) {
     const typeFilter = document.getElementById('chart-type-filter')?.value || 'all';
     const periodSelect = document.getElementById('chart-filter')?.value || 'month';
     const dateFromInput = document.getElementById('date-from')?.value || '';
@@ -108,14 +116,11 @@ export async function loadDashboardOverview() {
             .sort((a, b) => (b.trx_date || '').localeCompare(a.trx_date || ''))
             .slice(0, 6);
     } else {
-        try {
-            const filterParams = {};
-            if (typeFilter !== 'all') filterParams.type = typeFilter;
-            if (effectiveStartDate) filterParams.startDate = effectiveStartDate;
-            if (effectiveEndDate) filterParams.endDate = effectiveEndDate;
+        const cacheKey = `${typeFilter}_${effectiveStartDate || ''}_${effectiveEndDate || ''}`;
+        const cached = overviewCache.get(cacheKey);
 
-            const res = await rnfFetch('overview', { params: filterParams });
-            const stats = res.stats || {};
+        if (!forceRefresh && cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+            const stats = cached.stats || {};
             totalIncoming = stats.totalIncoming || 0;
             totalOutgoing = stats.totalOutgoing || 0;
             netProfit = stats.netProfit || (totalIncoming - totalOutgoing);
@@ -125,9 +130,30 @@ export async function loadDashboardOverview() {
             dailyIncomeMap = stats.dailyIncomeMap || {};
             dailyOutgoingMap = stats.dailyOutgoingMap || {};
             recentTransactions = stats.recentTransactions || [];
-        } catch (err) {
-            console.error('[RNFSHOP] Error loading dashboard stats:', err);
-            return;
+        } else {
+            try {
+                const filterParams = {};
+                if (typeFilter !== 'all') filterParams.type = typeFilter;
+                if (effectiveStartDate) filterParams.startDate = effectiveStartDate;
+                if (effectiveEndDate) filterParams.endDate = effectiveEndDate;
+
+                const res = await rnfFetch('overview', { params: filterParams });
+                const stats = res.stats || {};
+                overviewCache.set(cacheKey, { timestamp: Date.now(), stats });
+
+                totalIncoming = stats.totalIncoming || 0;
+                totalOutgoing = stats.totalOutgoing || 0;
+                netProfit = stats.netProfit || (totalIncoming - totalOutgoing);
+                totalCount = stats.totalCount || 0;
+                appIncomeMap = stats.appIncomeMap || {};
+                appSalesCountMap = stats.appSalesCountMap || {};
+                dailyIncomeMap = stats.dailyIncomeMap || {};
+                dailyOutgoingMap = stats.dailyOutgoingMap || {};
+                recentTransactions = stats.recentTransactions || [];
+            } catch (err) {
+                console.error('[RNFSHOP] Error loading dashboard stats:', err);
+                return;
+            }
         }
     }
 
@@ -194,7 +220,7 @@ function renderRecentActivities(transactions) {
                 dateFormatted = t.trx_date;
             }
         }
-        const customer = t.customer_name || t.customer_id || t.notes || '-';
+        const customer = (t.customer_name || t.customer_id || t.note || t.notes || '-').toString().trim() || '-';
         const color = isIn ? 'text-emerald-400' : 'text-rose-400';
         const sign = isIn ? '+' : '-';
         const typeBadge = isIn
@@ -434,14 +460,20 @@ export function initPeriodFilters() {
         await loadDashboardOverview();
     });
 
-    // 3. Custom Date Range inputs
-    const handleCustomDate = async () => {
-        isUpdatingFromDateInput = true;
-        await loadDashboardOverview();
-        isUpdatingFromDateInput = false;
+    // 3. Custom Date Range inputs with debounce
+    let dateDebounceTimer = null;
+    const handleCustomDate = () => {
+        clearTimeout(dateDebounceTimer);
+        dateDebounceTimer = setTimeout(async () => {
+            isUpdatingFromDateInput = true;
+            await loadDashboardOverview();
+            isUpdatingFromDateInput = false;
+        }, 250);
     };
 
+    document.getElementById('date-from')?.addEventListener('input', handleCustomDate);
     document.getElementById('date-from')?.addEventListener('change', handleCustomDate);
+    document.getElementById('date-to')?.addEventListener('input', handleCustomDate);
     document.getElementById('date-to')?.addEventListener('change', handleCustomDate);
 
     // 4. Clear Filter button
@@ -462,7 +494,7 @@ export function initPeriodFilters() {
         if (dateFrom) dateFrom.value = '';
         if (dateTo) dateTo.value = '';
 
-        await loadDashboardOverview();
+        await loadDashboardOverview(true);
     });
 
     // 5. Quick action: Add Transaction from Overview

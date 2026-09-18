@@ -1,5 +1,5 @@
 // public/js/rnfshop/main.js
-import { loadDashboardOverview, initPeriodFilters } from './dashboard.js';
+import { loadDashboardOverview, initPeriodFilters, invalidateOverviewCache } from './dashboard.js';
 import { initTransactionsView, loadTransactions } from './transactions.js';
 import { parseReceiptText } from './import.js';
 import { fetchApps, renderAppsView, saveApp, bindAppSearchFilter } from './apps.js';
@@ -45,16 +45,20 @@ export async function onRnfViewActivated(viewName) {
     }
 
     if (viewName === 'rnf-transactions') {
+        // Fast path: load transactions immediately, update overview in background non-blocking
         await loadTransactions(1);
+        loadDashboardOverview().catch(overviewErr => console.error('[RNFSHOP] Background stats error:', overviewErr));
     } else if (viewName === 'rnf-apps') {
+        // Fast path: render master apps immediately, update overview in background non-blocking
         await renderAppsView();
-    }
-
-    // Safely update overview stats & metric cards without blocking view activation
-    try {
-        await loadDashboardOverview();
-    } catch (overviewErr) {
-        console.error('[RNFSHOP] Error loading dashboard overview stats:', overviewErr);
+        loadDashboardOverview().catch(overviewErr => console.error('[RNFSHOP] Background stats error:', overviewErr));
+    } else {
+        // For overview, await stats and charts to ensure visual consistency
+        try {
+            await loadDashboardOverview();
+        } catch (overviewErr) {
+            console.error('[RNFSHOP] Error loading dashboard overview stats:', overviewErr);
+        }
     }
 }
 
@@ -202,8 +206,9 @@ function bindImportEvents() {
             if (summaryBadge) summaryBadge.classList.add('hidden');
             btnSaveImport.classList.add('hidden');
             document.getElementById('rnf-import-panel')?.classList.add('hidden');
+            invalidateOverviewCache();
             await loadTransactions(1);
-            await loadDashboardOverview();
+            await loadDashboardOverview(true);
         } catch (err) {
             btnSaveImport.disabled = false;
             btnSaveImport.innerText = `Save Transactions`;
