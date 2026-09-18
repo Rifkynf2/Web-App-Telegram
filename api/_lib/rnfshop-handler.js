@@ -23,14 +23,40 @@ module.exports = async function handler(req, res) {
 
     try {
         const supa = getRnfSupabase();
-        const action = req.query.action || req.body?.action;
+        let action = req.query.action || req.body?.action || '';
+
+        // Defensive: if action contains '?' (e.g. "overview?startDate=2026-09-01"), split it
+        if (typeof action === 'string' && action.includes('?')) {
+            const [cleanAction, qs] = action.split('?');
+            action = cleanAction;
+            const parsed = new URLSearchParams(qs);
+            parsed.forEach((v, k) => {
+                if (!req.query[k]) req.query[k] = v;
+            });
+        }
 
         // ── 1. GET Requests ───────────────────────────────────────────────────
         if (req.method === 'GET') {
             if (action === 'overview') {
-                const { data: trxs, error: dbErr } = await supa
+                const startDate = req.query.startDate;
+                const endDate = req.query.endDate;
+                const trxType = req.query.trx_type || req.query.type;
+
+                let query = supa
                     .from('transactions')
                     .select('id, trx_date, trx_type, amount, app_id, apps(id, name)');
+
+                if (trxType && trxType !== 'all') {
+                    query = query.eq('trx_type', trxType);
+                }
+                if (startDate) {
+                    query = query.gte('trx_date', startDate);
+                }
+                if (endDate) {
+                    query = query.lte('trx_date', endDate);
+                }
+
+                const { data: trxs, error: dbErr } = await query.order('trx_date', { ascending: false });
 
                 if (dbErr) throw dbErr;
 
@@ -255,7 +281,17 @@ module.exports = async function handler(req, res) {
         // ── 4. DELETE Requests ────────────────────────────────────────────────
         if (req.method === 'DELETE') {
             const id = req.query.id || req.body?.id;
-            if (!id) return error(res, 'Transaction ID is required', 400);
+            if (!id) return error(res, 'ID is required', 400);
+
+            if (action === 'save_app' || action === 'delete_app') {
+                const { error: dbErr } = await supa
+                    .from('apps')
+                    .delete()
+                    .eq('id', id);
+
+                if (dbErr) throw dbErr;
+                return success(res, { message: 'Aplikasi berhasil dihapus' });
+            }
 
             const { error: dbErr } = await supa
                 .from('transactions')

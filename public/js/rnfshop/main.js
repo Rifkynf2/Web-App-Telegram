@@ -168,28 +168,34 @@ function bindImportEvents() {
             return;
         }
 
-        const res = await rnfFetch('import_batch', {
-            method: 'POST',
-            body: { rows: mappedPayload }
-        });
+        try {
+            const res = await rnfFetch('import_batch', {
+                method: 'POST',
+                body: { rows: mappedPayload }
+            });
 
-        btnSaveImport.disabled = false;
-        btnSaveImport.innerText = `Save Transactions`;
+            btnSaveImport.disabled = false;
+            btnSaveImport.innerText = `Save Transactions`;
 
-        if (!res.ok) {
-            showAlert('Save Failed', res.error || 'A system error occurred', 'error');
-            return;
+            if (!res.ok && !res.success) {
+                showAlert('Save Failed', res.error || 'A system error occurred', 'error');
+                return;
+            }
+
+            batchSyncToGoogleSheets(readyRows);
+            showAlert('Saved', `${readyRows.length} transactions saved and synced successfully!`, 'success');
+            if (rawInput) rawInput.value = '';
+            if (previewContainer) previewContainer.innerHTML = '';
+            if (summaryBadge) summaryBadge.classList.add('hidden');
+            btnSaveImport.classList.add('hidden');
+            document.getElementById('rnf-import-panel')?.classList.add('hidden');
+            await loadTransactions(1);
+            await loadDashboardOverview();
+        } catch (err) {
+            btnSaveImport.disabled = false;
+            btnSaveImport.innerText = `Save Transactions`;
+            showAlert('Save Failed', err.message || 'A system error occurred', 'error');
         }
-
-        batchSyncToGoogleSheets(readyRows);
-        showAlert('Saved', `${readyRows.length} transactions saved and synced successfully!`, 'success');
-        if (rawInput) rawInput.value = '';
-        if (previewContainer) previewContainer.innerHTML = '';
-        if (summaryBadge) summaryBadge.classList.add('hidden');
-        btnSaveImport.classList.add('hidden');
-        document.getElementById('rnf-import-panel')?.classList.add('hidden');
-        await loadTransactions(1);
-        await loadDashboardOverview();
     });
 }
 
@@ -241,16 +247,23 @@ function bindSheetsEvents() {
         if (isRnfPreviewMode()) {
             trxs = MOCK_TRANSACTIONS.slice(0, 100);
         } else {
-            const res = await rnfFetch('transactions', {
-                params: { page: 1, pageSize: 100 }
-            });
-            if (!res.ok) {
+            try {
+                const res = await rnfFetch('transactions', {
+                    params: { page: 1, pageSize: 100 }
+                });
+                if (!res.ok && !res.success) {
+                    btnSyncSheets.disabled = false;
+                    btnSyncSheets.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Mulai Sinkronisasi 100 Transaksi Terbaru`;
+                    showAlert('Gagal Mengambil Data', res.error || 'Gagal memuat transaksi', 'error');
+                    return;
+                }
+                trxs = res.transactions || [];
+            } catch (err) {
                 btnSyncSheets.disabled = false;
                 btnSyncSheets.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Mulai Sinkronisasi 100 Transaksi Terbaru`;
-                showAlert('Gagal Mengambil Data', res.error || 'Gagal memuat transaksi', 'error');
+                showAlert('Gagal Mengambil Data', err.message || 'Gagal memuat transaksi', 'error');
                 return;
             }
-            trxs = res.transactions || [];
         }
 
         btnSyncSheets.disabled = false;

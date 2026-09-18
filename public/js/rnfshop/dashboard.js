@@ -108,13 +108,12 @@ export async function loadDashboardOverview() {
             .slice(0, 6);
     } else {
         try {
-            const params = new URLSearchParams();
-            if (typeFilter !== 'all') params.append('type', typeFilter);
-            if (effectiveStartDate) params.append('startDate', effectiveStartDate);
-            if (effectiveEndDate) params.append('endDate', effectiveEndDate);
+            const filterParams = {};
+            if (typeFilter !== 'all') filterParams.type = typeFilter;
+            if (effectiveStartDate) filterParams.startDate = effectiveStartDate;
+            if (effectiveEndDate) filterParams.endDate = effectiveEndDate;
 
-            const qs = params.toString();
-            const res = await rnfFetch(qs ? `overview?${qs}` : 'overview');
+            const res = await rnfFetch('overview', { params: filterParams });
             const stats = res.stats || {};
             totalIncoming = stats.totalIncoming || 0;
             totalOutgoing = stats.totalOutgoing || 0;

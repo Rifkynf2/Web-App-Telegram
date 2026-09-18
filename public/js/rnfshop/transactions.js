@@ -105,33 +105,45 @@ export async function loadTransactions(page = 1) {
         const from = (page - 1) * PAGE_SIZE;
         transactions = filtered.slice(from, from + PAGE_SIZE);
     } else {
-        const res = await rnfFetch('transactions', {
-            params: {
-                page,
-                pageSize: PAGE_SIZE,
-                trx_type: currentFilter.type,
-                app_id: currentFilter.appId,
-                startDate: currentFilter.startDate,
-                endDate: currentFilter.endDate,
-                search: currentFilter.search,
-                sortBy: currentFilter.sortBy
-            }
-        });
+        try {
+            const res = await rnfFetch('transactions', {
+                params: {
+                    page,
+                    pageSize: PAGE_SIZE,
+                    trx_type: currentFilter.type,
+                    app_id: currentFilter.appId,
+                    startDate: currentFilter.startDate,
+                    endDate: currentFilter.endDate,
+                    search: currentFilter.search,
+                    sortBy: currentFilter.sortBy
+                }
+            });
 
-        if (!res.ok) {
-            console.error('[RNFSHOP] Error loading transactions:', res.error);
+            if (!res.ok && !res.success) {
+                console.error('[RNFSHOP] Error loading transactions:', res.error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-8 text-rose-400">
+                            <i class="fa-solid fa-triangle-exclamation mb-1"></i> Failed to load data: ${res.error || 'Server error'}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            transactions = res.transactions || [];
+            count = res.count || 0;
+        } catch (err) {
+            console.error('[RNFSHOP] Error loading transactions:', err);
             tbody.innerHTML = `
                 <tr>
                     <td colspan="7" class="text-center py-8 text-rose-400">
-                        <i class="fa-solid fa-triangle-exclamation mb-1"></i> Failed to load data: ${res.error || 'Server error'}
+                        <i class="fa-solid fa-triangle-exclamation mb-1"></i> Failed to load data: ${err.message || 'Server error'}
                     </td>
                 </tr>
             `;
             return;
         }
-
-        transactions = res.transactions || [];
-        count = res.count || 0;
     }
 
     if (!transactions || transactions.length === 0) {
@@ -291,17 +303,21 @@ function bindRowEvents() {
                 return;
             }
 
-            const res = await rnfFetch('delete_transaction', {
-                method: 'DELETE',
-                params: { id }
-            });
+            try {
+                const res = await rnfFetch('delete_transaction', {
+                    method: 'DELETE',
+                    params: { id }
+                });
 
-            if (!res.ok) {
-                showAlert('Failed to Delete', res.error || 'A system error occurred', 'error');
-            } else {
-                deleteFromGoogleSheets(id);
-                showAlert('Deleted', 'Transaction has been deleted.', 'success');
-                loadTransactions(currentPage);
+                if (!res.ok && !res.success) {
+                    showAlert('Failed to Delete', res.error || 'A system error occurred', 'error');
+                } else {
+                    deleteFromGoogleSheets(id);
+                    showAlert('Deleted', 'Transaction has been deleted.', 'success');
+                    loadTransactions(currentPage);
+                }
+            } catch (err) {
+                showAlert('Failed to Delete', err.message || 'A system error occurred', 'error');
             }
         });
     });
@@ -527,20 +543,25 @@ async function handleSaveTransaction() {
     }
 
     let res;
-    if (id) {
-        res = await rnfFetch('update_transaction', {
-            method: 'PUT',
-            body: { id, ...payload }
-        });
-    } else {
-        res = await rnfFetch('add_transaction', {
-            method: 'POST',
-            body: payload
-        });
-    }
+    try {
+        if (id) {
+            res = await rnfFetch('update_transaction', {
+                method: 'PUT',
+                body: { id, ...payload }
+            });
+        } else {
+            res = await rnfFetch('add_transaction', {
+                method: 'POST',
+                body: payload
+            });
+        }
 
-    if (!res.ok) {
-        showAlert('Save Failed', res.error || 'A system error occurred', 'error');
+        if (!res.ok && !res.success) {
+            showAlert('Save Failed', res.error || 'A system error occurred', 'error');
+            return;
+        }
+    } catch (err) {
+        showAlert('Save Failed', err.message || 'A system error occurred', 'error');
         return;
     }
 

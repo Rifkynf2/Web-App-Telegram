@@ -15,10 +15,28 @@ export async function rnfFetch(action, options = {}) {
     const method = options.method || 'GET';
     const secret = getAdminSecret();
 
-    let url = `${RNFSHOP_CONFIG.apiBase}?action=${encodeURIComponent(action)}`;
+    let actionName = action;
+    const combinedParams = new URLSearchParams();
+
+    // Parse if action itself contains query string (e.g. "overview?startDate=...")
+    if (action.includes('?')) {
+        const [act, qs] = action.split('?');
+        actionName = act;
+        new URLSearchParams(qs).forEach((val, key) => combinedParams.append(key, val));
+    }
+
     if (options.params) {
-        const queryParams = new URLSearchParams(options.params).toString();
-        if (queryParams) url += `&${queryParams}`;
+        Object.entries(options.params).forEach(([key, val]) => {
+            if (val !== undefined && val !== null && val !== '') {
+                combinedParams.append(key, val);
+            }
+        });
+    }
+
+    let url = `${RNFSHOP_CONFIG.apiBase}?action=${encodeURIComponent(actionName)}`;
+    const qsString = combinedParams.toString();
+    if (qsString) {
+        url += `&${qsString}`;
     }
 
     const headers = {
@@ -38,11 +56,14 @@ export async function rnfFetch(action, options = {}) {
     }
 
     const res = await fetch(url, fetchConfig);
-    const data = await res.json();
+    const data = await res.json().catch(() => ({ success: false, error: 'Respons server tidak valid' }));
 
-    if (!data.success) {
-        throw new Error(data.error || 'Terjadi kesalahan pada server RNF Shop');
+    if (!res.ok || !data.success) {
+        throw new Error(data.error || `HTTP ${res.status}: Terjadi kesalahan pada server RNF Shop`);
     }
 
-    return data;
+    return {
+        ok: true,
+        ...data
+    };
 }
