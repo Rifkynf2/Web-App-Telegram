@@ -70,6 +70,7 @@ module.exports = async function handler(req, res) {
         case 'tenants':       return handleTenants(req, res);
         case 'sync-expired':  return handleManualSync(req, res);
         case 'wa-groups':     return require('../_lib/wa-groups-handler')(req, res);
+        case 'rnfshop':       return require('../_lib/rnfshop-handler')(req, res);
         default:              return error(res, `Unknown resource: ${resource}`, 404);
     }
 };

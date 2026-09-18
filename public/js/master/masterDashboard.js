@@ -26,8 +26,23 @@ function invalidateStatsCache() {
     console.log('[Cache] Stats cache invalidated.');
 }
 const urlPreviewParam = new URLSearchParams(window.location.search).get('preview');
-const isPreviewMode = urlPreviewParam === 'true';
+const isPreviewMode = urlPreviewParam === 'true' || urlPreviewParam === '1';
 const isPreviewLoginMode = urlPreviewParam === 'login';
+
+function minDelay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Expose global helpers to window immediately so inline HTML handlers always work
+window.switchView = switchView;
+window.switchMode = switchMode;
+window.openSidebar = openSidebar;
+window.closeSidebar = closeSidebar;
+window.toggleSidebar = toggleSidebar;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.openReminderModal = openReminderModal;
+window.closeReminderModal = closeReminderModal;
 
 const SVG_SPINNER = `<svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve"><path fill="currentColor" d="M10,40c0,0,0-0.4,0-1.1c0-0.3,0-0.8,0-1.3c0-0.3,0-0.5,0-0.8c0-0.3,0.1-0.6,0.1-0.9c0.1-0.6,0.1-1.4,0.2-2.1
 		c0.2-0.8,0.3-1.6,0.5-2.5c0.2-0.9,0.6-1.8,0.8-2.8c0.3-1,0.8-1.9,1.2-3c0.5-1,1.1-2,1.7-3.1c0.7-1,1.4-2.1,2.2-3.1
@@ -105,15 +120,49 @@ const MOCK_WA_GROUPS = [
 ];
 
 // DOM Elements
-const loginOverlay = document.getElementById('loginOverlay');
-const mainApp = document.getElementById('mainApp');
-const loginForm = document.getElementById('loginForm');
-const btnLogout = document.getElementById('btnLogout');
-const btnRefresh = document.getElementById('btnRefresh');
+let loginOverlay = null;
+let mainApp = null;
+let loginForm = null;
+let btnLogout = null;
+let btnRefresh = null;
+
+async function handleRefresh() {
+    const icon = btnRefresh?.querySelector('i');
+    if (icon) icon.classList.add('fa-spin');
+    if (btnRefresh) btnRefresh.disabled = true;
+
+    invalidateStatsCache(); // Force fresh data on manual refresh
+
+    try {
+        await Promise.all([loadStats(), loadActiveTab()]);
+        showToast('Dashboard data refreshed', 'success');
+    } catch (err) {
+        console.error('Refresh error:', err);
+        showToast('Failed to refresh data', 'error');
+    } finally {
+        if (icon) icon.classList.remove('fa-spin');
+        if (btnRefresh) btnRefresh.disabled = false;
+    }
+}
+
+function handleLogout() {
+    localStorage.removeItem('master_secret');
+    adminSecret = '';
+    transitionAppToLogin();
+    showToast('Logged out successfully', 'success');
+}
 
 // Initialization
-document.addEventListener('DOMContentLoaded', () => {
+function initMasterApp() {
+    loginOverlay = document.getElementById('loginOverlay');
+    mainApp = document.getElementById('mainApp');
+    loginForm = document.getElementById('loginForm');
+    btnLogout = document.getElementById('btnLogout');
+    btnRefresh = document.getElementById('btnRefresh');
+
     setupTabListeners();
+    setupSidebarNavigation();
+    switchView('telegram');
 
     // ── Search Event Listeners ──────────────────────────────────────────────────
     const searchTgInput = document.getElementById('searchTelegram');
@@ -165,33 +214,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCopyWa = document.getElementById('btnCopyWhatsapp');
     if (btnCopyWa) btnCopyWa.addEventListener('click', () => handleCopyCsv('whatsapp'));
 
-
-
-    async function handleRefresh() {
-        const icon = btnRefresh?.querySelector('i');
-        if (icon) icon.classList.add('fa-spin');
-        if (btnRefresh) btnRefresh.disabled = true;
-
-        invalidateStatsCache(); // Force fresh data on manual refresh
-
-        try {
-            await Promise.all([loadStats(), loadActiveTab()]);
-            showToast('Dashboard data refreshed', 'success');
-        } catch (err) {
-            console.error('Refresh error:', err);
-            showToast('Failed to refresh data', 'error');
-        } finally {
-            if (icon) icon.classList.remove('fa-spin');
-            if (btnRefresh) btnRefresh.disabled = false;
+    // ── Global Datepicker Click Trigger (Clicking anywhere in input triggers showPicker) ──
+    document.addEventListener('click', (e) => {
+        const dateInput = e.target?.closest?.('input[type="date"]');
+        if (dateInput) {
+            try {
+                dateInput.showPicker();
+            } catch (_) {}
         }
-    }
-
-    function handleLogout() {
-        localStorage.removeItem('master_secret');
-        adminSecret = '';
-        transitionAppToLogin();
-        showToast('Logged out successfully', 'success');
-    }
+    });
 
     if (isPreviewLoginMode) {
         console.log('[MasterDashboard] Preview Login mode — displaying login screen');
@@ -223,10 +254,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isPreviewMode) {
         console.log('[MasterDashboard] Preview mode — mock data loaded');
         if (loginOverlay) loginOverlay.style.display = 'none';
-        if (mainApp) mainApp.style.display = 'block';
+        if (mainApp) mainApp.style.display = 'flex';
+        switchView('telegram');
         loadStats();
         loadActiveTab();
         if (btnLogout) btnLogout.addEventListener('click', handleLogout);
+        document.getElementById('btnLogoutSidebar')?.addEventListener('click', handleLogout);
         if (btnRefresh) btnRefresh.addEventListener('click', handleRefresh);
         return;
     }
@@ -241,18 +274,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (adminSecret) {
-        loadStats();
+        loadStats().then(success => {
+            if (success) {
+                transitionLoginToApp();
+                loadActiveTab();
+            } else {
+                localStorage.removeItem('master_secret');
+                adminSecret = '';
+                if (loginOverlay) loginOverlay.style.display = 'flex';
+                if (mainApp) mainApp.style.display = 'none';
+            }
+        }).catch(err => {
+            console.error('[MasterDashboard] Error verifying stored secret:', err);
+            localStorage.removeItem('master_secret');
+            adminSecret = '';
+            if (loginOverlay) loginOverlay.style.display = 'flex';
+            if (mainApp) mainApp.style.display = 'none';
+        });
     }
 
-    loginForm.addEventListener('submit', (e) => {
+    loginForm?.addEventListener('submit', (e) => {
         e.preventDefault();
-        const secret = document.getElementById('adminSecret').value;
+        const secret = document.getElementById('adminSecret')?.value;
         if (!secret) return;
         adminSecret = secret;
 
         const btn = document.getElementById('loginBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+        }
 
         loadStats().then(success => {
             if (success) {
@@ -262,15 +313,90 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadActiveTab();
             } else {
                 showToast('Invalid Secret Key', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-lock"></i> Access Dashboard';
+                }
+            }
+        }).catch(err => {
+            showToast('Connection failed: ' + (err.message || 'Server error'), 'error');
+            if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-lock"></i> Access Dashboard';
             }
         });
     });
 
-    if (btnLogout) btnLogout.addEventListener('click', handleLogout);
-    if (btnRefresh) btnRefresh.addEventListener('click', handleRefresh);
+    btnLogout?.addEventListener('click', handleLogout);
+    document.getElementById('btnLogoutSidebar')?.addEventListener('click', handleLogout);
+    btnRefresh?.addEventListener('click', handleRefresh);
+}
+
+// ── Global Mode Switcher (Rental SaaS vs Shop Finance) ────────────────────────
+function switchMode(mode) {
+    if (mode === 'saas') {
+        switchView('telegram');
+    } else if (mode === 'shop') {
+        switchView('rnf-overview');
+    }
+}
+
+// ── Sidebar Toggle Helpers ───────────────────────────────────────────────────
+function openSidebar() {
+    const sb = document.getElementById('appSidebar');
+    const bd = document.getElementById('sidebarBackdrop');
+    const btn = document.getElementById('btnSidebarToggle');
+
+    if (sb) sb.classList.add('is-open');
+    if (bd) bd.classList.add('is-visible');
+    if (btn) btn.classList.add('is-open');
+}
+
+function closeSidebar() {
+    const sb = document.getElementById('appSidebar');
+    const bd = document.getElementById('sidebarBackdrop');
+    const btn = document.getElementById('btnSidebarToggle');
+
+    if (sb) sb.classList.remove('is-open');
+    if (bd) bd.classList.remove('is-visible');
+    if (btn) btn.classList.remove('is-open');
+}
+
+function toggleSidebar() {
+    const sb = document.getElementById('appSidebar');
+    if (!sb) return;
+
+    if (sb.classList.contains('is-open')) {
+        closeSidebar();
+    } else {
+        openSidebar();
+    }
+}
+
+// ── Modal Helpers ────────────────────────────────────────────────────────────
+function closeModal() {
+    document.getElementById('actionModal')?.classList.remove('active');
+}
+function closeReminderModal() {
+    document.getElementById('reminderModal')?.classList.remove('active');
+}
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.classList.remove('active');
+    });
 });
+
+// Expose helpers globally
+window.switchView = switchView;
+window.switchMode = switchMode;
+window.openSidebar = openSidebar;
+window.closeSidebar = closeSidebar;
+window.toggleSidebar = toggleSidebar;
+window.closeModal = closeModal;
+window.closeReminderModal = closeReminderModal;
+
 
 // ── Typing Animation Logic ──────────────────────────────────────────────────
 function initTypingPlaceholder(element, texts) {
@@ -372,6 +498,170 @@ function setupTabListeners() {
             loadActiveTab();
         });
     });
+}
+
+// ── Sidebar & Unified Multi-View Router ────────────────────────────────────
+let currentActiveView = 'telegram';
+
+function setupSidebarNavigation() {
+    const navItems = document.querySelectorAll('.nav-item[data-view]');
+    const backdrop = document.getElementById('sidebarBackdrop');
+
+    backdrop?.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeSidebar();
+    });
+
+    document.getElementById('btnRefreshMobile')?.addEventListener('click', handleRefresh);
+    document.getElementById('btnLogoutMobile')?.addEventListener('click', handleLogout);
+
+    // Direct button bindings for Mode Switcher
+    document.getElementById('btnModeSaas')?.addEventListener('click', () => switchMode('saas'));
+    document.getElementById('btnModeShop')?.addEventListener('click', () => switchMode('shop'));
+
+    navItems.forEach(item => {
+        item.addEventListener('click', async () => {
+            const viewName = item.getAttribute('data-view');
+            await switchView(viewName);
+            // Close mobile sidebar smoothly after selecting any view
+            closeSidebar();
+        });
+    });
+}
+
+async function switchView(viewName) {
+    if (!viewName) return;
+    currentActiveView = viewName;
+
+    const isRental = viewName === 'telegram' || viewName === 'whatsapp';
+
+    // 1. Update Mode Switcher visual button states & sidebar section visibility
+    const btnSaas = document.getElementById('btnModeSaas');
+    const btnShop = document.getElementById('btnModeShop');
+    const groupRental = document.getElementById('sidebar-group-rental');
+    const groupShop = document.getElementById('sidebar-group-shop');
+
+    if (isRental) {
+        if (groupRental) groupRental.style.display = 'block';
+        if (groupShop) groupShop.style.display = 'none';
+
+        if (btnSaas) {
+            btnSaas.className = 'py-1.5 px-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-600/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.18)] transition-all flex items-center justify-center gap-1.5';
+            const icon = btnSaas.querySelector('i');
+            if (icon) icon.className = 'fa-solid fa-display text-cyan-400 text-xs';
+        }
+        if (btnShop) {
+            btnShop.className = 'py-1.5 px-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all flex items-center justify-center gap-1.5 border border-transparent';
+            const icon = btnShop.querySelector('i');
+            if (icon) icon.className = 'fa-solid fa-circle-dollar-to-slot text-slate-400 text-xs';
+        }
+    } else {
+        if (groupRental) groupRental.style.display = 'none';
+        if (groupShop) groupShop.style.display = 'block';
+
+        if (btnShop) {
+            btnShop.className = 'py-1.5 px-2 rounded-lg bg-gradient-to-r from-violet-500/20 to-indigo-600/20 text-violet-300 border border-violet-500/30 shadow-[0_0_12px_rgba(139,92,246,0.18)] transition-all flex items-center justify-center gap-1.5';
+            const icon = btnShop.querySelector('i');
+            if (icon) icon.className = 'fa-solid fa-circle-dollar-to-slot text-violet-400 text-xs';
+        }
+        if (btnSaas) {
+            btnSaas.className = 'py-1.5 px-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-all flex items-center justify-center gap-1.5 border border-transparent';
+            const icon = btnSaas.querySelector('i');
+            if (icon) icon.className = 'fa-solid fa-display text-slate-400 text-xs';
+        }
+    }
+
+    // 2. Toggle Refresh Button (Visible for Rental, Hidden for Shop)
+    const refreshBtn = document.getElementById('btnRefresh');
+    if (refreshBtn) {
+        if (isRental) {
+            refreshBtn.classList.remove('hidden');
+            refreshBtn.style.display = 'inline-flex';
+        } else {
+            refreshBtn.classList.add('hidden');
+            refreshBtn.style.display = 'none';
+        }
+    }
+
+    // 3. Update active state on sidebar items (Floating Island Glass style)
+    document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
+        const isMatch = btn.getAttribute('data-view') === viewName;
+        // Remove all active variants first
+        btn.classList.remove(
+            'active', 'active-shop',
+            'nav-item-active',
+            'bg-gradient-to-r', 'from-cyan-500/[0.18]', 'via-cyan-500/[0.06]', 'to-transparent',
+            'text-white', 'font-semibold', 'border-cyan-500/30',
+            'from-violet-500/[0.18]', 'border-violet-500/30'
+        );
+        btn.classList.add('text-slate-300', 'border-transparent');
+
+        if (isMatch) {
+            const isShop = viewName.startsWith('rnf-');
+            btn.classList.add('nav-item-active', 'text-white', 'font-semibold');
+            btn.classList.remove('text-slate-300', 'border-transparent');
+            if (isShop) {
+                btn.classList.add(
+                    'bg-gradient-to-r', 'from-violet-500/[0.18]', 'via-violet-500/[0.06]', 'to-transparent',
+                    'border', 'border-violet-500/30'
+                );
+                btn.classList.add('active-shop');
+            } else {
+                btn.classList.add(
+                    'bg-gradient-to-r', 'from-cyan-500/[0.18]', 'via-cyan-500/[0.06]', 'to-transparent',
+                    'border', 'border-cyan-500/30'
+                );
+                btn.classList.add('active');
+            }
+        }
+    });
+
+    // 4. Toggle Metric Strips
+    const rentalMetrics = document.getElementById('metrics-rental');
+    const rnfMetrics = document.getElementById('metrics-rnfshop');
+
+    if (rentalMetrics) rentalMetrics.style.display = isRental ? 'grid' : 'none';
+    if (rnfMetrics) rnfMetrics.style.display = isRental ? 'none' : 'grid';
+
+    // 5. Update Breadcrumbs
+    const secEl = document.getElementById('breadcrumbSection');
+    const currEl = document.getElementById('breadcrumbCurrent');
+    if (secEl && currEl) {
+        if (isRental) {
+            secEl.innerText = 'Bot Rental';
+            currEl.innerText = viewName === 'telegram' ? 'Bot Telegram' : 'Bot WhatsApp';
+        } else {
+            secEl.innerText = 'RNF Shop';
+            const nameMap = {
+                'rnf-overview': 'Overview & Grafik',
+                'rnf-transactions': 'Data Transaksi',
+                'rnf-apps': 'Master Apps',
+                'rnf-sheets': 'Google Sheets Sync'
+            };
+            currEl.innerText = nameMap[viewName] || 'Keuangan Toko';
+        }
+    }
+
+    // 6. Toggle Views
+    document.querySelectorAll('.view-section').forEach(sec => {
+        sec.classList.toggle('active', sec.id === `view-${viewName}`);
+    });
+
+    // 7. Trigger Data Loading
+    if (isRental) {
+        activeTab = viewName;
+        updateStatsHeader();
+        loadStats();
+        loadActiveTab();
+    } else {
+        try {
+            const { onRnfViewActivated } = await import('../rnfshop/main.js');
+            await onRnfViewActivated(viewName);
+        } catch (err) {
+            console.error('[MasterDashboard] Error loading RNF Shop view:', err);
+            showToast('Gagal memuat modul RNF Shop: ' + err.message, 'error');
+        }
+    }
 }
 
 function updateStatsHeader() {
@@ -512,8 +802,8 @@ async function loadStats() {
         if (loginOverlay && loginOverlay.style.display !== 'none') {
             loginOverlay.style.display = 'none';
         }
-        if (mainApp && mainApp.style.display !== 'block') {
-            mainApp.style.display = 'block';
+        if (mainApp && mainApp.style.display !== 'flex') {
+            mainApp.style.display = 'flex';
         }
         renderStats(activeTab === 'whatsapp' ? MOCK_WA_STATS : MOCK_STATS);
         return true;
@@ -641,26 +931,26 @@ function renderTenants(tenants) {
         const displayStatus = (t.status === 'EXPIRED' || isExpired) ? 'INACTIVE' : t.status;
 
         tr.innerHTML = `
-            <td data-label="Bot ID"><div class="cell-value"><code>${escapeHtml(t.bot_id)}</code></div></td>
-            <td data-label="Shop">
+            <td data-label="Bot ID" class="text-left"><div class="cell-value"><code>${escapeHtml(t.bot_id)}</code></div></td>
+            <td data-label="Shop" class="text-left">
                 <div class="cell-value">
                     <b>${escapeHtml(t.shop_name)}</b><br>
                     <small style="color:var(--text-muted)">@${escapeHtml(t.username)}</small>
                 </div>
             </td>
-            <td data-label="STATUS JOINED" style="text-align: center;">
+            <td data-label="STATUS JOINED" class="text-center">
                 <div class="cell-value">
                     <span class="badge ${tenantStatusClass}">${escapeHtml(displayStatus)}</span>
                     ${memberSinceHtml ? `<br>${memberSinceHtml}` : ''}
                 </div>
             </td>
-            <td data-label="Rental" style="text-align: center;">
+            <td data-label="Rental" class="text-center">
                 <div class="cell-value">
                     <span class="badge ${subBadgeClass}">${escapeHtml(subBadgeText)}</span><br>
                     <small>${escapeHtml(t.subscription?.plan || 'Standard')}</small>
                 </div>
             </td>
-            <td data-label="Expiry" style="text-align: center;">
+            <td data-label="Expiry" class="text-center">
                 <div class="cell-value">
                     ${expiry}<br>
                     <small style="color:${isExpired ? 'var(--danger-color)' : 'var(--text-muted)'}">
@@ -674,7 +964,7 @@ function renderTenants(tenants) {
                     ` : ''}
                 </div>
             </td>
-            <td data-label="Actions" style="text-align: right;">
+            <td data-label="Actions" class="text-right">
                 <div class="actions" style="justify-content: flex-end;">
                     <button class="icon-btn icon-btn-primary btn-action-renew" title="Extend rent"><i class="fa-solid fa-clock-rotate-left"></i></button>
                     <button class="icon-btn ${t.status === 'ACTIVE' ? 'icon-btn-warning' : 'icon-btn-success'} btn-action-toggle" title="${t.status === 'ACTIVE' ? 'Suspend' : 'Activate'}">
@@ -759,14 +1049,14 @@ function applyFilterAndSortWaGroups() {
     renderWaGroups(sortWaGroupsByExpiry(list));
 }
 
-const minDelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function loadTenants() {
     const tbody = document.getElementById('tenantsTableBody');
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state">${SVG_SPINNER}<br><span class="loading-text">Loading data...</span></td></tr>`;
+    if (!tbody) return;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state text-center py-12">${SVG_SPINNER}<br><span class="loading-text text-slate-400 text-xs mt-2 block">Memuat data bot...</span></td></tr>`;
 
     if (isPreviewMode) {
-        await minDelay(1000);
+        await minDelay(400);
         _currentTenants = MOCK_TENANTS;
         applyFilterAndSortTenants();
         return;
@@ -778,17 +1068,17 @@ async function loadTenants() {
                 cache: 'no-store',
                 headers: { 'X-Admin-Secret': adminSecret }
             }),
-            minDelay(600)
+            minDelay(300)
         ]);
         const data = await res.json();
 
-        if (!data.success) throw new Error(data.error);
+        if (!data.success) throw new Error(data.error || 'Server error');
 
-        _currentTenants = data.tenants;
+        _currentTenants = data.tenants || [];
         applyFilterAndSortTenants();
     } catch (err) {
         showToast(err.message, 'error');
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state" style="color:var(--danger-color)"><i class="fa-solid fa-triangle-exclamation"></i><br>Failed to load data</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state text-center py-12 text-rose-400"><i class="fa-solid fa-triangle-exclamation text-xl mb-2"></i><br>Gagal memuat data: ${escapeHtml(err.message)}</td></tr>`;
     }
 }
 
@@ -837,25 +1127,25 @@ function renderWaGroups(groups) {
         const statusBadgeClass = (!isExpired && isActive) ? 'badge-active' : 'badge-suspended';
 
         tr.innerHTML = `
-            <td data-label="Group ID"><div class="cell-value"><code>${escapeHtml(displayGroupId)}</code></div></td>
-            <td data-label="Group Name">
+            <td data-label="Group ID" class="text-left"><div class="cell-value"><code>${escapeHtml(displayGroupId)}</code></div></td>
+            <td data-label="Group Name" class="text-left">
                 <div class="cell-value">
                     <b>${escapeHtml(g.group_name)}</b>
                 </div>
             </td>
-            <td data-label="Renter Name" style="text-align: center;">
+            <td data-label="Renter Name" class="text-center">
                 <div class="cell-value">
                     <b>${escapeHtml(g.renter_name || '-')}</b>
                     ${g.user_jid ? `<br><small style="color: var(--text-muted); font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px; justify-content: center; margin-top: 3px;"><i class="fa-brands fa-whatsapp" style="color: #22c55e;"></i> ${escapeHtml(g.user_jid)}</small>` : ''}
                 </div>
             </td>
-            <td data-label="STATUS JOINED" style="text-align: center;">
+            <td data-label="STATUS JOINED" class="text-center">
                 <div class="cell-value">
                     <span class="badge ${statusBadgeClass}">${escapeHtml(statusBadgeText)}</span>
                     ${memberSinceHtml ? `<br>${memberSinceHtml}` : ''}
                 </div>
             </td>
-            <td data-label="Expiry" style="text-align: center;">
+            <td data-label="Expiry" class="text-center">
                 <div class="cell-value">
                     ${expiryDisplay}<br>
                     <small style="color:${isExpired ? 'var(--danger-color)' : 'var(--text-muted)'}">
@@ -869,7 +1159,7 @@ function renderWaGroups(groups) {
                     ` : ''}
                 </div>
             </td>
-            <td data-label="Actions" style="text-align: right;">
+            <td data-label="Actions" class="text-right">
                 <div class="actions" style="justify-content: flex-end;">
                     <button class="icon-btn icon-btn-primary btn-action-extend-wa" title="Extend rent"><i class="fa-solid fa-clock-rotate-left"></i></button>
                     <button class="icon-btn ${isActive ? 'icon-btn-warning' : 'icon-btn-success'} btn-action-toggle-wa" title="${isActive ? 'Deactivate' : 'Activate'}">
@@ -906,10 +1196,11 @@ function renderWaGroups(groups) {
 
 async function loadWaGroups() {
     const tbody = document.getElementById('waGroupsTableBody');
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state">${SVG_SPINNER}<br><span class="loading-text">Loading data...</span></td></tr>`;
+    if (!tbody) return;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state text-center py-12">${SVG_SPINNER}<br><span class="loading-text text-slate-400 text-xs mt-2 block">Memuat data WhatsApp...</span></td></tr>`;
 
     if (isPreviewMode) {
-        await minDelay(1000);
+        await minDelay(400);
         _currentWaGroups = MOCK_WA_GROUPS;
         applyFilterAndSortWaGroups();
         return;
@@ -921,17 +1212,17 @@ async function loadWaGroups() {
                 cache: 'no-store',
                 headers: { 'X-Admin-Secret': adminSecret }
             }),
-            minDelay(600)
+            minDelay(300)
         ]);
         const data = await res.json();
 
-        if (!data.success) throw new Error(data.error);
+        if (!data.success) throw new Error(data.error || 'Server error');
 
-        _currentWaGroups = data.groups;
+        _currentWaGroups = data.groups || [];
         applyFilterAndSortWaGroups();
     } catch (err) {
         showToast(err.message, 'error');
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state" style="color:var(--danger-color)"><i class="fa-solid fa-triangle-exclamation"></i><br>Failed to load data</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6" class="empty-state text-center py-12 text-rose-400"><i class="fa-solid fa-triangle-exclamation text-xl mb-2"></i><br>Gagal memuat data: ${escapeHtml(err.message)}</td></tr>`;
     }
 }
 
@@ -1474,15 +1765,14 @@ function transitionLoginToApp() {
 
     if (!overlay || overlay.style.display === 'none') {
         if (app) {
-            app.style.display = 'block';
-            app.classList.add('app-enter');
+            app.style.display = 'flex';
         }
         return;
     }
 
     overlay.classList.add('fade-out');
     if (app) {
-        app.style.display = 'block';
+        app.style.display = 'flex';
         app.classList.remove('app-exit');
         app.classList.add('app-enter');
     }
@@ -1530,22 +1820,14 @@ function transitionAppToLogin() {
     }, 450);
 }
 
-const modal = document.getElementById('actionModal');
-function openModal() { modal.classList.add('active'); }
-function closeModal() { modal.classList.remove('active'); }
-
-modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-});
+function openModal() {
+    document.getElementById('actionModal')?.classList.add('active');
+}
 
 // ── Expired Reminder Generator & Modal ──────────────────────────────────────
-const reminderModal = document.getElementById('reminderModal');
-function openReminderModal() { reminderModal?.classList.add('active'); }
-function closeReminderModal() { reminderModal?.classList.remove('active'); }
-
-reminderModal?.addEventListener('click', (e) => {
-    if (e.target === reminderModal) closeReminderModal();
-});
+function openReminderModal() {
+    document.getElementById('reminderModal')?.classList.add('active');
+}
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && reminderModal?.classList.contains('active')) {
@@ -1879,4 +2161,11 @@ function showToast(message, type = 'success') {
         toast.style.animation = 'fadeOutToast 0.3s forwards';
         setTimeout(() => toast.remove(), 300);
     }, 4000);
+}
+
+// ── App Bootstrapper ──────────────────────────────────────────────────────────
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMasterApp);
+} else {
+    initMasterApp();
 }

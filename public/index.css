@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "./**/*.{html,js}";
 
 @font-face {
   font-family: 'Outfit';
@@ -498,23 +499,24 @@ button[disabled],
 .glass-panel {
   background: linear-gradient(
     145deg,
-    rgba(22, 32, 54, 0.62) 0%,
-    rgba(13, 20, 38, 0.72) 50%,
-    rgba(8, 13, 26, 0.82) 100%
+    rgba(22, 32, 54, 0.68) 0%,
+    rgba(13, 20, 38, 0.76) 50%,
+    rgba(8, 13, 26, 0.86) 100%
   ) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25),
-              inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
   border-radius: 1.25rem;
-  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
 }
 
 .liquid-glass:hover,
 .glass-panel:hover {
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
 }
 
 /* Product Card Canvas (Inner Image Container) */

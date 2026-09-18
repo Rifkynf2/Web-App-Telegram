@@ -27,12 +27,69 @@
     <link rel="preload" href="style/style.css" as="style" fetchpriority="high" />
 
     <!-- Performance: Flatten ES Module dependency tree (Eliminates 2.16s critical request chaining) -->
-    <link rel="modulepreload" href="js/buyer-main.js" />
-    <link rel="modulepreload" href="js/buyer.js" />
-    <link rel="modulepreload" href="js/store.js" />
-    <link rel="modulepreload" href="js/utils.js" />
-    <link rel="modulepreload" href="js/theme.js" />
-    <link rel="modulepreload" href="js/supabaseClient.js" />
+    <link rel="modulepreload" href="js/buyer/buyer-main.js" />
+    <link rel="modulepreload" href="js/buyer/buyer.js" />
+    <link rel="modulepreload" href="js/shared/store.js" />
+    <link rel="modulepreload" href="js/shared/utils.js" />
+    <link rel="modulepreload" href="js/shared/theme.js" />
+    <link rel="modulepreload" href="js/shared/supabaseClient.js" />
+
+    <!-- Performance: Critical layout CSS to prevent FOUC before main styles load -->
+    <style>
+      body {
+        margin: 0;
+        background-color: var(--bg-body, #0a0a0c);
+        color: var(--text-primary, #ffffff);
+        font-family:
+          'Outfit',
+          system-ui,
+          -apple-system,
+          sans-serif;
+        opacity: 0;
+        transition: opacity 0.15s ease-in;
+      }
+      body.theme-loaded {
+        opacity: 1;
+      }
+      .shimmer-placeholder {
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.03) 25%,
+          rgba(255, 255, 255, 0.08) 50%,
+          rgba(255, 255, 255, 0.03) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+    </style>
+
+    <!-- Global Theme Script: Must run synchronously to eliminate FOUC on reload -->
+    <script type="module">
+      import { initTheme, toggleTheme } from './js/shared/theme.js';
+      initTheme();
+      window.toggleTheme = toggleTheme;
+      const bindToggle = () => {
+        const btn = document.getElementById('btn-theme-toggle');
+        if (btn) btn.addEventListener('click', toggleTheme);
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindToggle);
+      } else {
+        bindToggle();
+      }
+      requestAnimationFrame(() => {
+        document.body.classList.add('theme-loaded');
+      });
+    </script>
+    <script type="module" src="js/buyer/buyer-main.js?v=2.1" defer></script>
 
     <!-- Local Self-Hosted Stylesheets (Zero External CDN Dependency) -->
     <link href="style/style.css" rel="stylesheet" />
@@ -64,22 +121,6 @@
 
     <!-- Telegram Web App SDK (Deferred, non-blocking) -->
     <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
-
-    <!-- Theme: init BEFORE render to avoid flash -->
-    <script type="module">
-      import { initTheme, toggleTheme } from './js/theme.js';
-      initTheme();
-      const bindToggle = () => {
-        const btn = document.getElementById('btn-theme-toggle');
-        if (btn) btn.addEventListener('click', toggleTheme);
-      };
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bindToggle);
-      } else {
-        bindToggle();
-      }
-    </script>
-    <script type="module" src="js/buyer-main.js" defer></script>
   </head>
   <body
     class="bg-linear-to-br from-[#020617] via-[#0f0c29] to-[#020617] text-gray-100 min-h-screen text-sm antialiased relative pb-28"

@@ -1,5 +1,5 @@
-import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant, urlParams } from './store.js';
-import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, formatRestockDate, resolveTierPrice } from './utils.js';
+import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant, urlParams } from '../shared/store.js';
+import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, formatRestockDate, resolveTierPrice } from '../shared/utils.js';
 
 // ── Mock Catalog (preview mode tanpa API) ──────────────────────────────────────
 const MOCK_CATALOG = [
@@ -753,7 +753,9 @@ function openDetailPage(product) {
   // Render variant chips
   if (detailPageVariants) {
     detailPageVariants.innerHTML = '';
-    (product.variants || []).forEach((v, index) => {
+    let firstAvailableVariant = null;
+    let firstAvailableChip = null;
+    (product.variants || []).forEach((v) => {
       const isOut = (v.stock || 0) === 0;
       const chip = document.createElement('button');
       chip.className = `variant-chip liquid-glass w-full flex flex-col justify-between items-start p-3 sm:p-3.5 rounded-2xl min-h-[66px] text-left transition-all active:scale-95 ${isOut ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-white/30'}`;
@@ -769,14 +771,20 @@ function openDetailPage(product) {
       `;
       if (!isOut) {
         chip.addEventListener('click', () => selectDetailVariant(v, chip));
+        if (!firstAvailableVariant) {
+          firstAvailableVariant = v;
+          firstAvailableChip = chip;
+        }
       }
       detailPageVariants.appendChild(chip);
-
-      // Auto-select first available
-      if (!isOut && index === 0) {
-        setTimeout(() => selectDetailVariant(v, chip), 0);
-      }
     });
+
+    // Auto-select first available variant with stock
+    if (firstAvailableVariant && firstAvailableChip) {
+      setTimeout(() => selectDetailVariant(firstAvailableVariant, firstAvailableChip), 0);
+    } else {
+      updateDetailQtyDisplay();
+    }
   }
 
   // Show detail page with slide-in animation
@@ -812,7 +820,11 @@ function closeDetailPage() {
 
 function selectDetailVariant(variant, chipElement) {
   activeVariant = variant;
-  currentQty = variant.min_qty || 1;
+  const stock = typeof variant.stock === 'number' ? Math.max(0, variant.stock) : 0;
+  const min = stock <= 0 ? 0 : Math.min(variant.min_qty || 1, stock);
+  const maxLimit = variant.max_qty && variant.max_qty > 0 ? variant.max_qty : Infinity;
+  const max = Math.min(stock, maxLimit);
+  currentQty = stock <= 0 ? 0 : Math.max(min, Math.min(min, max));
 
   // Highlight chip with glow & active check indicator
   const allChips = detailPageVariants?.querySelectorAll('.variant-chip');
@@ -836,9 +848,8 @@ function selectDetailVariant(variant, chipElement) {
   // Update price & stock
   if (detailPagePrice) detailPagePrice.textContent = formatCurrency(resolveTierPrice(variant, currentQty));
   if (detailPageStock) {
-    const stockVal = variant.stock || 0;
-    detailPageStock.textContent = stockVal.toLocaleString('id-ID');
-    detailPageStock.style.color = stockVal > 0 ? '#34d399' : '#f87171';
+    detailPageStock.textContent = stock.toLocaleString('id-ID');
+    detailPageStock.style.color = stock > 0 ? '#34d399' : '#f87171';
   }
 
   // Harga Grosir box
@@ -890,22 +901,92 @@ function selectDetailVariant(variant, chipElement) {
 
 function updateDetailQty(change) {
   if (!activeVariant) return;
-  const min = activeVariant.min_qty || 1;
-  const max = activeVariant.max_qty || Math.min(activeVariant.stock || 999, 999);
+  const stock = typeof activeVariant.stock === 'number' ? Math.max(0, activeVariant.stock) : 0;
+  if (stock <= 0) {
+    currentQty = 0;
+    updateDetailQtyDisplay();
+    return;
+  }
+  const min = Math.min(activeVariant.min_qty || 1, stock);
+  const maxLimit = activeVariant.max_qty && activeVariant.max_qty > 0 ? activeVariant.max_qty : Infinity;
+  const max = Math.min(stock, maxLimit);
+
+  if (change > 0 && currentQty >= max) return;
+  if (change < 0 && currentQty <= min) return;
+
   currentQty = Math.min(Math.max(currentQty + change, min), max);
   updateDetailQtyDisplay();
 }
 
 function updateDetailQtyDisplay() {
-  if (!activeVariant) return;
+  if (!activeVariant) {
+    if (detailPageQty) detailPageQty.textContent = '0';
+    if (detailPageQtyDesk) detailPageQtyDesk.textContent = '0';
+    if (detailPageTotal) detailPageTotal.textContent = 'Rp 0';
+    if (detailPageTotalDesk) detailPageTotalDesk.textContent = 'Rp 0';
+    if (detailPageTotalOriginal) detailPageTotalOriginal.classList.add('hidden');
+    if (detailPageTotalDeskOriginal) detailPageTotalDeskOriginal.classList.add('hidden');
+    if (btnDetailCheckout) {
+      btnDetailCheckout.disabled = true;
+      btnDetailCheckout.style.opacity = '0.5';
+    }
+    if (btnDetailCheckoutDesk) {
+      btnDetailCheckoutDesk.disabled = true;
+      btnDetailCheckoutDesk.style.opacity = '0.5';
+    }
+    if (detailCheckoutText) detailCheckoutText.textContent = 'Pilih Varian Dulu';
+    if (detailCheckoutTextDesk) detailCheckoutTextDesk.textContent = 'Pilih Varian Dulu';
+    [detailPageBtnPlus, detailPageBtnPlusDesk, detailPageBtnMin, detailPageBtnMinDesk].forEach((btn) => {
+      if (!btn) return;
+      btn.disabled = true;
+      btn.style.opacity = '0.35';
+      btn.style.cursor = 'not-allowed';
+    });
+    return;
+  }
+
+  const stock = typeof activeVariant.stock === 'number' ? Math.max(0, activeVariant.stock) : 0;
+  const min = stock <= 0 ? 0 : Math.min(activeVariant.min_qty || 1, stock);
+  const maxLimit = activeVariant.max_qty && activeVariant.max_qty > 0 ? activeVariant.max_qty : Infinity;
+  const max = Math.min(stock, maxLimit);
+
+  if (stock <= 0) {
+    currentQty = 0;
+  } else {
+    currentQty = Math.min(Math.max(currentQty, min), max);
+  }
 
   const basePrice = parseInt(activeVariant.price, 10) || 0;
   const unitPrice = resolveTierPrice(activeVariant, currentQty);
   const isDiscounted = unitPrice < basePrice;
   const total = formatCurrency(currentQty * unitPrice);
   const originalTotal = formatCurrency(currentQty * basePrice);
-  const canCheckout = currentQty > 0 && !isCheckoutSubmitting;
-  const btnLabel = currentQty > 0 ? 'Beli Sekarang' : 'Pilih Varian Dulu';
+  const canCheckout = currentQty > 0 && currentQty <= stock && !isCheckoutSubmitting;
+
+  let btnLabel = 'Pilih Varian Dulu';
+  if (stock <= 0) {
+    btnLabel = 'Stok Habis';
+  } else if (currentQty > 0) {
+    btnLabel = 'Beli Sekarang';
+  }
+
+  // Update button states (+ and - buttons)
+  const canIncrease = stock > 0 && currentQty < max;
+  const canDecrease = stock > 0 && currentQty > min;
+
+  [detailPageBtnPlus, detailPageBtnPlusDesk].forEach((btn) => {
+    if (!btn) return;
+    btn.disabled = !canIncrease;
+    btn.style.opacity = canIncrease ? '1' : '0.35';
+    btn.style.cursor = canIncrease ? 'pointer' : 'not-allowed';
+  });
+
+  [detailPageBtnMin, detailPageBtnMinDesk].forEach((btn) => {
+    if (!btn) return;
+    btn.disabled = !canDecrease;
+    btn.style.opacity = canDecrease ? '1' : '0.35';
+    btn.style.cursor = canDecrease ? 'pointer' : 'not-allowed';
+  });
 
   if (detailPagePrice) detailPagePrice.textContent = formatCurrency(unitPrice);
   if (detailPagePriceOriginal) {
@@ -923,9 +1004,6 @@ function updateDetailQtyDisplay() {
     }
     detailPageWholesaleList.querySelectorAll('.tier-display-row').forEach((row) => {
       const isActive = activeMinQty !== null && parseInt(row.getAttribute('data-min-qty'), 10) === activeMinQty;
-      // Inline styles (not a CSS class) so the active-tier highlight is
-      // self-contained here and can't be lost to a style.css overwrite.
-      // Semi-transparent emerald reads well on both dark and light themes.
       row.style.background = isActive ? 'rgba(16,185,129,0.15)' : '';
       row.style.borderColor = isActive ? 'rgba(16,185,129,0.4)' : 'transparent';
       const badge = row.querySelector('.tier-active-badge');
@@ -963,6 +1041,16 @@ function updateDetailQtyDisplay() {
 // ── Checkout ───────────────────────────────────────────────────────────────────
 async function handleCheckout() {
   if (!activeVariant || currentQty < 1 || isCheckoutSubmitting) return;
+
+  const stock = typeof activeVariant.stock === 'number' ? Math.max(0, activeVariant.stock) : 0;
+  if (currentQty > stock) {
+    if (tg?.showAlert) {
+      tg.showAlert(`Stok tidak mencukupi. Tersedia: ${stock}`);
+    } else {
+      showCheckoutModal('Stok Tidak Cukup', `Jumlah pesanan (${currentQty}) melebihi stok yang tersedia (${stock}).`);
+    }
+    return;
+  }
 
   isCheckoutSubmitting = true;
   const loadingLabel = 'Membuat QRIS di Telegram...';

@@ -1,6 +1,6 @@
-import { supabase } from './supabaseClient.js';
-import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId } from './store.js';
-import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl, escapeHtml } from './utils.js';
+import { supabase } from '../shared/supabaseClient.js';
+import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId } from '../shared/store.js';
+import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl, escapeHtml } from '../shared/utils.js';
 import { openStockModal, initAdminStock, initSmoothSelect, syncSmoothSelect } from './adminStock.js';
 
 // ── Mock Data (preview mode) ───────────────────────────────────────────────────

@@ -1,5 +1,5 @@
-// adminStock.js
-import { currentBotId, urlParams } from './store.js';
+// public/js/tenant-admin/adminStock.js
+import { currentBotId, urlParams } from '../shared/store.js';
 import { refreshAdminData } from './adminProducts.js';
 
 const adminStockSlide = document.getElementById('admin-stock-slide');

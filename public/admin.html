@@ -54,7 +54,7 @@
 
     <!-- Theme: init BEFORE render to avoid flash -->
     <script type="module">
-      import { initTheme, toggleTheme } from './js/theme.js';
+      import { initTheme, toggleTheme } from './js/shared/theme.js';
       initTheme();
       const bindToggle = () => {
         const btn = document.getElementById('btn-theme-toggle');
@@ -66,7 +66,7 @@
         bindToggle();
       }
     </script>
-    <script type="module" src="js/admin-main.js" defer></script>
+    <script type="module" src="js/tenant-admin/admin-main.js" defer></script>
   </head>
   <body
     class="bg-linear-to-br from-[#020617] via-[#0f0c29] to-[#020617] text-gray-100 min-h-screen text-sm antialiased relative"
