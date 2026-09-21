@@ -179,6 +179,11 @@ export async function initAdminApp() {
     // Akses di luar bot Telegram atau tanpa token auth resmi: biarkan fallback resmi tampil
     console.log('[Admin] Access outside authorized Telegram bot context — displaying official fallback.');
     hideLoading();
+    try {
+      if (window.history && window.history.replaceState && window.location.search) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (_) {}
     return;
   }
 

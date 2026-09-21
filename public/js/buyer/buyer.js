@@ -192,9 +192,14 @@ export async function initBuyerApp() {
       activeTg?.ready?.();
     } catch (_) {}
   } else {
-    // Di luar Telegram atau akses langsung tanpa bot_id: biarkan fallback resmi tetap tampil
+    // Di luar Telegram atau akses langsung tanpa bot_id / tanpa Telegram initData: biarkan fallback resmi tetap tampil
     console.log('[App] Access outside valid Telegram bot context — displaying official fallback.');
     hideLoading();
+    try {
+      if (window.history && window.history.replaceState && window.location.search) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (_) {}
     return;
   }
 
