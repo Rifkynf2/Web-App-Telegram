@@ -43,6 +43,18 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.openReminderModal = openReminderModal;
 window.closeReminderModal = closeReminderModal;
+window.executeDelete = executeDelete;
+window.executeRenew = executeRenew;
+window.confirmDelete = confirmDelete;
+window.showRenewModal = showRenewModal;
+window.confirmToggleStatus = confirmToggleStatus;
+window.updateTenantStatus = updateTenantStatus;
+window.showWaExtendModal = showWaExtendModal;
+window.executeWaExtend = executeWaExtend;
+window.confirmWaToggleStatus = confirmWaToggleStatus;
+window.executeWaToggle = executeWaToggle;
+window.confirmWaDelete = confirmWaDelete;
+window.executeWaDelete = executeWaDelete;
 
 const SVG_SPINNER = `<svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve"><path fill="currentColor" d="M10,40c0,0,0-0.4,0-1.1c0-0.3,0-0.8,0-1.3c0-0.3,0-0.5,0-0.8c0-0.3,0.1-0.6,0.1-0.9c0.1-0.6,0.1-1.4,0.2-2.1
 		c0.2-0.8,0.3-1.6,0.5-2.5c0.2-0.9,0.6-1.8,0.8-2.8c0.3-1,0.8-1.9,1.2-3c0.5-1,1.1-2,1.7-3.1c0.7-1,1.4-2.1,2.2-3.1
@@ -1550,8 +1562,13 @@ function confirmDelete(botId, username) {
 
     modalFooter.innerHTML = `
         <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-danger" onclick="executeDelete('${botId}')">Yes, Delete Forever</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete Forever</button>
     `;
+
+    document.getElementById('confirmDeleteBtn').onclick = () => {
+        closeModal();
+        executeDelete(botId);
+    };
 
     openModal();
 }
@@ -1597,8 +1614,12 @@ function showRenewModal(botId, username) {
 
     modalFooter.innerHTML = `
         <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-success" onclick="executeRenew('${botId}')">Confirm Extend</button>
+        <button class="btn btn-success" id="confirmRenewBtn">Confirm Extend</button>
     `;
+
+    document.getElementById('confirmRenewBtn').onclick = () => {
+        executeRenew(botId);
+    };
 
     openModal();
 }

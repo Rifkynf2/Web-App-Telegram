@@ -171,10 +171,16 @@ export async function initBuyerApp() {
   const isPreviewMode = urlParams.get('preview') === 'true' || urlParams.get('preview') === '1';
   const hasBotId = Boolean(urlParams.get('bot_id'));
 
-  // Valid Telegram context requires active WebApp and bot_id (or preview mode)
-  const isTelegramAuthorized = Boolean(
-    activeTg && (activeTg.initData || activeTg.version) && hasBotId
+  // Valid Telegram context requires:
+  // - Non-empty initData supplied exclusively by official Telegram WebApp container
+  // - Bot ID present in URL parameters
+  const hasTelegramSession = Boolean(
+    activeTg &&
+    typeof activeTg.initData === 'string' &&
+    activeTg.initData.trim().length > 0 &&
+    (activeTg.initDataUnsafe?.user?.id || activeTg.platform !== 'unknown')
   );
+  const isTelegramAuthorized = Boolean(hasTelegramSession && hasBotId);
 
   if (isTelegramAuthorized || isPreviewMode) {
     if (telegramFallback) {
@@ -1105,9 +1111,13 @@ async function handleCheckout() {
 
   const stock = typeof activeVariant.stock === 'number' ? Math.max(0, activeVariant.stock) : 0;
   if (currentQty > stock) {
-    if (tg?.showAlert) {
-      tg.showAlert(`Stok tidak mencukupi. Tersedia: ${stock}`);
-    } else {
+    try {
+      if (tg?.isVersionAtLeast?.('6.2') && typeof tg?.showAlert === 'function') {
+        tg.showAlert(`Stok tidak mencukupi. Tersedia: ${stock}`);
+      } else {
+        showCheckoutModal('Stok Tidak Cukup', `Jumlah pesanan (${currentQty}) melebihi stok yang tersedia (${stock}).`);
+      }
+    } catch (_) {
       showCheckoutModal('Stok Tidak Cukup', `Jumlah pesanan (${currentQty}) melebihi stok yang tersedia (${stock}).`);
     }
     return;
@@ -1147,9 +1157,14 @@ async function handleCheckout() {
     setTimeout(() => showCheckoutModal('QRIS Terkirim ke Telegram', 'Pesanan Anda sudah diteruskan ke bot. Silakan cek chat Telegram untuk melihat QRIS dan menyelesaikan pembayaran.'), 350);
   } catch (err) {
     console.error('[Buyer] Checkout failed:', err.message);
-    if (tg?.showAlert) {
-      tg.showAlert(err.message || 'Checkout gagal diproses');
-    } else {
+    try {
+      if (tg?.isVersionAtLeast?.('6.2') && typeof tg?.showAlert === 'function') {
+        tg.showAlert(err.message || 'Checkout gagal diproses');
+      } else {
+        closeDetailPage();
+        setTimeout(() => showCheckoutModal('Checkout Gagal', err.message || 'Terjadi kesalahan saat membuat QRIS. Silakan coba lagi dari Mini App.'), 350);
+      }
+    } catch (_) {
       closeDetailPage();
       setTimeout(() => showCheckoutModal('Checkout Gagal', err.message || 'Terjadi kesalahan saat membuat QRIS. Silakan coba lagi dari Mini App.'), 350);
     }

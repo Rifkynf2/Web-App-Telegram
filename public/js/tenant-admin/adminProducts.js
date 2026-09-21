@@ -159,10 +159,14 @@ export async function initAdminApp() {
 
   const activeTg = window.Telegram?.WebApp || refreshTelegramData() || tg;
   const isTelegramAuthorized = Boolean(
-    activeTg && (activeTg.initData || activeTg.version) && (hasBotId || urlAuthToken)
+    activeTg &&
+    typeof activeTg.initData === 'string' &&
+    activeTg.initData.trim().length > 0 &&
+    hasBotId
   );
+  const isBrowserAuthValid = Boolean(urlAuthToken && hasBotId);
 
-  if (isTelegramAuthorized || urlAuthToken || isPreviewMode) {
+  if (isTelegramAuthorized || isBrowserAuthValid || isPreviewMode) {
     if (telegramFallback) {
       telegramFallback.classList.add('hidden');
       telegramFallback.style.display = 'none';
