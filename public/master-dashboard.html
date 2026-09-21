@@ -12,19 +12,31 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <!-- Google Fonts -->
+    <!-- Preconnect to CDNs & External Resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 
-    <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Preload Critical LCP Hero Image -->
+    <link rel="preload" href="/images/cloud-server.svg" as="image" type="image/svg+xml" fetchpriority="high">
 
-    <!-- Compiled Tailwind CSS & Liquid Glass Stylesheets -->
-    <link rel="stylesheet" href="/style/style.css?v=3.1">
-    <link rel="stylesheet" href="/style/rnfshop-liquid.css?v=3.1">
-    <!-- Google Material Symbols Outlined (for reference icons) -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
+    <!-- Preload Compiled Stylesheets -->
+    <link rel="preload" href="/style/style.css?v=3.2" as="style">
+    <link rel="preload" href="/style/rnfshop-liquid.css?v=3.2" as="style">
+    <link rel="stylesheet" href="/style/style.css?v=3.2">
+    <link rel="stylesheet" href="/style/rnfshop-liquid.css?v=3.2">
+
+    <!-- Non-Blocking Google Fonts: Plus Jakarta Sans -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"></noscript>
+
+    <!-- Non-Blocking Font Awesome 6 -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"></noscript>
+
+    <!-- Non-Blocking Google Material Symbols Outlined -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"></noscript>
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
@@ -167,7 +179,7 @@
                     <!-- Subtle soft pedestal shadow under the isometric block -->
                     <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 w-4/5 h-12 bg-cyan-500/10 blur-2xl rounded-full pointer-events-none"></div>
                     <!-- Isometric server image -->
-                    <img alt="RNFBOT Server Infrastructure Node" class="w-70 sm:w-85 lg:w-95 max-w-sm h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.7)] select-none" draggable="false" loading="eager" src="/images/cloud-server.svg">
+                    <img alt="RNFBOT Server Infrastructure Node" class="w-70 sm:w-85 lg:w-95 max-w-sm h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.7)] select-none" draggable="false" loading="eager" fetchpriority="high" src="/images/cloud-server.svg">
                 </div>
             </div>
         </div>
@@ -211,8 +223,8 @@
                     </div>
                 </div>
                 <!-- Close on mobile/tablet -->
-                <button class="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5" onclick="closeSidebar()">
-                    <i class="fa-solid fa-xmark"></i>
+                <button class="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5" onclick="closeSidebar()" aria-label="Tutup menu navigasi">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
             </div>
 
@@ -328,8 +340,8 @@
                         <p class="text-[10px] text-slate-400 truncate">Super Admin</p>
                     </div>
                 </div>
-                <button id="btnLogoutSidebar" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors" title="Logout">
-                    <i class="fa-solid fa-right-from-bracket text-sm"></i>
+                <button id="btnLogoutSidebar" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors" title="Logout" aria-label="Keluar dari akun admin">
+                    <i class="fa-solid fa-right-from-bracket text-sm" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -355,10 +367,10 @@
 
                 <!-- Breadcrumb -->
                 <nav class="flex items-center gap-1.5 text-xs font-medium text-slate-400 truncate">
-                    <i class="fa-solid fa-house text-cyan-400/70 text-xs"></i>
-                    <span class="text-slate-600">/</span>
+                    <i class="fa-solid fa-house text-cyan-400/70 text-xs" aria-hidden="true"></i>
+                    <span class="text-slate-400">/</span>
                     <span id="breadcrumbSection" class="hover:text-slate-200 cursor-pointer transition-colors">Bot Rental</span>
-                    <span class="text-slate-600">/</span>
+                    <span class="text-slate-400">/</span>
                     <span id="breadcrumbCurrent" class="text-cyan-400 font-semibold">Bot Telegram</span>
                 </nav>
             </div>
@@ -370,8 +382,8 @@
                     <span class="font-medium text-[11px] text-slate-300">Live System</span>
                 </div>
                 <!-- Refresh (context-aware: Bot Rental) -->
-                <button id="btnRefresh" class="btn-glass flex gap-1.5 items-center">
-                    <i class="fa-solid fa-rotate text-cyan-400 text-xs"></i>
+                <button id="btnRefresh" class="btn-glass flex gap-1.5 items-center" aria-label="Muat ulang data">
+                    <i class="fa-solid fa-rotate text-cyan-400 text-xs" aria-hidden="true"></i>
                     <span class="text-xs">Refresh</span>
                 </button>
             </div>
@@ -386,9 +398,9 @@
             <div id="metrics-rental" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div class="stat-card hover:border-cyan-500/30">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Tenants</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Tenants</span>
                         <div class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                            <i class="fa-solid fa-store text-sm"></i>
+                            <i class="fa-solid fa-store text-sm" aria-hidden="true"></i>
                         </div>
                     </div>
                     <div class="text-2xl font-black text-white tabular-nums" id="statTotalTenants">—</div>
@@ -396,9 +408,9 @@
                 </div>
                 <div class="stat-card hover:border-emerald-500/30">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Active</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active</span>
                         <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                            <i class="fa-solid fa-circle-check text-sm"></i>
+                            <i class="fa-solid fa-circle-check text-sm" aria-hidden="true"></i>
                         </div>
                     </div>
                     <div class="text-2xl font-black text-white tabular-nums" id="statActiveTenants">—</div>
@@ -406,9 +418,9 @@
                 </div>
                 <div class="stat-card hover:border-amber-500/30">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Expiring Soon</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Expiring Soon</span>
                         <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                            <i class="fa-solid fa-hourglass-half text-sm"></i>
+                            <i class="fa-solid fa-hourglass-half text-sm" aria-hidden="true"></i>
                         </div>
                     </div>
                     <div class="text-2xl font-black text-amber-400 tabular-nums" id="statExpiring">—</div>
@@ -416,9 +428,9 @@
                 </div>
                 <div class="stat-card hover:border-violet-500/30">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Revenue</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Revenue</span>
                         <div class="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-                            <i class="fa-solid fa-money-bill-wave text-sm"></i>
+                            <i class="fa-solid fa-money-bill-wave text-sm" aria-hidden="true"></i>
                         </div>
                     </div>
                     <div class="text-xl font-black bg-linear-to-r from-cyan-300 to-teal-200 bg-clip-text text-transparent tabular-nums" id="statRevenue">—</div>
@@ -432,9 +444,9 @@
             <div id="metrics-rnfshop" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" style="display:none;">
                 <div class="stat-card hover:border-emerald-500/30">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Incoming</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Incoming</span>
                         <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                            <i class="fa-solid fa-arrow-trend-up text-sm"></i>
+                            <i class="fa-solid fa-arrow-trend-up text-sm" aria-hidden="true"></i>
                         </div>
                     </div>
                     <div class="text-xl font-black text-emerald-400 tabular-nums" id="rnf-stat-incoming">Rp 0</div>
@@ -442,9 +454,9 @@
                 </div>
                 <div class="stat-card hover:border-rose-500/30">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Outgoing</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Outgoing</span>
                         <div class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                            <i class="fa-solid fa-arrow-trend-down text-sm"></i>
+                            <i class="fa-solid fa-arrow-trend-down text-sm" aria-hidden="true"></i>
                         </div>
                     </div>
                     <div class="text-xl font-black text-rose-400 tabular-nums" id="rnf-stat-outgoing">Rp 0</div>
@@ -452,9 +464,9 @@
                 </div>
                 <div class="stat-card hover:border-cyan-500/30">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Net Profit</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Net Profit</span>
                         <div class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                            <i class="fa-solid fa-wallet text-sm"></i>
+                            <i class="fa-solid fa-wallet text-sm" aria-hidden="true"></i>
                         </div>
                     </div>
                     <div class="text-xl font-black text-cyan-400 tabular-nums" id="rnf-stat-profit">Rp 0</div>
@@ -462,9 +474,9 @@
                 </div>
                 <div class="stat-card hover:border-violet-500/30">
                     <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Transaksi</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Transaksi</span>
                         <div class="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-                            <i class="fa-solid fa-receipt text-sm"></i>
+                            <i class="fa-solid fa-receipt text-sm" aria-hidden="true"></i>
                         </div>
                     </div>
                     <div class="text-2xl font-black text-violet-300 tabular-nums" id="rnf-stat-count">0</div>
@@ -488,12 +500,12 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button class="btn-glass btn-cyan text-xs" id="btnCopyTelegram">
-                                <i class="fa-regular fa-copy"></i><span>Copy CSV</span>
+                            <button class="btn-glass btn-cyan text-xs" id="btnCopyTelegram" aria-label="Salin data tabel Telegram">
+                                <i class="fa-regular fa-copy" aria-hidden="true"></i><span>Copy CSV</span>
                             </button>
                             <a href="https://docs.google.com/spreadsheets/d/13olCZtXPwaSdfCNI8GXdat_mKXPxJ-Om4vfJw81cL_I/edit?usp=sharing"
-                                target="_blank" rel="noopener" class="btn-glass btn-emerald text-xs no-underline inline-flex items-center gap-1.5">
-                                <i class="fa-solid fa-file-excel"></i><span>Spreadsheet</span>
+                                target="_blank" rel="noopener" class="btn-glass btn-emerald text-xs no-underline inline-flex items-center gap-1.5" aria-label="Buka spreadsheet langganan Telegram">
+                                <i class="fa-solid fa-file-excel" aria-hidden="true"></i><span>Spreadsheet</span>
                             </a>
                         </div>
                     </div>
@@ -501,7 +513,7 @@
                     <div class="search-bar-wrapper relative w-full">
                         <i class="fa-solid fa-magnifying-glass search-bar-icon text-cyan-400" aria-hidden="true"></i>
                         <input type="search" id="searchTelegram" autocomplete="off" placeholder="Cari Bot ID, Shop Name, @username..."
-                            class="input-glass search-bar-input w-full text-xs">
+                            class="input-glass search-bar-input w-full text-xs" aria-label="Cari Bot ID, Shop Name, atau Username Telegram">
                     </div>
                 </div>
                 <div class="table-glass overflow-x-auto hide-scrollbar">
@@ -525,8 +537,8 @@
                             </tr>
                         </thead>
                         <tbody id="tenantsTableBody">
-                            <tr><td colspan="6" class="text-center py-12 text-slate-500">
-                                <i class="fa-solid fa-spinner fa-spin text-xl text-cyan-400 block mb-2"></i>
+                            <tr><td colspan="6" class="text-center py-12 text-slate-400">
+                                <i class="fa-solid fa-spinner fa-spin text-xl text-cyan-400 block mb-2" aria-hidden="true"></i>
                                 Loading data...
                             </td></tr>
                         </tbody>
@@ -550,12 +562,12 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button class="btn-glass btn-emerald text-xs" id="btnCopyWhatsapp">
-                                <i class="fa-regular fa-copy"></i><span>Copy CSV</span>
+                            <button class="btn-glass btn-emerald text-xs" id="btnCopyWhatsapp" aria-label="Salin data tabel WhatsApp">
+                                <i class="fa-regular fa-copy" aria-hidden="true"></i><span>Copy CSV</span>
                             </button>
                             <a href="https://docs.google.com/spreadsheets/d/1ZrDqkxFLZx0dK6IP8Fo2LbtqFhqjioUmIRQtyLObzdI/edit?usp=sharing"
-                                target="_blank" rel="noopener" class="btn-glass btn-cyan text-xs no-underline inline-flex items-center gap-1.5">
-                                <i class="fa-solid fa-file-excel"></i><span>Spreadsheet</span>
+                                target="_blank" rel="noopener" class="btn-glass btn-cyan text-xs no-underline inline-flex items-center gap-1.5" aria-label="Buka spreadsheet langganan WhatsApp">
+                                <i class="fa-solid fa-file-excel" aria-hidden="true"></i><span>Spreadsheet</span>
                             </a>
                         </div>
                     </div>
@@ -563,7 +575,7 @@
                     <div class="search-bar-wrapper relative w-full">
                         <i class="fa-solid fa-magnifying-glass search-bar-icon text-emerald-400" aria-hidden="true"></i>
                         <input type="search" id="searchWhatsapp" autocomplete="off" placeholder="Cari Group ID, Group Name, Renter..."
-                            class="input-glass search-bar-input w-full text-xs">
+                            class="input-glass search-bar-input w-full text-xs" aria-label="Cari Group ID, Group Name, atau Renter WhatsApp">
                     </div>
                 </div>
                 <div class="table-glass overflow-x-auto hide-scrollbar">
@@ -587,8 +599,8 @@
                             </tr>
                         </thead>
                         <tbody id="waGroupsTableBody">
-                            <tr><td colspan="6" class="text-center py-12 text-slate-500">
-                                <i class="fa-solid fa-spinner fa-spin text-xl text-emerald-400 block mb-2"></i>
+                            <tr><td colspan="6" class="text-center py-12 text-slate-400">
+                                <i class="fa-solid fa-spinner fa-spin text-xl text-emerald-400 block mb-2" aria-hidden="true"></i>
                                 Loading data...
                             </td></tr>
                         </tbody>
@@ -651,7 +663,7 @@
                                 From Date
                             </label>
                             <div class="relative">
-                                <input id="date-from" type="date" required placeholder="dd/mm/yyyy" class="filter-date-input input-glass h-11 w-full min-w-0 text-xs font-medium rounded-xl pl-3.5 pr-10 outline-none shadow-2xs" />
+                                <input id="date-from" type="date" required placeholder="dd/mm/yyyy" class="filter-date-input input-glass h-11 w-full min-w-0 text-xs font-medium rounded-xl pl-3.5 pr-10 outline-none shadow-2xs" aria-label="Filter dari tanggal transaksi" />
                                 <span class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
@@ -666,7 +678,7 @@
                                 To Date
                             </label>
                             <div class="relative">
-                                <input id="date-to" type="date" required placeholder="dd/mm/yyyy" class="filter-date-input input-glass h-11 w-full min-w-0 text-xs font-medium rounded-xl pl-3.5 pr-10 outline-none shadow-2xs" />
+                                <input id="date-to" type="date" required placeholder="dd/mm/yyyy" class="filter-date-input input-glass h-11 w-full min-w-0 text-xs font-medium rounded-xl pl-3.5 pr-10 outline-none shadow-2xs" aria-label="Filter sampai tanggal transaksi" />
                                 <span class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
@@ -706,9 +718,9 @@
                                     <span class="material-symbols-outlined text-cyan-400 text-xl">history</span>
                                     <h3 class="font-bold text-base text-white tracking-tight">Recent Activities</h3>
                                 </div>
-                                <button id="ov-btn-view-all-trx" type="button" class="btn-glass px-3 py-1 text-xs font-semibold text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center gap-1 transition-all group active:scale-95 cursor-pointer">
+                                <button id="ov-btn-view-all-trx" type="button" class="btn-glass px-3 py-1 text-xs font-semibold text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center gap-1 transition-all group active:scale-95 cursor-pointer" aria-label="Lihat semua transaksi RNF Shop">
                                     <span>View All</span>
-                                    <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                                    <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform" aria-hidden="true">arrow_forward</span>
                                 </button>
                             </div>
                             <div class="overflow-x-auto hide-scrollbar">
@@ -723,8 +735,8 @@
                                         </tr>
                                     </thead>
                                     <tbody id="recent-activities-table-body" class="divide-y divide-white/4 text-xs">
-                                        <tr><td colspan="5" class="text-center py-8 text-slate-500">
-                                            <i class="fa-solid fa-spinner fa-spin text-cyan-400 mr-1.5"></i> Memuat aktivitas...
+                                        <tr><td colspan="5" class="text-center py-8 text-slate-400">
+                                            <i class="fa-solid fa-spinner fa-spin text-cyan-400 mr-1.5" aria-hidden="true"></i> Memuat aktivitas...
                                         </td></tr>
                                     </tbody>
                                 </table>
@@ -740,14 +752,14 @@
                                     <span class="material-symbols-outlined text-amber-400 text-xl">trophy</span>
                                     <h3 class="font-bold text-base text-white tracking-tight">Top Best Sellers</h3>
                                 </div>
-                                <button id="ov-btn-view-catalog" type="button" class="btn-glass px-3 py-1 text-xs font-semibold text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-1 transition-all group active:scale-95 cursor-pointer">
+                                <button id="ov-btn-view-catalog" type="button" class="btn-glass px-3 py-1 text-xs font-semibold text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-1 transition-all group active:scale-95 cursor-pointer" aria-label="Buka katalog aplikasi RNF Shop">
                                     <span>Catalog</span>
-                                    <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                                    <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform" aria-hidden="true">arrow_forward</span>
                                 </button>
                             </div>
                             <div id="top-products-list" class="space-y-3">
-                                <div class="text-center py-8 text-slate-500 text-xs">
-                                    <i class="fa-solid fa-spinner fa-spin text-amber-400 mr-1.5"></i> Memuat best sellers...
+                                <div class="text-center py-8 text-slate-400 text-xs">
+                                    <i class="fa-solid fa-spinner fa-spin text-amber-400 mr-1.5" aria-hidden="true"></i> Memuat best sellers...
                                 </div>
                             </div>
                         </div>
@@ -769,11 +781,11 @@
                             <p class="text-xs text-slate-400 mt-0.5">Manage all cash inflow &amp; outflow transactions</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button type="button" id="btn-add-trx" class="btn-glass btn-cyan text-xs">
-                                <i class="fa-solid fa-plus-circle"></i><span>Add Transaction</span>
+                            <button type="button" id="btn-add-trx" class="btn-glass btn-cyan text-xs" aria-label="Tambah transaksi manual baru">
+                                <i class="fa-solid fa-plus-circle" aria-hidden="true"></i><span>Add Transaction</span>
                             </button>
-                            <button type="button" id="btn-toggle-import" class="btn-glass btn-violet text-xs">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i><span>Import Receipts</span>
+                            <button type="button" id="btn-toggle-import" class="btn-glass btn-violet text-xs" aria-label="Buka panel import receipts">
+                                <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i><span>Import Receipts</span>
                             </button>
                         </div>
                     </div>
@@ -782,7 +794,7 @@
                     <div class="mb-3">
                         <div class="search-bar-wrapper relative w-full">
                             <i class="fa-solid fa-magnifying-glass search-bar-icon text-teal-400" aria-hidden="true"></i>
-                            <input type="search" id="searchInput" autocomplete="off" class="input-glass search-bar-input w-full text-xs" placeholder="Search customer / note / app...">
+                            <input type="search" id="searchInput" autocomplete="off" class="input-glass search-bar-input w-full text-xs" placeholder="Search customer / note / app..." aria-label="Cari transaksi customer, note, atau aplikasi">
                         </div>
                     </div>
 
@@ -793,7 +805,7 @@
                             <label for="sortBy" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                 Sort By
                             </label>
-                            <select id="sortBy" class="input-glass text-xs h-11 w-full">
+                            <select id="sortBy" class="input-glass text-xs h-11 w-full" aria-label="Urutkan transaksi">
                                 <option value="date_desc">Newest First</option>
                                 <option value="date_asc">Oldest First</option>
                                 <option value="amount_desc">Highest Amount</option>
@@ -806,7 +818,7 @@
                             <label for="filterType" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                 Transaction Type
                             </label>
-                            <select id="filterType" class="input-glass text-xs h-11 w-full">
+                            <select id="filterType" class="input-glass text-xs h-11 w-full" aria-label="Filter tipe transaksi">
                                 <option value="all">All Transactions</option>
                                 <option value="incoming">Incoming Only</option>
                                 <option value="outgoing">Outgoing Only</option>
@@ -819,7 +831,7 @@
                                 From Date
                             </label>
                             <div class="relative">
-                                <input type="date" id="filterDateFrom" class="filter-date-input input-glass text-xs h-11 w-full pl-3.5 pr-10" placeholder="dd/mm/yyyy" title="From Date">
+                                <input type="date" id="filterDateFrom" class="filter-date-input input-glass text-xs h-11 w-full pl-3.5 pr-10" placeholder="dd/mm/yyyy" title="From Date" aria-label="Filter transaksi dari tanggal">
                                 <span class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
@@ -834,7 +846,7 @@
                                 To Date
                             </label>
                             <div class="relative">
-                                <input type="date" id="filterDateTo" class="filter-date-input input-glass text-xs h-11 w-full pl-3.5 pr-10" placeholder="dd/mm/yyyy" title="To Date">
+                                <input type="date" id="filterDateTo" class="filter-date-input input-glass text-xs h-11 w-full pl-3.5 pr-10" placeholder="dd/mm/yyyy" title="To Date" aria-label="Filter transaksi sampai tanggal">
                                 <span class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
@@ -858,15 +870,15 @@
                     <div class="flex items-center justify-between gap-3 mb-4">
                         <div class="flex items-center gap-3">
                             <div class="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
                             </div>
                             <div>
                                 <h3 class="font-bold text-white text-sm">Telegram Receipt Parser</h3>
                                 <p class="text-xs text-slate-400">Paste "TRANSAKSI SUKSES" receipt text from your bot to auto-parse</p>
                             </div>
                         </div>
-                        <button type="button" id="btn-close-import-panel" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 text-xs" title="Close Panel">
-                            <i class="fa-solid fa-xmark text-sm"></i>
+                        <button type="button" id="btn-close-import-panel" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 text-xs" title="Close Panel" aria-label="Tutup panel import receipts">
+                            <i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i>
                         </button>
                     </div>
 
@@ -905,8 +917,8 @@
                                 </tr>
                             </thead>
                             <tbody id="rnf-transactions-body">
-                                <tr><td colspan="7" class="text-center py-12 text-slate-500">
-                                    <i class="fa-solid fa-spinner fa-spin text-xl text-cyan-400 block mb-2"></i>
+                                <tr><td colspan="7" class="text-center py-12 text-slate-400">
+                                    <i class="fa-solid fa-spinner fa-spin text-xl text-cyan-400 block mb-2" aria-hidden="true"></i>
                                     Loading transactions...
                                 </td></tr>
                             </tbody>
@@ -936,8 +948,8 @@
                                 <p class="text-xs text-slate-400 mt-0.5">Manage master digital applications data and availability status</p>
                             </div>
                             <div class="shrink-0">
-                                <button type="button" id="btn-open-add-app" class="btn-glass btn-amber text-xs w-full sm:w-auto justify-center">
-                                    <i class="fa-solid fa-plus"></i><span>Add App</span>
+                                <button type="button" id="btn-open-add-app" class="btn-glass btn-amber text-xs w-full sm:w-auto justify-center" aria-label="Buka form tambah produk digital baru">
+                                    <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add App</span>
                                 </button>
                             </div>
                         </div>
@@ -945,7 +957,7 @@
                         <!-- Row 2: Full-Width Search Bar -->
                         <div class="search-bar-wrapper relative w-full">
                             <i class="fa-solid fa-magnifying-glass search-bar-icon text-amber-400" aria-hidden="true"></i>
-                            <input type="search" id="rnf-apps-search" autocomplete="off" class="input-glass search-bar-input w-full text-xs" placeholder="Search app...">
+                            <input type="search" id="rnf-apps-search" autocomplete="off" class="input-glass search-bar-input w-full text-xs" placeholder="Search app..." aria-label="Cari nama aplikasi katalog">
                         </div>
 
                         <!-- Row 3: Filter Dropdown + Clear Filter Button (Identical to Transactions / Overview Style) -->
@@ -963,7 +975,7 @@
                             </div>
 
                             <div class="flex flex-col justify-end w-full sm:w-auto min-w-0">
-                                <button type="button" id="btn-clear-apps-filter" class="h-11 px-4 text-xs font-bold text-slate-300 hover:text-rose-400 bg-white/5 hover:bg-rose-950/30 border border-white/10 hover:border-rose-800/50 rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 shadow-2xs cursor-pointer" title="Clear Filter">
+                                <button type="button" id="btn-clear-apps-filter" class="h-11 px-4 text-xs font-bold text-slate-300 hover:text-rose-400 bg-white/5 hover:bg-rose-950/30 border border-white/10 hover:border-rose-800/50 rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 shadow-2xs cursor-pointer" title="Clear Filter" aria-label="Reset filter pencarian aplikasi">
                                     <span class="material-symbols-outlined text-lg" aria-hidden="true">filter_alt_off</span>
                                     <span>Clear Filter</span>
                                 </button>
@@ -981,7 +993,7 @@
         </main>
 
         <!-- Footer -->
-        <footer class="mt-6 py-4 text-center text-slate-600 text-xs">
+        <footer class="mt-6 py-4 text-center text-slate-400 text-xs">
             &copy; 2025–2026 Super Dashboard &middot; RNFBOT & RNF SHOP Console
         </footer>
     </div>
@@ -994,7 +1006,7 @@
     <div class="modal-box">
         <div class="flex items-center justify-between p-5 border-b border-white/7">
             <h3 class="font-bold text-white" id="modalTitle">Modal Title</h3>
-            <button class="icon-btn icon-btn-red" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            <button class="icon-btn icon-btn-red" onclick="closeModal()" aria-label="Tutup modal konfirmasi"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
         <div class="p-5" id="modalBody"></div>
         <div class="flex justify-end gap-2 px-5 pb-5" id="modalFooter"></div>
@@ -1005,24 +1017,24 @@
     <div class="modal-box" style="max-width:560px;">
         <div class="flex items-center justify-between p-5 border-b border-white/7">
             <h3 class="font-bold text-white flex items-center gap-2">
-                <i class="fa-regular fa-clipboard text-amber-400"></i>
+                <i class="fa-regular fa-clipboard text-amber-400" aria-hidden="true"></i>
                 <span id="reminderModalTitle">Pratinjau Teks Tagihan</span>
             </h3>
-            <button class="icon-btn icon-btn-red" onclick="closeReminderModal()"><i class="fa-solid fa-xmark"></i></button>
+            <button class="icon-btn icon-btn-red" onclick="closeReminderModal()" aria-label="Tutup modal pengingat tagihan"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
         <div class="p-5">
             <div id="reminderModalSubtitle" class="mb-3 p-2.5 rounded-xl bg-white/4 border border-white/7 text-xs text-slate-400 flex flex-wrap gap-2"></div>
-            <textarea id="reminderTextarea" class="reminder-textarea" spellcheck="false"></textarea>
+            <textarea id="reminderTextarea" class="reminder-textarea" spellcheck="false" aria-label="Teks pratinjau tagihan"></textarea>
         </div>
         <div class="p-5 pt-0 flex flex-col gap-2">
-            <button id="btnSendWaFromModal" class="btn-glass btn-emerald justify-center w-full py-2.5 hidden">
-                <i class="fa-brands fa-whatsapp"></i> Kirim ke WhatsApp
+            <button id="btnSendWaFromModal" class="btn-glass btn-emerald justify-center w-full py-2.5 hidden" aria-label="Kirim teks tagihan ke WhatsApp">
+                <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Kirim ke WhatsApp
             </button>
             <div class="flex gap-2">
-                <button id="btnCopyFromModal" class="btn-glass btn-cyan flex-1 justify-center py-2.5">
-                    <i class="fa-regular fa-copy"></i> Salin Teks
+                <button id="btnCopyFromModal" class="btn-glass btn-cyan flex-1 justify-center py-2.5" aria-label="Salin teks tagihan">
+                    <i class="fa-regular fa-copy" aria-hidden="true"></i> Salin Teks
                 </button>
-                <button class="btn-glass flex-1 justify-center py-2.5" onclick="closeReminderModal()">Tutup</button>
+                <button class="btn-glass flex-1 justify-center py-2.5" onclick="closeReminderModal()" aria-label="Tutup jendela pengingat">Tutup</button>
             </div>
         </div>
     </div>
@@ -1038,15 +1050,15 @@
         <div class="flex items-center justify-between px-6 py-5 border-b border-white/8">
             <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400" id="modal-trx-icon-wrap">
-                    <span class="material-symbols-outlined text-lg">payments</span>
+                    <span class="material-symbols-outlined text-lg" aria-hidden="true">payments</span>
                 </div>
                 <div>
                     <h3 class="font-bold text-white text-base tracking-tight" id="modal-trx-title">Add Transaction</h3>
                     <p class="text-[11px] text-slate-400">Record cash inflow or outflow</p>
                 </div>
             </div>
-            <button type="button" id="btn-close-trx-modal" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" aria-label="Close modal">
-                <span class="material-symbols-outlined text-lg">close</span>
+            <button type="button" id="btn-close-trx-modal" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" aria-label="Tutup modal transaksi">
+                <span class="material-symbols-outlined text-lg" aria-hidden="true">close</span>
             </button>
         </div>
 
@@ -1056,44 +1068,44 @@
 
             <!-- Liquid Segmented Pill for IN / OUT -->
             <div class="liquid-segmented-pill">
-                <button type="button" id="seg-btn-incoming" class="liquid-segmented-item active-incoming">
-                    <span class="material-symbols-outlined text-base">arrow_upward</span>
+                <button type="button" id="seg-btn-incoming" class="liquid-segmented-item active-incoming" aria-label="Pilih tipe transaksi incoming">
+                    <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_upward</span>
                     <span>Incoming (IN)</span>
                 </button>
-                <button type="button" id="seg-btn-outgoing" class="liquid-segmented-item">
-                    <span class="material-symbols-outlined text-base">arrow_downward</span>
+                <button type="button" id="seg-btn-outgoing" class="liquid-segmented-item" aria-label="Pilih tipe transaksi outgoing">
+                    <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_downward</span>
                     <span>Outgoing (OUT)</span>
                 </button>
             </div>
 
             <!-- Amount Hero Field with Rp Badge -->
             <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label for="modal-trx-amount" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                     Amount (IDR) <span class="text-rose-400">*</span>
                 </label>
                 <div class="relative">
                     <div class="absolute left-3.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-lg bg-white/10 text-slate-300 font-bold text-xs pointer-events-none">
                         Rp
                     </div>
-                    <input type="number" id="modal-trx-amount" class="input-glass w-full text-sm font-bold h-12 pl-14 pr-4 tabular" placeholder="0" min="1" required>
+                    <input type="number" id="modal-trx-amount" class="input-glass w-full text-sm font-bold h-12 pl-14 pr-4 tabular" placeholder="0" min="1" required aria-label="Jumlah nominal rupiah transaksi">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    <label for="modal-trx-app" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                         Application <span class="text-rose-400">*</span>
                     </label>
-                    <select id="modal-trx-app" class="input-glass w-full text-xs h-11" required>
+                    <select id="modal-trx-app" class="input-glass w-full text-xs h-11" required aria-label="Pilih nama aplikasi">
                         <option value="">Select App...</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    <label for="modal-trx-date" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                         Date <span class="text-rose-400">*</span>
                     </label>
                     <div class="relative">
-                        <input type="date" id="modal-trx-date" class="filter-date-input input-glass w-full text-xs h-11 pl-3.5 pr-10" required>
+                        <input type="date" id="modal-trx-date" class="filter-date-input input-glass w-full text-xs h-11 pl-3.5 pr-10" required aria-label="Tanggal transaksi">
                         <span class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
@@ -1104,27 +1116,27 @@
             </div>
 
             <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label for="modal-trx-customer" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                     Customer ID / Name <span class="text-rose-400">*</span>
                 </label>
                 <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base pointer-events-none">person</span>
-                    <input type="text" id="modal-trx-customer" class="input-glass w-full text-xs h-11 pl-10 pr-3.5" placeholder="e.g. 1829684122 or Budi" required>
+                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base pointer-events-none" aria-hidden="true">person</span>
+                    <input type="text" id="modal-trx-customer" class="input-glass w-full text-xs h-11 pl-10 pr-3.5" placeholder="e.g. 1829684122 or Budi" required aria-label="ID atau Nama Customer">
                 </div>
             </div>
 
             <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                    Note / Variation <span class="text-slate-500 font-normal lowercase">(optional)</span>
+                <label for="modal-trx-note" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Note / Variation <span class="text-slate-400 font-normal lowercase">(optional)</span>
                 </label>
                 <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base pointer-events-none">description</span>
-                    <input type="text" id="modal-trx-note" class="input-glass w-full text-xs h-11 pl-10 pr-3.5" placeholder="e.g. 1 Month Shared / Fee QRIS Rp 350">
+                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base pointer-events-none" aria-hidden="true">description</span>
+                    <input type="text" id="modal-trx-note" class="input-glass w-full text-xs h-11 pl-10 pr-3.5" placeholder="e.g. 1 Month Shared / Fee QRIS Rp 350" aria-label="Catatan atau variasi produk">
                 </div>
             </div>
 
-            <button type="submit" id="btn-save-trx-submit" class="btn-glass btn-emerald w-full justify-center py-3 text-xs font-bold mt-2 shadow-lg cursor-pointer">
-                <span class="material-symbols-outlined text-base mr-1.5">save</span>
+            <button type="submit" id="btn-save-trx-submit" class="btn-glass btn-emerald w-full justify-center py-3 text-xs font-bold mt-2 shadow-lg cursor-pointer" aria-label="Simpan transaksi">
+                <span class="material-symbols-outlined text-base mr-1.5" aria-hidden="true">save</span>
                 <span>Save Transaction</span>
             </button>
         </form>
@@ -1138,18 +1150,18 @@
     <div class="modal-wrapper" style="max-width:420px;">
         <div class="flex items-center justify-between p-5 border-b border-white/10">
             <h3 class="font-bold text-white text-base flex items-center gap-2">
-                <i class="fa-solid fa-cubes text-amber-400"></i>
+                <i class="fa-solid fa-cubes text-amber-400" aria-hidden="true"></i>
                 <span>Add New Application</span>
             </h3>
-            <button type="button" id="btn-close-app-modal" class="icon-btn icon-btn-red"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" id="btn-close-app-modal" class="icon-btn icon-btn-red" aria-label="Tutup modal tambah aplikasi"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
         <form id="form-app-modal" class="p-5 sm:p-6 space-y-4">
             <div>
-                <label class="block text-xs text-slate-400 mb-1.5 font-semibold">Application Name</label>
-                <input type="text" id="modal-app-name" class="input-glass w-full text-xs h-11" style="text-transform:uppercase;" placeholder="e.g. CANVA, NETFLIX, SPOTIFY" required>
+                <label for="modal-app-name" class="block text-xs text-slate-400 mb-1.5 font-semibold">Application Name</label>
+                <input type="text" id="modal-app-name" class="input-glass w-full text-xs h-11" style="text-transform:uppercase;" placeholder="e.g. CANVA, NETFLIX, SPOTIFY" required aria-label="Nama Aplikasi Baru">
             </div>
-            <button type="submit" class="btn-glass btn-amber w-full justify-center py-3 text-xs font-bold shadow-lg">
-                <i class="fa-solid fa-floppy-disk mr-1.5"></i> Save Application
+            <button type="submit" class="btn-glass btn-amber w-full justify-center py-3 text-xs font-bold shadow-lg" aria-label="Simpan aplikasi baru">
+                <i class="fa-solid fa-floppy-disk mr-1.5" aria-hidden="true"></i> Save Application
             </button>
         </form>
     </div>
@@ -1163,6 +1175,6 @@
 <!-- ════════════════════════════════════════════════════════════ -->
 <!-- SCRIPTS                                                       -->
 <!-- ════════════════════════════════════════════════════════════ -->
-<script type="module" src="/js/master/masterDashboard.js?v=2.9"></script>
+<script type="module" src="/js/master/masterDashboard.js?v=3.0"></script>
 </body>
 </html>

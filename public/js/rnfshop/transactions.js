@@ -189,11 +189,11 @@ export async function loadTransactions(page = 1) {
                 </td>
                 <td data-label="Actions" class="text-center whitespace-nowrap px-3 py-3">
                     <div class="flex gap-1 justify-center">
-                        <button class="icon-btn icon-btn-blue btn-trx-edit" data-trx='${JSON.stringify(t).replace(/'/g, "&apos;")}' title="Edit">
-                            <i class="fa-solid fa-pen-to-square"></i>
+                        <button class="icon-btn icon-btn-blue btn-trx-edit" data-trx='${JSON.stringify(t).replace(/'/g, "&apos;")}' title="Edit" aria-label="Edit transaksi ${escAttr(t.app_name || '')} - ${escAttr(t.customer_name || '')}">
+                            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
                         </button>
-                        <button class="icon-btn icon-btn-red btn-trx-delete" data-id="${t.id}" title="Delete">
-                            <i class="fa-solid fa-trash-can"></i>
+                        <button class="icon-btn icon-btn-red btn-trx-delete" data-id="${t.id}" title="Delete" aria-label="Hapus transaksi ${escAttr(t.app_name || '')} - ${escAttr(t.customer_name || '')}">
+                            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
                         </button>
                     </div>
                 </td>

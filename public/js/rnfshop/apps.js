@@ -117,12 +117,12 @@ function renderAppsFiltered() {
                             ${renderAppLogo(app.name, "w-full h-full object-contain")}
                         </div>
                         <div class="flex items-center gap-0.5 bg-white/5 rounded-xl border border-white/10 p-0.5 shrink-0">
-                            <button class="btn-app-edit text-slate-400 hover:text-cyan-400 p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer" data-id="${app.id}" data-name="${escAttr(app.name)}" title="Edit Nama Aplikasi">
-                                <span class="material-symbols-outlined text-base">edit</span>
+                            <button class="btn-app-edit text-slate-400 hover:text-cyan-400 p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer" data-id="${app.id}" data-name="${escAttr(app.name)}" title="Edit Nama Aplikasi" aria-label="Edit nama aplikasi ${escAttr(app.name)}">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">edit</span>
                             </button>
                             <div class="w-px h-3.5 bg-white/10 my-auto"></div>
-                            <button class="btn-app-delete text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-950/30 transition-colors cursor-pointer" data-id="${app.id}" data-name="${escAttr(app.name)}" title="Hapus Aplikasi">
-                                <span class="material-symbols-outlined text-base">delete</span>
+                            <button class="btn-app-delete text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-950/30 transition-colors cursor-pointer" data-id="${app.id}" data-name="${escAttr(app.name)}" title="Hapus Aplikasi" aria-label="Hapus aplikasi ${escAttr(app.name)}">
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">delete</span>
                             </button>
                         </div>
                     </div>
@@ -133,7 +133,7 @@ function renderAppsFiltered() {
 
                 <!-- Card Footer: Status on left, Sold badge on right (Never overlaps) -->
                 <div class="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-white/6">
-                    <button type="button" class="btn-app-toggle inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-lg ${isActive ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'} cursor-pointer hover:opacity-80 transition-opacity shrink-0" data-id="${app.id}" data-active="${isActive}" title="Klik untuk mengubah status">
+                    <button type="button" class="btn-app-toggle inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-lg ${isActive ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'} cursor-pointer hover:opacity-80 transition-opacity shrink-0" data-id="${app.id}" data-active="${isActive}" title="Klik untuk mengubah status" aria-label="Ubah status aplikasi ${escAttr(app.name)} saat ini ${isActive ? 'Aktif' : 'Nonaktif'}">
                         <span class="size-1.5 rounded-full ${isActive ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}"></span>
                         ${isActive ? 'Active' : 'Nonaktif'}
                     </button>

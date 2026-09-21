@@ -1018,19 +1018,19 @@ function renderTenants(tenants) {
                     </small>
                     ${isExpired ? `
                         <br>
-                        <button class="btn-reminder-pill btn-action-reminder" title="Lihat Teks Tagihan">
-                            <i class="fa-regular fa-clipboard"></i> <span>Tagihan</span>
+                        <button class="btn-reminder-pill btn-action-reminder" title="Lihat Teks Tagihan" aria-label="Lihat Teks Tagihan ${escapeHtml(t.username || t.bot_id)}">
+                            <i class="fa-regular fa-clipboard" aria-hidden="true"></i> <span>Tagihan</span>
                         </button>
                     ` : ''}
                 </div>
             </td>
             <td data-label="Actions" class="text-right">
                 <div class="actions" style="justify-content: flex-end;">
-                    <button class="icon-btn icon-btn-primary btn-action-renew" title="Extend rent"><i class="fa-solid fa-clock-rotate-left"></i></button>
-                    <button class="icon-btn ${t.status === 'ACTIVE' ? 'icon-btn-warning' : 'icon-btn-success'} btn-action-toggle" title="${t.status === 'ACTIVE' ? 'Suspend' : 'Activate'}">
-                        <i class="fa-solid fa-${t.status === 'ACTIVE' ? 'pause' : 'play'}"></i>
+                    <button class="icon-btn icon-btn-primary btn-action-renew" title="Extend rent" aria-label="Perpanjang sewa ${escapeHtml(t.username || t.bot_id)}"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></button>
+                    <button class="icon-btn ${t.status === 'ACTIVE' ? 'icon-btn-warning' : 'icon-btn-success'} btn-action-toggle" title="${t.status === 'ACTIVE' ? 'Suspend' : 'Activate'}" aria-label="${t.status === 'ACTIVE' ? 'Suspend' : 'Aktifkan'} ${escapeHtml(t.username || t.bot_id)}">
+                        <i class="fa-solid fa-${t.status === 'ACTIVE' ? 'pause' : 'play'}" aria-hidden="true"></i>
                     </button>
-                    <button class="icon-btn icon-btn-danger btn-action-delete" title="Delete tenant"><i class="fa-solid fa-trash-can"></i></button>
+                    <button class="icon-btn icon-btn-danger btn-action-delete" title="Delete tenant" aria-label="Hapus permanen ${escapeHtml(t.username || t.bot_id)}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
                 </div>
             </td>
         `;
@@ -1213,19 +1213,19 @@ function renderWaGroups(groups) {
                     </small>
                     ${isExpired ? `
                         <br>
-                        <button class="btn-reminder-pill btn-action-reminder-wa" title="Lihat Teks Tagihan">
-                            <i class="fa-regular fa-clipboard"></i> <span>Tagihan</span>
+                        <button class="btn-reminder-pill btn-action-reminder-wa" title="Lihat Teks Tagihan" aria-label="Lihat Teks Tagihan ${escapeHtml(g.group_name || g.id)}">
+                            <i class="fa-regular fa-clipboard" aria-hidden="true"></i> <span>Tagihan</span>
                         </button>
                     ` : ''}
                 </div>
             </td>
             <td data-label="Actions" class="text-right">
                 <div class="actions" style="justify-content: flex-end;">
-                    <button class="icon-btn icon-btn-primary btn-action-extend-wa" title="Extend rent"><i class="fa-solid fa-clock-rotate-left"></i></button>
-                    <button class="icon-btn ${isActive ? 'icon-btn-warning' : 'icon-btn-success'} btn-action-toggle-wa" title="${isActive ? 'Deactivate' : 'Activate'}">
-                        <i class="fa-solid fa-${isActive ? 'pause' : 'play'}"></i>
+                    <button class="icon-btn icon-btn-primary btn-action-extend-wa" title="Extend rent" aria-label="Perpanjang sewa ${escapeHtml(g.group_name || g.id)}"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></button>
+                    <button class="icon-btn ${isActive ? 'icon-btn-warning' : 'icon-btn-success'} btn-action-toggle-wa" title="${isActive ? 'Deactivate' : 'Activate'}" aria-label="${isActive ? 'Nonaktifkan' : 'Aktifkan'} grup ${escapeHtml(g.group_name || g.id)}">
+                        <i class="fa-solid fa-${isActive ? 'pause' : 'play'}" aria-hidden="true"></i>
                     </button>
-                    <button class="icon-btn icon-btn-danger btn-action-delete-wa" title="Delete group"><i class="fa-solid fa-trash-can"></i></button>
+                    <button class="icon-btn icon-btn-danger btn-action-delete-wa" title="Delete group" aria-label="Hapus permanen grup ${escapeHtml(g.group_name || g.id)}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
                 </div>
             </td>
         `;
