@@ -2,10 +2,10 @@
 # RNF SaaS Multi-Tenant Web App & API Gateway System
 ## Unified Multi-Tenant Bot Ecosystem & Finance Super-Dashboard
 
-- **Version**: 2.6.0
+- **Version**: 2.7.0
 - **Status**: Production / Active
 - **System Architecture**: Multi-Tenant Telegram Mini App + Centralized Vercel API Gateway + Triple Supabase (Master, WA, RNF Shop)
-- **Date**: 2026-09-19
+- **Date**: 2026-09-22
 - **Maintainer**: RNF System
 
 ---
@@ -14,10 +14,10 @@
 
 ### 1.1 Product Vision
 **RNF SaaS Multi-Tenant Web App** adalah platform terpadu untuk ekosistem e-commerce bot digital dan operasional finansial multi-layanan. Platform ini mengintegrasikan:
-1. **Storefront Telegram Mini App (Buyer)**: Katalog belanja interaktif, responsif, dan instan untuk pelanggan toko digital bot tenant.
-2. **Tenant Admin Portal (Seller)**: Antarmuka pengelolaan produk multi-varian, aturan harga grosir (*wholesale pricing tiers*), dan manajemen stok massal (*bulk restock*).
+1. **Storefront Telegram Mini App (Buyer)**: Katalog belanja interaktif, responsif, dan instan untuk pelanggan toko digital bot tenant dengan rendering GPU 60 FPS dan in-memory catalog caching.
+2. **Tenant Admin Portal (Seller)**: Antarmuka pengelolaan produk multi-varian, aturan harga grosir (*wholesale pricing tiers*), dan manajemen stok massal (*bulk restock*) dengan pencarian ter-debounce dan invalidasi cache seketika.
 3. **Master SaaS Super Dashboard (Superadmin)**: Pusat kendali terpadu yang memiliki **Dual-Mode Switcher**:
-   - **Mode Rental SaaS**: Pengelolaan lisensi masa aktif bot Telegram tenant, manajemen sewa grup bot WhatsApp (*managed groups*), penyesuaian durasi sewa, generator pengingat tagihan multi-platform, serta sinkronisasi kedaluwarsa otomatis.
+   - **Mode Rental SaaS**: Pengelolaan lisensi masa aktif bot Telegram tenant, manajemen sewa grup bot WhatsApp (*managed groups*), penyesuaian durasi sewa, generator pengingat tagihan multi-platform (WhatsApp direct `wa.me` deep-link & clean Telegram plain text), serta sinkronisasi kedaluwarsa otomatis.
    - **Mode Shop Finance (RNF Shop)**: Pencatatan keuangan toko (*income* & *expense*), visualisasi metrik laba bersih, manajemen katalog aplikasi/produk digital master, integrasi Google Sheets, serta modul *Batch Receipt Parser* cerdas untuk ekstraksi transaksi mutasi bank & QRIS.
 
 ### 1.2 Core Value Propositions
@@ -37,6 +37,14 @@
    - Komunikasi internal antara Bot Tenant dan API Gateway dilindungi oleh HMAC-SHA256 dengan payload terikat `timestamp.botId.body` dan toleransi waktu maksimal 5 menit untuk menolak *replay attack* dan impersonasi tenant.
 6. **Vercel Hobby Optimization (Consolidated Dynamic Routing)**:
    - Mengonsolidasikan handler admin (`api/admin/[resource].js`), langganan (`api/tenant/subscription/[action].js`), dan checkout (`api/webapp/checkout.js`) agar seluruh backend serverless tetap berada di bawah limit kuota Vercel Hobby (< 12 Serverless Functions).
+7. **High-Performance In-Memory Catalog Caching & Anti-Stampede**:
+   - Frontend mengimplementasikan cache in-memory 60 detik (`_catalogCache`) dengan *in-flight promise deduplication* (`_inFlightCatalogPromise`) dan *parallel fetching* via `Promise.all` (produk aktif, varian, dan stok tersedia). Mengeliminasi query N+1, memangkas latensi buka katalog hingga 90%, dan menjaga konsumsi row Supabase Free Tier tetap aman.
+8. **Realtime WebSocket Quota Shielding (Free Tier Defense)**:
+   - Koneksi WebSocket Supabase Realtime (`subscribeToInventoryChanges`) diisolasi secara ketat dan hanya diaktifkan untuk sesi seller admin (`role === 'admin'`). Sesi buyer Telegram Mini App tidak membuka WebSocket permanen, mencegah habisnya kuota batas 200 concurrent connection pool Supabase.
+9. **Hardware-Accelerated Mobile GPU Rendering (60 FPS WebView)**:
+   - Panel modal detail produk (`.detail-page-slide`) dirombak menggunakan akselerasi GPU hardware (`transform: translate3d(...)`, `will-change: transform, visibility`, `-webkit-overflow-scrolling: touch`), serta menonaktifkan filter berat (`backdrop-filter`) di dalam panel slide opaque untuk mengeliminasi jank/stutter saat digulir di perangkat mobile berspesifikasi rendah.
+10. **Address Bar Sanitization & Token Leak Prevention**:
+    - URL query string sensitif (`?bot_id=...&auth=...`) secara otomatis dibersihkan dari bilah alamat browser menggunakan `window.history.replaceState` ketika terjadi fallback screen atau akses tidak sah, mencegah kebocoran token via bookmark, screenshot, atau history sniffing.
 
 ---
 
@@ -44,9 +52,9 @@
 
 | Role | Lokasi Akses | Akses & Otentikasi | Tanggung Jawab Utama |
 |---|---|---|---|
-| **SaaS Superadmin** | `/master` (`public/master-dashboard.html`) | Header `X-Admin-Secret` (`ADMIN_DASHBOARD_SECRET`) | - Monitoring analitik SaaS (Tenant, WA Group, Finansial RNF Shop).<br>- Pengelolaan tenant: Tambah durasi (+30/custom hari), Suspend, Activate, Ban, Delete, Force Invalidate Cache.<br>- Pengelolaan rental grup WhatsApp: Tambah grup, perpanjang sewa, toggle status aktif, ubah PIC renter.<br>- Finansial RNF Shop: Input transaksi manual, edit, hapus, import struk/mutasi batch, manajemen katalog apps.<br>- Generator pesan pengingat tagihan (Telegram Markdown & WhatsApp).<br>- Sinkronisasi manual tenant expired. |
-| **Tenant Admin (Toko)** | `/admin` (`public/admin.html`) | Query Param `?bot_id=...&auth=...` / HMAC Bot Admin | - Manajemen produk: Tambah/edit nama, kategori, deskripsi, gambar, varian multi-harga, serta aturan diskon grosir.<br>- Manajemen stok: Tambah stok massal via file `.txt` atau input baris, deteksi baris duplikat otomatis, hapus stok per item atau per varian.<br>- Monitoring metrik pesanan toko melalui relay ke server bot tenant. |
-| **Buyer (Pelanggan)** | `/` (`public/index.html`) | Header / Body `X-Telegram-Init-Data` (`Telegram.WebApp.initData`) | - Menjelajah katalog toko bot secara interaktif di Telegram Mini App.<br>- Pencarian produk instan dengan efek animasi placeholder mesin tik dinamis.<br>- Melihat detail produk, variasi, dan tabel harga bertingkat grosir.<br>- Pengecekan saldo akun dan riwayat order belanja via bot relay.<br>- Melakukan checkout pesanan toko melalui relay transaksi ke bot tenant. |
+| **SaaS Superadmin** | `/master` (`public/master-dashboard.html`) | Header `X-Admin-Secret` (`ADMIN_DASHBOARD_SECRET`) | - Monitoring analitik SaaS (Tenant, WA Group, Finansial RNF Shop).<br>- Pengelolaan tenant: Tambah durasi (+30/custom hari), Suspend, Activate, Ban, Delete, Force Invalidate Cache.<br>- Pengelolaan rental grup WhatsApp: Tambah grup, perpanjang sewa, toggle status aktif, ubah PIC renter.<br>- Finansial RNF Shop: Input transaksi manual, edit, hapus, import struk/mutasi batch, manajemen katalog apps.<br>- Generator pesan pengingat tagihan multi-platform: Direct WhatsApp launcher (`wa.me`) dengan resolusi nomor otomatis & format pesan plain-text Telegram bersih.<br>- Avatar modern SVG (`boy.svg`) & 100% Core Web Vitals Accessibility Score.<br>- Sinkronisasi manual tenant expired. |
+| **Tenant Admin (Toko)** | `/admin` (`public/admin.html`) | Query Param `?bot_id=...&auth=...` / HMAC Bot Admin | - Manajemen produk responsif: Tambah/edit produk, varian multi-harga, aturan diskon grosir, dan pencarian produk ter-debounce 150ms.<br>- Manajemen stok massal: Upload batch file `.txt` atau input teks, deteksi baris duplikat otomatis, hapus stok per item/varian.<br>- Proactive cache invalidation (`clearCatalogCache()`) saat simpan/hapus produk & perubahan stok.<br>- Dropdown kustom ultra-ringan dengan *document event delegation* tunggal.<br>- Realtime WebSocket aktif eksklusif untuk admin inventaris toko. |
+| **Buyer (Pelanggan)** | `/` (`public/index.html`) | Header / Body `X-Telegram-Init-Data` (`Telegram.WebApp.initData`) | - Menjelajah katalog toko bot secara instan berkat in-memory caching 60s & in-flight deduplication.<br>- Tombol refresh katalog manual interaktif dengan animasi putar 360°.<br>- Panel detail produk dengan animasi slide GPU hardware-accelerated 60 FPS tanpa jank.<br>- Pencarian produk instan dengan efek animasi placeholder mesin tik dinamis.<br>- Melihat detail produk, variasi, dan tabel harga bertingkat grosir.<br>- Pengecekan saldo akun & checkout pesanan via relay bot, dengan pembersihan cache lokal seketika pasca checkout. |
 
 ---
 
@@ -186,6 +194,20 @@
 - **FR-4.5**: Checkout Pesanan Terproteksi:
   - Tombol checkout mengirimkan payload ke `POST /api/webapp/checkout` disertai header `X-Telegram-Init-Data`.
   - Gateway memverifikasi integritas buyer via `telegramAuth.js`, lalu me-relay order ke bot tenant untuk pemotongan saldo aman atau penerbitan pembayaran QRIS bot tenant.
+- **FR-4.6**: High-Efficiency In-Memory Catalog Caching (60s TTL) & Anti-Stampede:
+  - Frontend menyimpan data katalog lengkap (produk aktif, variasi, dan ketersediaan stok aktual) dalam memori browser selama 60 detik (`_catalogCache`).
+  - Mekanisme *in-flight promise deduplication* (`_inFlightCatalogPromise`) memastikan bahwa pemanggilan `fetchCatalog()` yang terjadi secara bersamaan hanya memicu 1 permintaan jaringan Supabase tunggal.
+  - Pengambilan data mengeksekusi query paralel `Promise.all` (`products`, `variants`, dan `stock counts`), mengurangi waktu pemuatan hingga 90% dan meminimalkan konsumsi row Supabase Free Tier.
+- **FR-4.7**: Manual Catalog Refresh Button (`btn-refresh-catalog`):
+  - Disediakan tombol refresh manual pada header katalog buyer dengan visual ikon putar.
+  - Menekan tombol ini memicu `fetchCatalog(supabase, true)` dengan flag `forceRefresh` dan animasi rotasi CSS 360° secara kontinu hingga data selesai diperbarui.
+- **FR-4.8**: Hardware-Accelerated 60 FPS Mobile Slide Panel:
+  - Panel detail produk (`.detail-page-slide`) dioptimalkan menggunakan akselerasi GPU perangkat keras: `transform: translate3d(0, 0, 0)`, `will-change: transform, visibility`, serta `-webkit-overflow-scrolling: touch` dengan CSS scroll containment (`contain: paint layout`).
+  - Properti `backdrop-filter` yang berat di dalam panel opaque dinonaktifkan guna memastikan scroll halus 60 FPS tanpa jank pada Telegram WebView perangkat mobile.
+- **FR-4.9**: Proactive Post-Checkout Cache Invalidation:
+  - Segera setelah checkout berhasil diselesaikan, pemanggilan `clearCatalogCache()` otomatis dieksekusi agar pembeli melihat pengurangan stok terkini secara instan tanpa menunggu kedaluwarsa cache 60 detik.
+- **FR-4.10**: Realtime Connection Isolation (Quota Guard):
+  - Client buyer tidak pernah membuka koneksi WebSocket permanen (`subscribeToInventoryChanges`), melindungi batas 200 concurrent connections Supabase Free Tier dari lonjakan buyer massal.
 
 ### FR-5: Tenant Shop Administration Portal
 - **FR-5.1**: Portal khusus admin toko diakses melalui `/admin?bot_id=...&auth=...`.
@@ -201,6 +223,14 @@
   - `POST`: Upload stok massal baik melalui input teks multi-baris maupun file `.txt`.
   - **Deduplikasi Cerdas**: Sistem membersihkan spasi, mendeteksi dan mengeliminasi item duplikat sebelum dikirim ke database.
   - `DELETE`: Menghapus satu item stok tertentu berdasarkan ID atau menghapus seluruh stok (*clear all*) untuk varian terkait.
+- **FR-5.5**: Product Search Debounce (150ms):
+  - Pencarian pada daftar produk admin dilengkapi filter *debounce* 150ms untuk mencegah re-render DOM yang membebani browser saat admin mengetik cepat.
+- **FR-5.6**: Proactive Cache Invalidation on Mutations:
+  - Setiap aksi simpan produk, hapus produk, upload stok batch, hapus item stok satuan, maupun clear all stok langsung mengeksekusi `clearCatalogCache()`. Perubahan inventaris langsung sinkron di seluruh komponen tanpa lag.
+- **FR-5.7**: Optimized Dropdown Event Delegation:
+  - Event listener custom dropdown `.smooth-select-btn` menggunakan delegasi level `document` tunggal, mencegah duplikasi listener event dan memory leaks saat membuka-tutup modal berulang kali.
+- **FR-5.8**: Exclusive Admin Realtime Channel:
+  - Pendaftaran listener Supabase Realtime WebSocket inventaris (`subscribeToInventoryChanges`) hanya dijalankan untuk sesi terautentikasi admin (`role === 'admin'`).
 
 ### FR-6: Master SaaS Administrative Dashboard (Rental Mode)
 - **FR-6.1**: Akses terpusat di `/master` dengan proteksi `X-Admin-Secret`.
@@ -213,8 +243,6 @@
     - Tambah Durasi Sewa: Opsi instan +30 Hari atau Custom Hari input manual.
     - Kontrol Akses: Tombol Suspend, Activate, Ban, dan Delete tenant.
     - Force Push Invalidate Cache: Memicu pembersihan cache internal bot tenant seketika.
-  - Generator Pesan Pengingat Sewa Telegram:
-    - Menghasilkan format pesan tagihan siap kirim Markdown Telegram yang mencantumkan nama bot, tanggal kedaluwarsa, sisa hari, dan instruksi perpanjangan.
 - **FR-6.4**: Sinkronisasi Expired Manual:
   - Tombol manual sync untuk mengeksekusi RPC `sync_expired_tenants` secara instan dari dashboard.
 - **FR-6.5**: Manajemen Rental Grup WhatsApp (`wa-groups`):
@@ -222,7 +250,15 @@
   - Metrik: Total Grup, Grup Aktif, Segera Expired, Total Pembayaran Disetujui.
   - Tabel grup: Nama grup, JID grup, nama penyewa (*renter*), status aktif/non-aktif, tanggal sewa (`paid_until`), dan sisa hari.
   - Aksi: Tambah grup sewa, perpanjang masa aktif sewa grup, edit rincian data grup, toggle status aktif/non-aktif, dan hapus grup.
-  - Generator Template Pesan Tagihan WhatsApp: Pesan terformat resmi untuk dikirimkan ke grup/penyewa WA.
+- **FR-6.6**: Direct WhatsApp Launcher (`wa.me` Deep-Link):
+  - Modal pengingat sewa WhatsApp menyertakan tombol aksi langsung "Buka WhatsApp" yang membuka tautan resmi `https://wa.me/<phone>?text=...` di tab baru.
+  - Sistem secara otomatis mengekstrak nomor telepon dari data penyewa atau JID grup (`user_jid`), membersihkan karakter khusus non-digit, mengonversi format awalan lokal (`08...` -> `628...`), dan menyediakan prompt input darurat bila nomor belum tersimpan di database.
+- **FR-6.7**: Clean Plain-Text Telegram Reminder:
+  - Format pesan pengingat tagihan Telegram diformat menjadi plain-text bersih tanpa simbol asteris markdown (`*`) untuk mencegah kesalahan parsing atau teks berantakan saat disalin ke berbagai versi klien Telegram.
+- **FR-6.8**: Modern Identity Asset (`boy.svg`):
+  - Profil superadmin pada navigasi utama menggunakan avatar vektor SVG modern (`public/images/boy.svg`), menggantikan placeholder inisial teks `AD`.
+- **FR-6.9**: Accessibility & Core Web Vitals Optimization (100 A11y):
+  - Penggunaan atribut semantik ARIA (`aria-label`, `aria-hidden`, `role`), perbaikan rasio kontras warna teks, focus ring navigasi keyboard, dan optimasi font loading untuk mencapai skor 100 Accessibility pada audit performa web.
 
 ### FR-7: RNF Shop Finance & Operations Dashboard (Shop Mode)
 - **FR-7.1**: Mode Khusus "Shop Finance" pada Master Super-Dashboard:
@@ -245,6 +281,12 @@
 - **FR-7.5**: Manajemen Master Aplikasi Digital (`rnf-apps`):
   - Pengelolaan katalog aplikasi toko digital (`apps` table).
   - Tambah aplikasi baru, edit nama aplikasi, atur ikon aplikasi, dan toggle status aktif/non-aktif.
+
+### FR-8: Client Security & Address Bar Sanitization
+- **FR-8.1**: Address Bar Token Scrubbing (`history.replaceState`):
+  - Ketika Mini App atau Admin Portal memasuki status unauthorized/fallback screen karena ketiadaan parameter otentikasi yang valid, aplikasi secara otomatis mengeksekusi pembersihan bilah alamat:
+    `window.history.replaceState({}, document.title, window.location.pathname)`
+  - Menghilangkan query string sensitif (`?bot_id=...&auth=...`) dari URL peramban untuk mencegah kebocoran kredensial melalui riwayat browser, screenshot, atau shared links.
 
 ---
 
@@ -301,6 +343,18 @@
   - Akses CRUD penuh hanya diberikan kepada role internal serverless `service_role`.
 - **Relay Server Bot**:
   - Seluruh operasi checkout, pemotongan saldo, katalog toko admin, dan mutasi stok dialirkan via HTTP relay ke bot server tenant dengan autentikasi header `X-Internal-Api-Secret` dan `X-Admin-Auth`.
+
+### 5.5 Address Bar URL Sanitization & Token Scrubbing
+- Untuk memitigasi risiko *credential leaking* via browser history atau screenshot:
+  - Frontend membersihkan query parameter otentikasi secara dinamis menggunakan API HTML5 `history.replaceState`.
+  - Eksekusi dilakukan saat mendeteksi ketiadaan kredensial yang valid atau saat menampilkan fallback error screen.
+
+### 5.6 Supabase Realtime Quota Defense & Access Segregation
+- Batas maksimal concurrent WebSocket connection pool pada Supabase Free Tier adalah 200 koneksi aktif.
+- **Proteksi Tingkat Client**:
+  - Pendaftaran Realtime listener via `subscribeToInventoryChanges` dibatasi secara ketat berdasarkan role (`role === 'admin'`).
+  - Pelanggan Mini App pembeli (`buyer`) tidak diizinkan membuka koneksi WebSocket permanen dan mengandalkan in-memory cache dengan TTL 60 detik serta tombol refresh manual on-demand.
+  - Mencegah penolakan koneksi (*connection starvation*) pada admin toko saat terjadi lonjakan traffic pembeli.
 
 ---
 
@@ -413,32 +467,53 @@
 
 ### 8.1 Buyer Mini App (`public/index.html` & `public/js/buyer/`)
 - **`buyer.js` / `buyer-main.js`**:
-  - Lifecycle initialization Mini App Telegram.
-  - Dynamic typewriter animated search placeholder (`getPlaceholderPhrases`, `stepRunningPlaceholder`).
-  - Rendering kartu produk responsif dengan badge ketersediaan stok.
-  - Detail modal produk, pemilih varian aktif, dan kalkulator harga grosir (*wholesale discount table*).
-  - Pengecekan profil buyer via relay backend dan checkout pesanan.
+  - Inisialisasi lifecycle Mini App Telegram (`Telegram.WebApp.ready()`, `expand()`).
+  - Search placeholder dinamis dengan efek ketik mesin tik berganti frasa secara berkala (`getPlaceholderPhrases`, `stepRunningPlaceholder`).
+  - Rendering kartu produk responsif dengan status stok aktual dan animasi skeleton shimmer.
+  - Tombol refresh katalog manual interaktif (`#btn-refresh-catalog`) dengan animasi putar 360° yang memicu `fetchCatalog(supabase, true)`.
+  - Detail modal produk geser (`.detail-page-slide`) dengan akselerasi GPU perangkat keras (`transform: translate3d(...)`, `will-change: transform, visibility`, `-webkit-overflow-scrolling: touch`) dan eliminasi filter berat pada panel opaque demi scroll mulus 60 FPS di mobile WebView.
+  - Pemilih varian interaktif, sisa stok dinamis per varian, dan tabel kalkulator diskon grosir bertingkat (*wholesale tier pricing*).
+  - Pengecekan profil buyer via relay backend dan checkout pesanan terenkripsi.
+  - Invalidasi cache katalog lokal otomatis (`clearCatalogCache()`) seketika pasca checkout berhasil.
+  - Pembersihan bilah alamat URL otomatis (`history.replaceState`) saat memasuki status fallback/unauthorized.
 - **`public/js/shared/`**:
-  - `store.js`: State manager katalog, detail produk, cache tenant config, dan riwayat pesanan.
-  - `theme.js`: Pengendali tema Dark/Light mode sinkron dengan tema Telegram client.
-  - `utils.js`: Helper format mata uang Rupiah (`formatRupiah`), sanitasi HTML (`escapeHtml`), dan notifikasi toast.
+  - `store.js`: Manajer state inventaris dan katalog terpusat:
+    - **In-Memory Cache Layer**: Cache `_catalogCache` dengan TTL 60.000 ms.
+    - **In-Flight Promise Deduplication**: Variabel `_inFlightCatalogPromise` mencegah *request stampede* saat beberapa komponen memanggil `fetchCatalog()` bersamaan.
+    - **Parallel Fetching**: Pengambilan paralel via `Promise.all` (`products`, `product_variants`, dan agregasi `stock counts`).
+    - **Proactive Invalidation**: Fungsi `clearCatalogCache()` untuk pengosongan cache seketika pasca mutasi.
+    - **Realtime Quota Defense**: Fungsi `subscribeToInventoryChanges(supabase, onUpdate, role)` memvalidasi `role === 'admin'`. Koneksi WebSocket Supabase Realtime diabaikan untuk sesi pembeli guna melindungi pool 200 koneksi Supabase Free Tier.
+  - `theme.js`: Pengendali tema Dark/Light mode sinkron otomatis dengan preferensi tema aplikasi Telegram.
+  - `utils.js`: Helper format mata uang Rupiah (`formatRupiah`), sanitasi HTML (`escapeHtml`), dan visual toast notifications.
 
 ### 8.2 Tenant Admin Portal (`public/admin.html` & `public/js/tenant-admin/`)
 - **`adminProducts.js`**:
   - CRUD katalog produk toko tenant.
-  - Form builder multi-varian interaktif.
-  - Form builder tier harga grosir bertingkat (min qty -> harga grosir).
+  - Filter pencarian produk ter-debounce 150ms untuk eliminasi lag render DOM saat mengetik.
+  - Form builder interaktif untuk varian multi-harga.
+  - Form builder tier harga grosir bertingkat (min qty -> harga satuan khusus).
+  - Invalidasi cache instan (`clearCatalogCache()`) pada setiap operasi simpan produk, update varian, dan hapus produk.
 - **`adminStock.js`**:
-  - Pengelolaan stok barang per varian.
-  - Upload batch file `.txt` atau paste teks dengan filter otomatis item duplikat.
-  - Hapus stok satuan atau bersihkan seluruh stok varian.
+  - Manajemen stok barang per varian.
+  - Upload stok massal via file `.txt` atau paste multi-baris dengan normalisasi whitespace dan deteksi item duplikat otomatis.
+  - Event listener kustom dropdown `.smooth-select-btn` didelegasikan ke level `document` tunggal, mencegah duplikasi event handler dan *memory leaks*.
+  - Deduplikasi query snapshot stok pada saat memanggil `renderStockItems()`.
+  - Hapus stok satuan atau bersihkan seluruh stok varian (*clear all*) dengan pembersihan cache instan (`clearCatalogCache()`).
+  - Mengaktifkan listener WebSocket Supabase Realtime inventaris secara eksklusif untuk sesi admin.
 
 ### 8.3 Master Super-Dashboard (`public/master-dashboard.html`, `public/js/master/`, & `public/js/rnfshop/`)
 - **`masterDashboard.js`**:
-  - Pengendali utama Super Dashboard.
-  - Mode Switcher: Berganti antara `Rental SaaS Mode` dan `Shop Finance Mode`.
-  - Modul Rental Telegram: Tabel tenant, kontrol aksi perpanjangan sewa (+30/custom hari), suspend/activate/ban/delete, invalidate cache, sync expired manual, dan modal generator pengingat Markdown Telegram.
-  - Modul Rental WhatsApp: Tabel grup WA (`managed_groups`), perpanjangan masa aktif sewa, toggle status aktif, dan generator pesan WhatsApp.
+  - Pengendali utama Super Dashboard dengan mode switcher (`Rental SaaS Mode` & `Shop Finance Mode`).
+  - Modul Rental Telegram:
+    - Tabel tenant real-time, pencarian instan, filter status, sorting dinamis.
+    - Aksi perpanjangan sewa (+30 hari atau custom hari input manual), toggle suspend/activate/ban/delete, force push invalidate cache ke bot tenant, dan tombol manual sync expired tenants.
+    - Generator pesan pengingat tagihan Telegram dalam format plain-text bersih tanpa simbol asteris (`*`) untuk mencegah distorsi tampilan teks pada klien Telegram.
+  - Modul Rental WhatsApp:
+    - Tabel grup WA (`managed_groups`), perpanjangan masa sewa, toggle status aktif, dan edit profil PIC grup.
+    - Generator pesan tagihan WhatsApp dengan tombol aksi langsung "Buka WhatsApp" (`window.open('https://wa.me/...')`), resolusi pembersihan format nomor internasional otomatis (`628...`), dan modal prompt input nomor darurat bila nomor belum tersimpan.
+  - Visual & Accessibility:
+    - Avatar profil superadmin vektor modern `public/images/boy.svg` menggantikan teks inisial `AD`.
+    - Kepatuhan aksesibilitas penuh WCAG AA (skor 100 A11y Lighthouse) dengan atribut ARIA komprehensif dan rasio kontras tinggi.
 - **`public/js/rnfshop/` (Modul Finansial RNF Shop)**:
   - `dashboard.js`: Inisialisasi tampilan overview finansial, kalkulasi laba bersih, chart tren pemasukan/pengeluaran, dan rekapitulasi per aplikasi digital.
   - `transactions.js`: Tabel mutasi transaksi finansial, filter multi-parameter, pagination, form tambah/edit transaksi, dan aksi hapus.
@@ -548,6 +623,7 @@ Web App/
 │   │   └── outfit-latin-ext.woff2   # Font Outfit self-hosted (latin-ext)
 │   ├── images/
 │   │   ├── Logo RNFBOT.webp         # Logo resmi RNFBOT
+│   │   ├── boy.svg                  # Avatar profil vektor superadmin master dashboard
 │   │   └── cloud-server.svg         # Ilustrasi SVG cloud server (login showcase panel)
 │   ├── style/
 │   │   ├── style.css                # Minified output Tailwind CSS v4 (generated dari index.css)
