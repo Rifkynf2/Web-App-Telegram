@@ -82,101 +82,153 @@ export async function initTenant() {
     }
 }
 
-export async function fetchShopSettings() {
+let _shopSettingsCache = null;
+let _shopSettingsPromise = null;
+
+export async function fetchShopSettings(forceRefresh = false) {
     if (!supabase) return shopSettings;
-    const { data, error } = await supabase.from('settings').select('key, value');
-    if (error) return shopSettings;
-    
-    const settingsMap = {};
-    data.forEach(s => settingsMap[s.key] = s.value);
-    
-    if (settingsMap['SHOP_NAME']) shopSettings.name = settingsMap['SHOP_NAME'];
-    if (settingsMap['SHOP_DESCRIPTION']) shopSettings.description = settingsMap['SHOP_DESCRIPTION'];
-    if (settingsMap['SHOP_LOGO_URL']) {
-        shopSettings.logoUrl = settingsMap['SHOP_LOGO_URL'];
-    } else if (tenantInfo?.botPhotoUrl) {
-        shopSettings.logoUrl = tenantInfo.botPhotoUrl;
-    }
-    
-    // Admin contact for help button (strip @ prefix if present)
-    if (settingsMap['ADMIN_USERNAME']) {
-        shopSettings.adminContact = settingsMap['ADMIN_USERNAME'].replace(/^@/, '');
-    }
-    
-    return shopSettings;
+    if (!forceRefresh && _shopSettingsCache) return _shopSettingsCache;
+    if (_shopSettingsPromise) return _shopSettingsPromise;
+
+    _shopSettingsPromise = (async () => {
+        try {
+            const { data, error } = await supabase.from('settings').select('key, value');
+            if (error) return shopSettings;
+            
+            const settingsMap = {};
+            data.forEach(s => settingsMap[s.key] = s.value);
+            
+            if (settingsMap['SHOP_NAME']) shopSettings.name = settingsMap['SHOP_NAME'];
+            if (settingsMap['SHOP_DESCRIPTION']) shopSettings.description = settingsMap['SHOP_DESCRIPTION'];
+            if (settingsMap['SHOP_LOGO_URL']) {
+                shopSettings.logoUrl = settingsMap['SHOP_LOGO_URL'];
+            } else if (tenantInfo?.botPhotoUrl) {
+                shopSettings.logoUrl = tenantInfo.botPhotoUrl;
+            }
+            
+            // Admin contact for help button (strip @ prefix if present)
+            if (settingsMap['ADMIN_USERNAME']) {
+                shopSettings.adminContact = settingsMap['ADMIN_USERNAME'].replace(/^@/, '');
+            }
+            
+            _shopSettingsCache = shopSettings;
+            return shopSettings;
+        } finally {
+            _shopSettingsPromise = null;
+        }
+    })();
+
+    return _shopSettingsPromise;
 }
 
 // Catalog Data (Products + Variants)
 export let catalogData = [];
 
-export async function fetchCatalog() {
+let _catalogCache = {
+    data: null,
+    timestamp: 0
+};
+const CATALOG_CACHE_TTL_MS = 60 * 1000; // 60s in-memory cache TTL for catalog browsing
+
+export function clearCatalogCache() {
+    _catalogCache.data = null;
+    _catalogCache.timestamp = 0;
+}
+
+let _catalogInFlightPromise = null;
+
+export async function fetchCatalog(forceRefresh = false) {
     if (!supabase) return [];
-    
-    // Fetch active products
-    const { data: products, error: pError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true })
-        .limit(500);
 
-    if (pError) return [];
-
-    // Fetch active variants for these products
-    const { data: variants, error: vError } = await supabase
-        .from('variants')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true })
-        .limit(2000);
-
-    if (vError) return products;
-
-    // Fetch Stock Counts + latest restock date via Inventory Table
-    const { data: stocks, error: sError } = await supabase
-        .from('inventory_items')
-        .select('variant_id, created_at')
-        .eq('status', 'AVAILABLE')
-        .limit(10000);
-
-    const variantStockMap = {};
-    const variantRestockMap = {};
-
-    if (!sError && stocks) {
-        stocks.forEach(s => {
-            variantStockMap[s.variant_id] = (variantStockMap[s.variant_id] || 0) + 1;
-            // Track latest created_at per variant (same as bot logic)
-            if (!variantRestockMap[s.variant_id] || s.created_at > variantRestockMap[s.variant_id]) {
-                variantRestockMap[s.variant_id] = s.created_at;
-            }
-        });
+    const now = Date.now();
+    if (!forceRefresh && _catalogCache.data && (now - _catalogCache.timestamp < CATALOG_CACHE_TTL_MS)) {
+        catalogData = _catalogCache.data;
+        return catalogData;
     }
 
-    // Join variants to products and add stock info
-    catalogData = products.map(p => {
-        const productVariants = variants.filter(v => v.product_id === p.id).map(v => ({
-            ...v,
-            stock: variantStockMap[v.id] || 0,
-            last_restock_at: variantRestockMap[v.id] || v.last_restock_at || null
-        }));
-        
-        const totalStock = productVariants.reduce((sum, v) => sum + v.stock, 0);
+    if (_catalogInFlightPromise) {
+        return _catalogInFlightPromise;
+    }
 
-        return {
-            ...p,
-            stock_count: totalStock,
-            variants: productVariants
-        };
-    });
+    _catalogInFlightPromise = (async () => {
+        try {
+            // Fetch active products, variants, and stock counts in PARALLEL (Max speed & minimal latency)
+            const [pRes, vRes, sRes] = await Promise.all([
+                supabase
+                    .from('products')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('sort_order', { ascending: true })
+                    .limit(500),
+                supabase
+                    .from('variants')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('sort_order', { ascending: true })
+                    .limit(2000),
+                supabase
+                    .from('inventory_items')
+                    .select('variant_id, created_at')
+                    .eq('status', 'AVAILABLE')
+                    .limit(10000)
+            ]);
 
-    // Default sort alfabet A-Z otomatis
-    catalogData.sort((a, b) => {
-        const nameA = (a.name || '').trim();
-        const nameB = (b.name || '').trim();
-        return nameA.localeCompare(nameB, 'id', { sensitivity: 'base', numeric: true });
-    });
+            if (pRes.error) {
+                console.error('[Store] Products fetch error:', pRes.error);
+                return catalogData || [];
+            }
 
-    return catalogData;
+            const products = pRes.data || [];
+            const variants = vRes.data || [];
+            const stocks = sRes.data || [];
+
+            const variantStockMap = {};
+            const variantRestockMap = {};
+
+            stocks.forEach(s => {
+                variantStockMap[s.variant_id] = (variantStockMap[s.variant_id] || 0) + 1;
+                // Track latest created_at per variant (same as bot logic)
+                if (!variantRestockMap[s.variant_id] || s.created_at > variantRestockMap[s.variant_id]) {
+                    variantRestockMap[s.variant_id] = s.created_at;
+                }
+            });
+
+            // Join variants to products and add stock info
+            catalogData = products.map(p => {
+                const productVariants = variants.filter(v => v.product_id === p.id).map(v => ({
+                    ...v,
+                    stock: variantStockMap[v.id] || 0,
+                    last_restock_at: variantRestockMap[v.id] || v.last_restock_at || null
+                }));
+                
+                const totalStock = productVariants.reduce((sum, v) => sum + v.stock, 0);
+
+                return {
+                    ...p,
+                    stock_count: totalStock,
+                    variants: productVariants
+                };
+            });
+
+            // Default sort alfabet A-Z otomatis
+            catalogData.sort((a, b) => {
+                const nameA = (a.name || '').trim();
+                const nameB = (b.name || '').trim();
+                return nameA.localeCompare(nameB, 'id', { sensitivity: 'base', numeric: true });
+            });
+
+            _catalogCache = {
+                data: catalogData,
+                timestamp: Date.now()
+            };
+
+            return catalogData;
+        } finally {
+            _catalogInFlightPromise = null;
+        }
+    })();
+
+    return _catalogInFlightPromise;
 }
 
 export async function fetchAdminCatalog(authToken) {
@@ -285,12 +337,18 @@ export async function fetchUserTransactionCount(chatId) {
     return profile.transactionCount;
 }
 
-export function subscribeToInventoryChanges(onUpdate) {
-    if (!supabase) return null;
+export function subscribeToInventoryChanges(onUpdate, role = 'buyer') {
+    // Supabase Free Tier Optimization:
+    // Regular buyers do not need persistent WebSockets; only tenant admins need live updates.
+    // This strictly preserves the Supabase Free Tier 200 concurrent connection limit
+    // and eliminates thundering-herd re-fetch storms across buyer devices.
+    if (!supabase || role !== 'admin') return null;
+
     return supabase
         .channel('inventory_realtime')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items' }, async () => {
-            await fetchCatalog();
+            clearCatalogCache();
+            await fetchCatalog(true);
             onUpdate?.();
         })
         .subscribe();

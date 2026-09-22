@@ -1978,7 +1978,7 @@ function buildTelegramReminderText(tenant) {
 
 Kami menginformasikan bahwa masa aktif sewa Bot Telegram Anda telah BERAKHIR.
 
-*RINCIAN SEWA BOT TELEGRAM:*
+RINCIAN SEWA BOT TELEGRAM:
 • Nama Toko/Bot: ${shopName}
 • Username Bot: ${username ? `@${username}` : '-'}
 • Bot ID: ${botId}
@@ -1986,14 +1986,14 @@ Kami menginformasikan bahwa masa aktif sewa Bot Telegram Anda telah BERAKHIR.
 • Jatuh Tempo: ${expiryFormatted} (${statusHari})
 • Status Layanan: [NON-AKTIF / EXPIRED]
 
-*CARA PERPANJANG MASA SEWA:*
+CARA PERPANJANG MASA SEWA:
 1. Buka bot Anda di Telegram: ${botUsernameDisplay}
 2. Buka /admin
 3. Pilih menu "Perpanjang Sewa Bot" di keyboard button
 4. Lakukan pembayaran invoice via QRIS yang muncul di bot
 5. Setelah pembayaran berhasil, bot Anda otomatis LANGSUNG AKTIF kembali tanpa perlu kirim bukti manual!
 
-*PENTING:* Jika masa expired sudah lebih dari 7 hari dan belum ada perpanjangan sewa, maka seluruh data bot akan DIHAPUS PERMANEN dari sistem.
+PENTING: Jika masa expired sudah lebih dari 7 hari dan belum ada perpanjangan sewa, maka seluruh data bot akan DIHAPUS PERMANEN dari sistem.
 
 Terima kasih atas kerja samanya!
 — Team RNFBOT`;
@@ -2074,47 +2074,85 @@ async function handleCopyReminderTelegram(tenant, btn) {
     }
 }
 
+function updateReminderCharCount(length, mode = 'tg') {
+    const charCount = document.getElementById('reminderCharCount');
+    if (!charCount) return;
+    if (mode === 'wa') {
+        charCount.innerHTML = `<i class="fa-brands fa-whatsapp text-emerald-400"></i> ${length} karakter &middot; Format WhatsApp`;
+    } else {
+        charCount.innerHTML = `<i class="fa-brands fa-telegram text-sky-400"></i> ${length} karakter &middot; Format Teks Polos Telegram`;
+    }
+}
+
 function handlePreviewReminderTelegram(tenant) {
     const text = buildTelegramReminderText(tenant);
+    const modalBox = document.getElementById('reminderModalBox');
+    const brandWrap = document.getElementById('reminderBrandIconWrap');
+    const brandIcon = document.getElementById('reminderBrandIcon');
+    const title = document.getElementById('reminderModalTitle');
+    const caption = document.getElementById('reminderModalCaption');
     const subtitle = document.getElementById('reminderModalSubtitle');
     const textarea = document.getElementById('reminderTextarea');
-    const title = document.getElementById('reminderModalTitle');
     const copyBtn = document.getElementById('btnCopyFromModal');
     const sendWaBtn = document.getElementById('btnSendWaFromModal');
+    const phoneWrap = document.getElementById('reminderPhoneInputWrap');
+
+    if (modalBox) {
+        modalBox.classList.remove('theme-whatsapp');
+        modalBox.classList.add('theme-telegram');
+    }
+    if (brandWrap) {
+        brandWrap.classList.remove('theme-whatsapp');
+        brandWrap.classList.add('theme-telegram');
+    }
+    if (brandIcon) {
+        brandIcon.className = 'fa-brands fa-telegram text-sky-400';
+    }
+    if (title) {
+        title.textContent = 'Pratinjau Tagihan Telegram';
+    }
+    if (caption) {
+        caption.textContent = 'Format pesan teks polos resmi Telegram';
+    }
 
     if (sendWaBtn) {
         sendWaBtn.style.display = 'none';
     }
-
-    if (title) {
-        title.innerHTML = '<i class="fa-brands fa-telegram" style="color: #38bdf8; margin-right: 8px;"></i>Pratinjau Tagihan Telegram';
+    if (phoneWrap) {
+        phoneWrap.style.display = 'none';
     }
+
     if (subtitle) {
         const usernameDisp = tenant.username ? `@${tenant.username.replace(/^@/, '')}` : (tenant.shop_name || 'Bot Member');
         subtitle.innerHTML = `
             <div class="recipient-badge-item">
-                <span class="badge-main">
-                    <i class="fa-solid fa-user-tag" style="color: #38bdf8;"></i>
-                    <span class="badge-label">Penerima:</span>
-                </span>
+                <i class="fa-solid fa-user-tag text-sky-400"></i>
+                <span class="badge-label">Penerima:</span>
                 <b class="badge-value">${escapeHtml(usernameDisp)}</b>
             </div>
             <span class="recipient-badge-divider">&middot;</span>
             <div class="recipient-badge-item">
-                <span class="badge-main">
-                    <i class="fa-solid fa-store" style="color: #60a5fa;"></i>
-                    <span class="badge-label">Toko:</span>
-                </span>
+                <i class="fa-solid fa-store text-blue-400"></i>
+                <span class="badge-label">Toko:</span>
                 <b class="badge-value">${escapeHtml(tenant.shop_name || '-')}</b>
+            </div>
+            <span class="recipient-badge-divider">&middot;</span>
+            <div class="recipient-badge-item">
+                <i class="fa-solid fa-robot text-cyan-400"></i>
+                <span class="badge-label">ID:</span>
+                <b class="badge-value">${escapeHtml(tenant.bot_id || '-')}</b>
             </div>
         `;
     }
     if (textarea) {
         textarea.value = text;
+        textarea.oninput = () => updateReminderCharCount(textarea.value.length, 'tg');
     }
+    updateReminderCharCount(text.length, 'tg');
+
     if (copyBtn) {
-        copyBtn.className = 'btn-modal-copy-primary theme-tg';
-        copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> <span>Salin Teks</span>';
+        copyBtn.className = 'btn-glass btn-cyan flex-1 justify-center py-2.5 text-xs sm:text-sm font-semibold cursor-pointer';
+        copyBtn.innerHTML = '<i class="fa-regular fa-copy" aria-hidden="true"></i> <span>Salin Teks</span>';
     }
     openReminderModal();
 }
@@ -2151,75 +2189,103 @@ function formatPhoneNumberForWa(raw) {
 }
 
 function handleSendToWhatsApp(group, text) {
-    let targetPhone = formatPhoneNumberForWa(group.user_jid);
+    const phoneInput = document.getElementById('reminderTargetPhone');
+    let targetPhone = null;
 
-    if (!targetPhone) {
-        const inputNum = prompt(
-            `Nomor WhatsApp untuk grup "${group.group_name || ''}" belum terdaftar di database.\n\nMasukkan nomor WhatsApp tujuan (contoh: 08123456789 atau +60189020700):`
-        );
-        if (!inputNum || !inputNum.trim()) return;
-        targetPhone = formatPhoneNumberForWa(inputNum.trim());
-        if (!targetPhone) {
-            showToast('Nomor WhatsApp yang dimasukkan tidak valid', 'error');
-            return;
-        }
+    if (phoneInput && phoneInput.value.trim()) {
+        targetPhone = formatPhoneNumberForWa(phoneInput.value.trim());
+    }
+    if (!targetPhone && group.user_jid) {
+        targetPhone = formatPhoneNumberForWa(group.user_jid);
     }
 
-    // Bersihkan karakter emoji atau surrogate pair agar wa.me redirect tidak menghasilkan  (%EF%BF%BD)
+    // Bersihkan karakter emoji atau surrogate pair agar wa.me redirect tidak menghasilkan (%EF%BF%BD)
     const cleanText = text
         ? text.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').replace(/[\u2600-\u27BF]/g, '').replace(/\uFE0F/g, '').trim()
         : '';
 
-    const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(cleanText)}`;
+    let waUrl = '';
+    if (targetPhone) {
+        waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(cleanText)}`;
+        showToast(`Membuka WhatsApp ke +${targetPhone}...`, 'success');
+    } else {
+        waUrl = `https://wa.me/?text=${encodeURIComponent(cleanText)}`;
+        showToast('Membuka WhatsApp... Silakan pilih kontak tujuan', 'info');
+    }
 
     window.open(waUrl, '_blank');
-    showToast(`Membuka WhatsApp ke +${targetPhone}...`, 'success');
 }
 
 function handlePreviewReminderWa(group) {
     const text = buildWaReminderText(group);
+    const modalBox = document.getElementById('reminderModalBox');
+    const brandWrap = document.getElementById('reminderBrandIconWrap');
+    const brandIcon = document.getElementById('reminderBrandIcon');
+    const title = document.getElementById('reminderModalTitle');
+    const caption = document.getElementById('reminderModalCaption');
     const subtitle = document.getElementById('reminderModalSubtitle');
     const textarea = document.getElementById('reminderTextarea');
-    const title = document.getElementById('reminderModalTitle');
     const copyBtn = document.getElementById('btnCopyFromModal');
     const sendWaBtn = document.getElementById('btnSendWaFromModal');
+    const phoneWrap = document.getElementById('reminderPhoneInputWrap');
+    const phoneInput = document.getElementById('reminderTargetPhone');
 
-    if (title) {
-        title.innerHTML = '<i class="fa-brands fa-whatsapp" style="color: #22c55e; margin-right: 8px;"></i>Pratinjau Tagihan WhatsApp';
+    if (modalBox) {
+        modalBox.classList.remove('theme-telegram');
+        modalBox.classList.add('theme-whatsapp');
     }
+    if (brandWrap) {
+        brandWrap.classList.remove('theme-telegram');
+        brandWrap.classList.add('theme-whatsapp');
+    }
+    if (brandIcon) {
+        brandIcon.className = 'fa-brands fa-whatsapp text-emerald-400';
+    }
+    if (title) {
+        title.textContent = 'Pratinjau Tagihan WhatsApp';
+    }
+    if (caption) {
+        caption.textContent = 'Format pesan resmi WhatsApp & tautan langsung wa.me';
+    }
+
+    const hasPhone = Boolean(formatPhoneNumberForWa(group.user_jid));
+    if (phoneWrap) {
+        phoneWrap.style.display = hasPhone ? 'none' : 'block';
+    }
+    if (phoneInput) {
+        phoneInput.value = hasPhone ? (formatPhoneNumberForWa(group.user_jid) || '') : '';
+    }
+
     if (subtitle) {
         subtitle.innerHTML = `
             <div class="recipient-badge-item">
-                <span class="badge-main">
-                    <i class="fa-solid fa-user" style="color: #22c55e;"></i>
-                    <span class="badge-label">Penyewa:</span>
-                </span>
+                <i class="fa-solid fa-user text-emerald-400"></i>
+                <span class="badge-label">Penyewa:</span>
                 <b class="badge-value">${escapeHtml(group.renter_name || '-')}</b>
             </div>
             <span class="recipient-badge-divider">&middot;</span>
             <div class="recipient-badge-item">
-                <span class="badge-main">
-                    <i class="fa-solid fa-user-group" style="color: #34d399;"></i>
-                    <span class="badge-label">Grup:</span>
-                </span>
+                <i class="fa-solid fa-user-group text-emerald-400"></i>
+                <span class="badge-label">Grup:</span>
                 <b class="badge-value">${escapeHtml(group.group_name || '-')}</b>
             </div>
             <span class="recipient-badge-divider">&middot;</span>
             <div class="recipient-badge-item">
-                <span class="badge-main">
-                    <i class="fa-brands fa-whatsapp" style="color: #22c55e;"></i>
-                    <span class="badge-label">Nomor:</span>
-                </span>
+                <i class="fa-brands fa-whatsapp text-emerald-400"></i>
+                <span class="badge-label">Nomor:</span>
                 <b class="badge-value">${escapeHtml(group.user_jid || 'Belum diisi')}</b>
             </div>
         `;
     }
     if (textarea) {
         textarea.value = text;
+        textarea.oninput = () => updateReminderCharCount(textarea.value.length, 'wa');
     }
+    updateReminderCharCount(text.length, 'wa');
+
     if (copyBtn) {
-        copyBtn.className = 'btn-modal-copy-primary theme-wa-blue';
-        copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> <span>Salin Teks</span>';
+        copyBtn.className = 'btn-glass btn-cyan flex-1 justify-center py-2.5 text-xs sm:text-sm font-semibold cursor-pointer';
+        copyBtn.innerHTML = '<i class="fa-regular fa-copy" aria-hidden="true"></i> <span>Salin Teks</span>';
     }
     if (sendWaBtn) {
         sendWaBtn.style.display = 'inline-flex';

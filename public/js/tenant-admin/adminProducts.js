@@ -1,5 +1,5 @@
 import { supabase } from '../shared/supabaseClient.js';
-import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, urlParams, initTenant, currentBotId, refreshTelegramData } from '../shared/store.js';
+import { tg, tgUser, fetchShopSettings, shopSettings, checkIsAdmin, fetchAdminStats, fetchAdminCatalog, clearCatalogCache, urlParams, initTenant, currentBotId, refreshTelegramData } from '../shared/store.js';
 import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, normalizeImageUrl, escapeHtml } from '../shared/utils.js';
 import { openStockModal, initAdminStock, initSmoothSelect, syncSmoothSelect } from './adminStock.js';
 
@@ -331,6 +331,7 @@ export async function initAdminApp() {
 }
 
 export async function refreshAdminData() {
+  clearCatalogCache();
   const [stats, products] = await Promise.all([fetchAdminStats(), fetchAdminCatalog(adminAuthToken)]);
 
   latestAdminStats = stats;
@@ -378,63 +379,54 @@ function renderAdminView(stats = null) {
   if (eStock) eStock.textContent = stats?.stock_available ?? products.reduce((sum, p) => sum + p.stock_count, 0);
 
   // Real Stats from Database (Highly optimized)
-  if (stats) {
-    if (eUsers) eUsers.textContent = stats.users;
-    if (eOrderToday) eOrderToday.textContent = stats.orders_today;
-    if (eRevenue) eRevenue.textContent = formatCurrency(stats.revenue_lifetime);
-    if (eSold) eSold.textContent = stats.sold_lifetime;
-  }
+  if (eSold) eSold.textContent = stats?.sold_lifetime != null ? Number(stats.sold_lifetime).toLocaleString('id-ID') : '0';
+  if (eUsers) eUsers.textContent = stats?.users != null ? Number(stats.users).toLocaleString('id-ID') : '0';
+  if (eOrderToday) eOrderToday.textContent = stats?.orders_today != null ? Number(stats.orders_today).toLocaleString('id-ID') : '0';
+  if (eRevenue) eRevenue.textContent = stats?.revenue_lifetime != null ? formatCurrency(stats.revenue_lifetime) : 'Rp 0';
 
   filterAndRenderAdminProducts();
 }
 
+// ── Search & Filter Logic ───────────────────────────────────────────────────────
 let adminSearchInput = null;
 let btnClearAdminSearch = null;
 let currentAdminSearchQuery = '';
-
-// ── Search Bar Dynamic Running Placeholder Animation ────────────────────────
-const placeholderTexts = [
-  'Cari nama produk...',
-  'Ketik nama produk yang dicari...',
-  'Cari produk Netflix, Spotify, Canva...',
-  'Temukan nama produk di sini...',
-];
-
+let isSearchInputFocused = false;
+let typewriterTimeout = null;
 let placeholderIndex = 0;
 let charIndex = 0;
-let isDeleting = 0;
-let typewriterTimeout = null;
-let isSearchInputFocused = false;
+let isDeleting = false;
+const searchPlaceholders = ['Cari nama produk...', 'Cari Netflix...', 'Cari Spotify...', 'Cari Youtube...', 'Cari Canva...'];
 
 function typePlaceholder() {
-  if (!adminSearchInput || isSearchInputFocused || (adminSearchInput.value && adminSearchInput.value.length > 0)) {
-    return;
-  }
+  if (isSearchInputFocused || !adminSearchInput) return;
 
-  const currentText = placeholderTexts[placeholderIndex];
+  const currentWord = searchPlaceholders[placeholderIndex];
   if (isDeleting) {
+    adminSearchInput.setAttribute('placeholder', currentWord.substring(0, charIndex - 1));
     charIndex--;
-    adminSearchInput.setAttribute('placeholder', currentText.substring(0, charIndex));
   } else {
+    adminSearchInput.setAttribute('placeholder', currentWord.substring(0, charIndex + 1));
     charIndex++;
-    adminSearchInput.setAttribute('placeholder', currentText.substring(0, charIndex));
   }
 
-  let typeSpeed = isDeleting ? 35 : 75;
+  let typeSpeed = isDeleting ? 40 : 80;
 
-  if (!isDeleting && charIndex === currentText.length) {
-    typeSpeed = 2200; // Pause when full text is displayed
-    isDeleting = 1;
+  if (!isDeleting && charIndex === currentWord.length) {
+    typeSpeed = 1800;
+    isDeleting = true;
   } else if (isDeleting && charIndex === 0) {
-    isDeleting = 0;
-    placeholderIndex = (placeholderIndex + 1) % placeholderTexts.length;
-    typeSpeed = 450; // Pause before typing next phrase
+    isDeleting = false;
+    placeholderIndex = (placeholderIndex + 1) % searchPlaceholders.length;
+    typeSpeed = 400;
   }
 
   typewriterTimeout = setTimeout(typePlaceholder, typeSpeed);
 }
 
 let isAdminSearchBound = false;
+let adminSearchDebounceTimer = null;
+
 export function bindAdminSearchEvents() {
   adminSearchInput = document.getElementById('admin-search-products');
   btnClearAdminSearch = document.getElementById('btn-clear-admin-search');
@@ -451,7 +443,10 @@ export function bindAdminSearchEvents() {
           btnClearAdminSearch.classList.add('hidden');
         }
       }
-      filterAndRenderAdminProducts();
+      clearTimeout(adminSearchDebounceTimer);
+      adminSearchDebounceTimer = setTimeout(() => {
+        filterAndRenderAdminProducts();
+      }, 150);
     });
 
     adminSearchInput.addEventListener('focus', () => {

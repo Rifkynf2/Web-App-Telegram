@@ -33,6 +33,22 @@ body {
   background-attachment: fixed;
 }
 
+/* Touch Responsiveness & Tap Optimization for Mobile WebViews */
+html,
+body,
+button,
+a,
+input,
+select,
+textarea,
+.card-scroll,
+.btn-glass,
+.icon-btn,
+.nav-item {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Background Dot Matrix (Delicate subtle on mobile, 4-side fade out on tablet/PC) */
 .bg-dot-matrix {
   position: fixed;
@@ -354,34 +370,20 @@ html[data-theme="light"] .specular-accent-border::after {
 }
 
 /* Ambient Glow Decoration (GPU Composited) */
+/* Ambient Background Mesh — GPU-Friendly Composite (No expensive blur filter overhead) */
 .bg-decoration {
-  display: block;
   position: fixed;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
-  transform: translateZ(0);
-  will-change: transform;
+  background:
+    radial-gradient(circle at 10% 8%, rgba(59, 130, 246, 0.16) 0%, transparent 48%),
+    radial-gradient(circle at 90% 20%, rgba(139, 92, 246, 0.14) 0%, transparent 44%),
+    radial-gradient(circle at 50% 85%, rgba(6, 182, 212, 0.11) 0%, transparent 52%);
 }
 .bg-decoration span {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(140px);
-  opacity: 0.32;
-  transform: translateZ(0);
-}
-.bg-decoration span:nth-child(1) {
-  top: -12%; left: -10%; width: 50vw; height: 50vw;
-  background: rgba(59, 130, 246, 0.35);
-}
-.bg-decoration span:nth-child(2) {
-  top: 10%; right: -12%; width: 45vw; height: 45vw;
-  background: rgba(139, 92, 246, 0.28);
-}
-.bg-decoration span:nth-child(3) {
-  bottom: -15%; left: 25%; width: 45vw; height: 45vw;
-  background: rgba(6, 182, 212, 0.2);
+  display: none;
 }
 
 /* Loading state — liquid glass full-screen overlay (opt-in via .active) */
@@ -517,6 +519,43 @@ button[disabled],
 .glass-panel:hover {
   border-color: rgba(255, 255, 255, 0.16) !important;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Repeating Grid / List Cards — High Performance Glass (Eliminates mobile scroll thrashing) */
+#product-grid > div,
+.card-scroll,
+#admin-product-list > div {
+  background: linear-gradient(
+    145deg,
+    rgba(22, 32, 54, 0.85) 0%,
+    rgba(14, 22, 42, 0.90) 50%,
+    rgba(9, 14, 28, 0.96) 100%
+  ) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.42),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  border-radius: 1.25rem;
+  transform: translateZ(0);
+}
+
+html[data-theme="light"] #product-grid > div,
+html[data-theme="light"] .card-scroll,
+html[data-theme="light"] #admin-product-list > div {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.97) 0%,
+    rgba(244, 246, 255, 0.94) 50%,
+    rgba(238, 242, 255, 0.97) 100%
+  ) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 1px solid rgba(199, 210, 254, 0.7) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.12),
+              inset 0 1.5px 0.5px rgba(255, 255, 255, 1) !important;
 }
 
 /* Product Card Canvas (Inner Image Container) */
@@ -1049,17 +1088,25 @@ html[data-theme="light"] .custom-select-option.selected {
 
 .detail-page-slide {
   z-index: 200 !important;
-  transform: translateX(100%);
+  transform: translate3d(100%, 0, 0);
   visibility: hidden;
   pointer-events: none;
-  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1), visibility 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform, visibility;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-overflow-scrolling: touch;
 }
 
 .detail-page-slide.active {
   z-index: 200 !important;
-  transform: translateX(0);
+  transform: translate3d(0, 0, 0);
   visibility: visible;
   pointer-events: auto;
+}
+
+/* Mobile GPU optimization: inside opaque slide panels, disable expensive nested backdrop-filters */
+.detail-page-slide .liquid-glass {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 /* Card scroll-triggered entrance */

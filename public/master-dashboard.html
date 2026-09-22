@@ -1,1180 +1,1972 @@
-<!DOCTYPE html>
+<!doctype html>
 <html class="dark" lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Super Dashboard — SaaS Bot Rental & RNF Shop Finance Console. Monitoring real-time tenant, manajemen keuangan toko digital.">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Super Dashboard — SaaS Bot Rental & RNF Shop Finance Console. Monitoring real-time tenant, manajemen keuangan toko digital." />
     <title>Super Dashboard — SaaS & RNF Shop</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
-    <!-- Cache-Busting & Freshness Directives | Build: 2026-09-19 -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-
-    <!-- Preconnect to CDNs & External Resources -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <!-- Preconnect to Font & Library CDNs -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 
     <!-- Preload Critical LCP Hero Image -->
-    <link rel="preload" href="/images/cloud-server.svg" as="image" type="image/svg+xml" fetchpriority="high">
+    <link
+      rel="preload"
+      href="/images/cloud-server.svg"
+      as="image"
+      type="image/svg+xml"
+      fetchpriority="high" />
 
-    <!-- Preload Compiled Stylesheets -->
-    <link rel="preload" href="/style/style.css?v=3.2" as="style">
-    <link rel="preload" href="/style/rnfshop-liquid.css?v=3.2" as="style">
-    <link rel="stylesheet" href="/style/style.css?v=3.2">
-    <link rel="stylesheet" href="/style/rnfshop-liquid.css?v=3.2">
+    <!-- Compiled Stylesheets -->
+    <link rel="preload" href="/style/style.css?v=3.3" as="style" />
+    <link rel="preload" href="/style/rnfshop-liquid.css?v=3.3" as="style" />
+    <link rel="stylesheet" href="/style/style.css?v=3.3" />
+    <link rel="stylesheet" href="/style/rnfshop-liquid.css?v=3.3" />
+
+    <!-- Complete Font Awesome 6 (All Icons: Solid, Regular, Brands) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer" />
 
     <!-- Non-Blocking Google Fonts: Plus Jakarta Sans -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"></noscript>
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      as="style"
+      onload="
+        this.onload = null;
+        this.rel = 'stylesheet';
+      " />
+    <noscript
+      ><link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    /></noscript>
 
-    <!-- Non-Blocking Font Awesome 6 -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"></noscript>
-
-    <!-- Non-Blocking Google Material Symbols Outlined -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"></noscript>
+    <!-- Google Material Symbols Outlined -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" />
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
     <!-- Chart.js 4 (Pre-registers all controllers, scales, and plugins) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+      defer></script>
 
     <!-- Preview Mode instant flash elimination -->
     <script>
-        const _pv = new URLSearchParams(window.location.search).get('preview');
-        if (_pv === 'true' || _pv === '1') document.documentElement.classList.add('is-preview-mode');
+      const _pv = new URLSearchParams(window.location.search).get("preview");
+      if (_pv === "true" || _pv === "1")
+        document.documentElement.classList.add("is-preview-mode");
     </script>
-</head>
-<body>
-
-<!-- ── Ambient Aurora Background Mesh (Vercel & Linear Luxe Console Style) ── -->
-<div class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true" style="transform: translateZ(0); will-change: transform;">
-    <!-- Top-Left Cyan Ambient Glow -->
-    <div class="absolute -top-[20%] left-[8%] w-162.5 h-130 rounded-full bg-cyan-500/8 blur-[130px]"></div>
-    <!-- Top-Right Indigo/Violet Ambient Glow -->
-    <div class="absolute -top-[15%] right-[5%] w-150 h-137.5 rounded-full bg-indigo-600/7 blur-[150px]"></div>
-    <!-- Center-Bottom Subtle Teal Accent -->
-    <div class="absolute bottom-[0%] left-[28%] w-137.5 h-100 rounded-full bg-teal-500/4 blur-[130px]"></div>
-    <!-- Delicate Tech Dot Grid Matrix -->
-    <div class="absolute inset-0 bg-dot-grid opacity-60"></div>
-</div>
-<!-- LOGIN OVERLAY                                                -->
-<!-- ════════════════════════════════════════════════════════════ -->
-<div id="loginOverlay">
-    <!-- Ambient Aurora & Tech Dot Grid Matrix for Login Background (Same as Dashboard) -->
-    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+  </head>
+  <body>
+    <!-- ── Ambient Aurora Background Mesh (Vercel & Linear Luxe Console Style) ── -->
+    <div
+      class="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+      aria-hidden="true"
+      style="transform: translateZ(0); will-change: transform">
+      <!-- Top-Left Cyan Ambient Glow -->
+      <div
+        class="absolute -top-[20%] left-[8%] w-162.5 h-130 rounded-full bg-cyan-500/8 blur-[130px]"></div>
+      <!-- Top-Right Indigo/Violet Ambient Glow -->
+      <div
+        class="absolute -top-[15%] right-[5%] w-150 h-137.5 rounded-full bg-indigo-600/7 blur-[150px]"></div>
+      <!-- Center-Bottom Subtle Teal Accent -->
+      <div
+        class="absolute bottom-[0%] left-[28%] w-137.5 h-100 rounded-full bg-teal-500/4 blur-[130px]"></div>
+      <!-- Delicate Tech Dot Grid Matrix -->
+      <div class="absolute inset-0 bg-dot-grid opacity-60"></div>
+    </div>
+    <!-- LOGIN OVERLAY                                                -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="loginOverlay">
+      <!-- Ambient Aurora & Tech Dot Grid Matrix for Login Background (Same as Dashboard) -->
+      <div
+        class="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+        aria-hidden="true">
         <!-- Top-Left Cyan Ambient Glow -->
-        <div class="absolute -top-[20%] left-[8%] w-162.5 h-130 rounded-full bg-cyan-500/10 blur-[130px]"></div>
+        <div
+          class="absolute -top-[20%] left-[8%] w-162.5 h-130 rounded-full bg-cyan-500/10 blur-[130px]"></div>
         <!-- Top-Right Indigo/Violet Ambient Glow -->
-        <div class="absolute -top-[15%] right-[5%] w-150 h-137.5 rounded-full bg-indigo-600/10 blur-[150px]"></div>
+        <div
+          class="absolute -top-[15%] right-[5%] w-150 h-137.5 rounded-full bg-indigo-600/10 blur-[150px]"></div>
         <!-- Center-Bottom Subtle Teal Accent -->
-        <div class="absolute bottom-[0%] left-[28%] w-137.5 h-100 rounded-full bg-teal-500/6 blur-[130px]"></div>
+        <div
+          class="absolute bottom-[0%] left-[28%] w-137.5 h-100 rounded-full bg-teal-500/6 blur-[130px]"></div>
         <!-- Delicate Tech Dot Grid Matrix -->
         <div class="absolute inset-0 bg-dot-grid opacity-75"></div>
-    </div>
+      </div>
 
-    <!-- BEGIN: SplitCanvasCard -->
-    <div class="auth-split-card relative z-10" data-purpose="auth-container">
+      <!-- BEGIN: SplitCanvasCard -->
+      <div class="auth-split-card relative z-10" data-purpose="auth-container">
         <!-- Subtle corner edge decorative accent -->
         <div class="auth-specular-accent"></div>
 
         <!-- BEGIN: LeftAuthenticationColumn (Columns: 5 / 12 on PC) -->
         <div class="auth-left-col" data-purpose="login-form-section">
-            <!-- Brand Identity Section (Visible on Mobile/Tablet < lg, Hidden on PC lg) -->
-            <div class="auth-brand-header items-center space-x-3 mb-8" data-purpose="brand-header">
-                <div class="w-9 h-9 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-center p-1 shadow-inner overflow-hidden">
-                    <img src="/images/cloud-server.svg" alt="Super Dashboard Icon" class="w-full h-full object-contain">
+          <!-- Brand Identity Section (Visible on Mobile/Tablet < lg, Hidden on PC lg) -->
+          <div
+            class="auth-brand-header items-center space-x-3 mb-8"
+            data-purpose="brand-header">
+            <div
+              class="w-9 h-9 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-center p-1 shadow-inner overflow-hidden">
+              <img
+                src="/images/cloud-server.svg"
+                alt="Super Dashboard Icon"
+                class="w-full h-full object-contain" />
+            </div>
+            <div class="flex flex-col">
+              <span
+                class="text-base font-bold tracking-tight text-white leading-tight"
+                >Super Dashboard</span
+              >
+              <div class="flex items-center space-x-1.5 mt-0.5">
+                <span
+                  class="w-1.5 h-1.5 rounded-full bg-[#10b981] inline-block shadow-[0_0_8px_#10b981]"></span>
+                <span
+                  class="text-[11px] font-medium tracking-wide text-slate-400 uppercase"
+                  >RNFBOT &amp; RNF SHOP</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Typography: Heading & Subtitle -->
+          <div class="space-y-3 mb-8">
+            <h1
+              class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              Sign in to Super Dashboard
+            </h1>
+            <p
+              class="text-slate-400 text-sm font-normal leading-relaxed max-w-sm">
+              Enter your admin secret key to access bot rental management and
+              RNF SHOP store cashflow.
+            </p>
+          </div>
+
+          <!-- Authentication Form -->
+          <form class="space-y-6" id="loginForm" data-purpose="credential-form">
+            <!-- Container Field Admin Secret Key -->
+            <div class="space-y-2">
+              <!-- Top Label -->
+              <div class="flex items-center text-xs">
+                <label
+                  for="adminSecret"
+                  class="font-semibold tracking-wider uppercase text-slate-300 text-[11px]">
+                  Admin Secret Key
+                </label>
+              </div>
+
+              <!-- Modern Interactive Input Container -->
+              <div class="relative group">
+                <!-- Password Input Field -->
+                <input
+                  type="password"
+                  id="adminSecret"
+                  name="adminSecret"
+                  placeholder="••••••••••••••••••••"
+                  autocomplete="current-password"
+                  required
+                  class="w-full pl-10 pr-11 py-3.5 bg-[#080d19]/90 border border-slate-700/70 rounded-xl text-white placeholder-slate-600 text-sm font-mono tracking-widest focus:outline-none focus:border-cyan-400/90 focus:ring-2 focus:ring-cyan-500/25 transition-all duration-200 shadow-inner" />
+
+                <!-- Icon Left (Lock) with High-Visibility Cyan Accent -->
+                <div
+                  class="auth-input-lock absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-cyan-400 group-focus-within:text-cyan-300 transition-colors duration-200 z-10">
+                  <svg
+                    class="w-4 h-4 text-cyan-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
                 </div>
-                <div class="flex flex-col">
-                    <span class="text-base font-bold tracking-tight text-white leading-tight">Super Dashboard</span>
-                    <div class="flex items-center space-x-1.5 mt-0.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] inline-block shadow-[0_0_8px_#10b981]"></span>
-                        <span class="text-[11px] font-medium tracking-wide text-slate-400 uppercase">RNFBOT &amp; RNF SHOP</span>
-                    </div>
-                </div>
+
+                <!-- Toggle Password Visibility Button -->
+                <button
+                  type="button"
+                  id="toggle-visibility-btn"
+                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-cyan-400 group-focus-within:text-slate-300 transition-colors duration-200 focus:outline-none cursor-pointer z-10"
+                  aria-label="Toggle password visibility"
+                  title="Lihat / Sembunyikan Secret">
+                  <svg
+                    id="eye-icon"
+                    class="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <!-- Typography: Heading & Subtitle -->
-            <div class="space-y-3 mb-8">
-                <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">Sign in to Super Dashboard</h1>
-                <p class="text-slate-400 text-sm font-normal leading-relaxed max-w-sm">Enter your admin secret key to access bot rental management and RNF SHOP store cashflow.</p>
+            <!-- Primary Action Button: Solid Cyan CTA with Liquid Glow -->
+            <div class="pt-1">
+              <button
+                class="auth-cta-btn"
+                id="loginBtn"
+                data-purpose="submit-button"
+                type="submit">
+                <span>Access Dashboard</span>
+                <svg
+                  class="w-4 h-4 stroke-[2.5]"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  viewBox="0 0 24 24">
+                  <line x1="5" x2="19" y1="12" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
             </div>
-
-            <!-- Authentication Form -->
-            <form class="space-y-6" id="loginForm" data-purpose="credential-form">
-                <!-- Container Field Admin Secret Key -->
-                <div class="space-y-2">
-                    <!-- Top Label -->
-                    <div class="flex items-center text-xs">
-                        <label for="adminSecret" class="font-semibold tracking-wider uppercase text-slate-300 text-[11px]">
-                            Admin Secret Key
-                        </label>
-                    </div>
-
-                    <!-- Modern Interactive Input Container -->
-                    <div class="relative group">
-                        <!-- Password Input Field -->
-                        <input 
-                            type="password" 
-                            id="adminSecret"
-                            name="adminSecret"
-                            placeholder="••••••••••••••••••••"
-                            autocomplete="current-password"
-                            required
-                            class="w-full pl-10 pr-11 py-3.5 bg-[#080d19]/90 border border-slate-700/70 rounded-xl text-white placeholder-slate-600 text-sm font-mono tracking-widest focus:outline-none focus:border-cyan-400/90 focus:ring-2 focus:ring-cyan-500/25 transition-all duration-200 shadow-inner"
-                        />
-
-                        <!-- Icon Left (Lock) with High-Visibility Cyan Accent -->
-                        <div class="auth-input-lock absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-cyan-400 group-focus-within:text-cyan-300 transition-colors duration-200 z-10">
-                            <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                            </svg>
-                        </div>
-
-                        <!-- Toggle Password Visibility Button -->
-                        <button 
-                            type="button" 
-                            id="toggle-visibility-btn"
-                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-cyan-400 group-focus-within:text-slate-300 transition-colors duration-200 focus:outline-none cursor-pointer z-10"
-                            aria-label="Toggle password visibility"
-                            title="Lihat / Sembunyikan Secret"
-                        >
-                            <svg id="eye-icon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Primary Action Button: Solid Cyan CTA with Liquid Glow -->
-                <div class="pt-1">
-                    <button class="auth-cta-btn" id="loginBtn" data-purpose="submit-button" type="submit">
-                        <span>Access Dashboard</span>
-                        <svg class="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <line x1="5" x2="19" y1="12" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </button>
-                </div>
-            </form>
+          </form>
         </div>
         <!-- END: LeftAuthenticationColumn -->
 
         <!-- BEGIN: RightShowcaseColumn (Columns: 7 / 12 on PC) -->
         <div class="auth-right-col" data-purpose="hero-visual-showcase">
-            <!-- Depth Ambient Glow Backdrop -->
-            <div class="absolute inset-0 hero-radial-glow pointer-events-none"></div>
+          <!-- Depth Ambient Glow Backdrop -->
+          <div
+            class="absolute inset-0 hero-radial-glow pointer-events-none"></div>
 
-            <!-- Central Isometric Graphic Display with gentle float ambience -->
-            <div class="relative z-10 flex flex-col items-center justify-center max-w-lg w-full">
-                <!-- Isometric Server Graphic Presentation -->
-                <div class="relative group transition-transform duration-700 hover:scale-[1.02]">
-                    <!-- Subtle soft pedestal shadow under the isometric block -->
-                    <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 w-4/5 h-12 bg-cyan-500/10 blur-2xl rounded-full pointer-events-none"></div>
-                    <!-- Isometric server image -->
-                    <img alt="RNFBOT Server Infrastructure Node" class="w-70 sm:w-85 lg:w-95 max-w-sm h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.7)] select-none" draggable="false" loading="eager" fetchpriority="high" src="/images/cloud-server.svg">
-                </div>
+          <!-- Central Isometric Graphic Display with gentle float ambience -->
+          <div
+            class="relative z-10 flex flex-col items-center justify-center max-w-lg w-full">
+            <!-- Isometric Server Graphic Presentation -->
+            <div
+              class="relative group transition-transform duration-700 hover:scale-[1.02]">
+              <!-- Subtle soft pedestal shadow under the isometric block -->
+              <div
+                class="absolute -bottom-8 left-1/2 -translate-x-1/2 w-4/5 h-12 bg-cyan-500/10 blur-2xl rounded-full pointer-events-none"></div>
+              <!-- Isometric server image -->
+              <img
+                alt="RNFBOT Server Infrastructure Node"
+                class="w-70 sm:w-85 lg:w-95 max-w-sm h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.7)] select-none"
+                draggable="false"
+                loading="eager"
+                fetchpriority="high"
+                src="/images/cloud-server.svg" />
             </div>
+          </div>
         </div>
         <!-- END: RightShowcaseColumn -->
+      </div>
+      <!-- END: SplitCanvasCard -->
     </div>
-    <!-- END: SplitCanvasCard -->
-</div>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- MAIN APP                                                      -->
-<!-- ════════════════════════════════════════════════════════════ -->
-<div id="mainApp" style="display:none;" class="relative z-10 flex min-h-screen p-3 sm:p-4 md:p-5 gap-4 md:gap-5">
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- MAIN APP                                                      -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div
+      id="mainApp"
+      style="display: none"
+      class="relative z-10 flex min-h-screen p-3 sm:p-4 md:p-5 gap-4 md:gap-5">
+      <!-- ── Backdrop (Mobile & Tablet) ─────────────────────── -->
+      <div id="sidebarBackdrop" onclick="closeSidebar()"></div>
 
-    <!-- ── Backdrop (Mobile & Tablet) ─────────────────────── -->
-    <div id="sidebarBackdrop" onclick="closeSidebar()"></div>
-
-    <!-- ════════════════════════════════════════════════════════ -->
-    <!-- SIDEBAR                                                  -->
-    <!-- ════════════════════════════════════════════════════════ -->
-    <aside id="appSidebar"
-        class="liquid-sidebar fixed lg:sticky top-0 lg:top-5 inset-y-0 left-0 z-50
-               w-72 lg:rounded-3xl
-               flex flex-col justify-between shrink-0
-               h-screen lg:h-[calc(100vh-2.5rem)]
-               overflow-hidden">
-
+      <!-- ════════════════════════════════════════════════════════ -->
+      <!-- SIDEBAR                                                  -->
+      <!-- ════════════════════════════════════════════════════════ -->
+      <aside
+        id="appSidebar"
+        class="liquid-sidebar fixed lg:sticky top-0 lg:top-5 inset-y-0 left-0 z-50 w-72 lg:rounded-3xl flex flex-col justify-between shrink-0 h-screen lg:h-[calc(100vh-2.5rem)] overflow-hidden">
         <!-- Top: Brand + Mode Switcher -->
         <div class="p-5 flex flex-col gap-4 border-b border-white/6">
-            <!-- Brand: Borderless SVG logo with subtle light glow effect -->
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="relative flex items-center justify-center shrink-0">
-                        <img src="/images/cloud-server.svg" alt="Cloud Server" class="w-8 h-8 object-contain drop-shadow-[0_0_12px_rgba(6,182,212,0.75)] hover:drop-shadow-[0_0_16px_rgba(6,182,212,0.95)] transition-all">
-                    </div>
-                    <div>
-                        <h2 class="font-extrabold text-sm bg-linear-to-r from-white to-slate-400 bg-clip-text text-transparent">Super Dashboard</h2>
-                        <div class="flex items-center gap-1.5 mt-0.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <span class="text-[9px] uppercase tracking-widest font-bold text-slate-400">RNFBOT & RNF SHOP</span>
-                        </div>
-                    </div>
+          <!-- Brand: Borderless SVG logo with subtle light glow effect -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="relative flex items-center justify-center shrink-0">
+                <img
+                  src="/images/cloud-server.svg"
+                  alt="Cloud Server"
+                  class="w-8 h-8 object-contain drop-shadow-[0_0_12px_rgba(6,182,212,0.75)] hover:drop-shadow-[0_0_16px_rgba(6,182,212,0.95)] transition-all" />
+              </div>
+              <div>
+                <h2
+                  class="font-extrabold text-sm bg-linear-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                  Super Dashboard
+                </h2>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span
+                    class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span
+                    class="text-[9px] uppercase tracking-widest font-bold text-slate-400"
+                    >RNFBOT & RNF SHOP</span
+                  >
                 </div>
-                <!-- Close on mobile/tablet -->
-                <button class="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5" onclick="closeSidebar()" aria-label="Tutup menu navigasi">
-                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-                </button>
+              </div>
             </div>
+            <!-- Close on mobile/tablet -->
+            <button
+              class="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5"
+              onclick="closeSidebar()"
+              aria-label="Tutup menu navigasi">
+              <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+          </div>
 
-            <!-- Mode Switcher -->
-            <div class="liquid-mode-switcher p-1 rounded-xl">
-                <div class="grid grid-cols-2 gap-1 text-[11px] font-bold text-center">
-                    <button id="btnModeSaas"
-                        class="py-1.5 px-2 rounded-lg bg-linear-to-r from-cyan-500/20 to-blue-600/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.18)] transition-all flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-display text-cyan-400 text-xs"></i> Rental SaaS
-                    </button>
-                    <button id="btnModeShop"
-                        class="py-1.5 px-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/4 transition-all flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-circle-dollar-to-slot text-slate-400 text-xs"></i> Shop Finance
-                    </button>
-                </div>
+          <!-- Mode Switcher -->
+          <div class="liquid-mode-switcher p-1 rounded-xl">
+            <div
+              class="grid grid-cols-2 gap-1 text-[11px] font-bold text-center">
+              <button
+                id="btnModeSaas"
+                class="py-1.5 px-2 rounded-lg bg-linear-to-r from-cyan-500/20 to-blue-600/20 text-cyan-300 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.18)] transition-all flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-display text-cyan-400 text-xs"></i> Rental
+                SaaS
+              </button>
+              <button
+                id="btnModeShop"
+                class="py-1.5 px-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/4 transition-all flex items-center justify-center gap-1.5">
+                <i
+                  class="fa-solid fa-circle-dollar-to-slot text-slate-400 text-xs"></i>
+                Shop Finance
+              </button>
             </div>
+          </div>
         </div>
 
         <!-- Nav -->
         <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+          <!-- Group: Bot Rental Management -->
+          <div id="sidebar-group-rental" class="sidebar-group-rental">
+            <div class="px-3 mb-2">
+              <span
+                class="text-[9px] uppercase font-bold tracking-widest text-cyan-400/70"
+                >Bot Rental Management</span
+              >
+            </div>
+            <ul class="space-y-0.5">
+              <li>
+                <button
+                  data-view="telegram"
+                  class="nav-item nav-item-active active relative group w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white font-semibold bg-linear-to-r from-cyan-500/18 via-cyan-500/6 to-transparent border border-cyan-500/30 transition-all">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-7 h-7 flex items-center justify-center text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(56,189,248,0.9)] transition-all">
+                      <i
+                        class="fa-brands fa-telegram text-base flex items-center justify-center"></i>
+                    </div>
+                    <span class="text-sm font-medium">Bot Telegram</span>
+                  </div>
+                </button>
+              </li>
+              <li>
+                <button
+                  data-view="whatsapp"
+                  class="nav-item relative group w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/6 transition-all">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-7 h-7 flex items-center justify-center text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(52,211,153,0.9)] transition-all">
+                      <i
+                        class="fa-brands fa-whatsapp text-base flex items-center justify-center"></i>
+                    </div>
+                    <span class="text-sm font-medium">Bot WhatsApp</span>
+                  </div>
+                </button>
+              </li>
+            </ul>
+          </div>
 
-            <!-- Group: Bot Rental Management -->
-            <div id="sidebar-group-rental" class="sidebar-group-rental">
-                <div class="px-3 mb-2">
-                    <span class="text-[9px] uppercase font-bold tracking-widest text-cyan-400/70">Bot Rental Management</span>
-                </div>
-                <ul class="space-y-0.5">
-                    <li>
-                        <button data-view="telegram"
-                            class="nav-item nav-item-active active relative group w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white font-semibold bg-linear-to-r from-cyan-500/18 via-cyan-500/6 to-transparent border border-cyan-500/30 transition-all">
-                            <div class="flex items-center gap-3">
-                                <div class="w-7 h-7 flex items-center justify-center text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(56,189,248,0.9)] transition-all">
-                                    <i class="fa-brands fa-telegram text-base flex items-center justify-center"></i>
-                                </div>
-                                <span class="text-sm font-medium">Bot Telegram</span>
-                            </div>
-                        </button>
-                    </li>
-                    <li>
-                        <button data-view="whatsapp"
-                            class="nav-item relative group w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/6 transition-all">
-                            <div class="flex items-center gap-3">
-                                <div class="w-7 h-7 flex items-center justify-center text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(52,211,153,0.9)] transition-all">
-                                    <i class="fa-brands fa-whatsapp text-base flex items-center justify-center"></i>
-                                </div>
-                                <span class="text-sm font-medium">Bot WhatsApp</span>
-                            </div>
-                        </button>
-                    </li>
-                </ul>
+          <!-- Group: Financial Overview & Administration (Shop Mode) -->
+          <div id="sidebar-group-shop" style="display: none" class="space-y-5">
+            <!-- Group: Financial Overview -->
+            <div>
+              <div class="px-3 mb-2">
+                <span
+                  class="text-[9px] uppercase font-bold tracking-widest text-violet-400/80"
+                  >Financial Overview</span
+                >
+              </div>
+              <ul class="space-y-0.5">
+                <li>
+                  <button
+                    data-view="rnf-overview"
+                    class="nav-item relative group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/6 transition-all">
+                    <div
+                      class="w-7 h-7 flex items-center justify-center text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(139,92,246,0.9)] transition-all">
+                      <i
+                        class="fa-solid fa-chart-line text-base flex items-center justify-center"></i>
+                    </div>
+                    <span class="text-sm font-medium">Overview</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    data-view="rnf-transactions"
+                    class="nav-item relative group w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/6 transition-all">
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-7 h-7 flex items-center justify-center text-teal-400 drop-shadow-[0_0_8px_rgba(20,184,166,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(20,184,166,0.9)] transition-all">
+                        <i
+                          class="fa-solid fa-receipt text-base flex items-center justify-center"></i>
+                      </div>
+                      <span class="text-sm font-medium">Transactions</span>
+                    </div>
+                  </button>
+                </li>
+              </ul>
             </div>
 
-            <!-- Group: Financial Overview & Administration (Shop Mode) -->
-            <div id="sidebar-group-shop" style="display: none;" class="space-y-5">
-                <!-- Group: Financial Overview -->
-                <div>
-                    <div class="px-3 mb-2">
-                        <span class="text-[9px] uppercase font-bold tracking-widest text-violet-400/80">Financial Overview</span>
+            <!-- Group: Administration -->
+            <div>
+              <div class="px-3 mb-2">
+                <span
+                  class="text-[9px] uppercase font-bold tracking-widest text-slate-400/60"
+                  >Administration</span
+                >
+              </div>
+              <ul class="space-y-0.5">
+                <li>
+                  <button
+                    data-view="rnf-apps"
+                    class="nav-item relative group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/6 transition-all">
+                    <div
+                      class="w-7 h-7 flex items-center justify-center text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(245,158,11,0.9)] transition-all">
+                      <i
+                        class="fa-solid fa-cubes text-base flex items-center justify-center"></i>
                     </div>
-                    <ul class="space-y-0.5">
-                        <li>
-                            <button data-view="rnf-overview"
-                                class="nav-item relative group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/6 transition-all">
-                                <div class="w-7 h-7 flex items-center justify-center text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(139,92,246,0.9)] transition-all">
-                                    <i class="fa-solid fa-chart-line text-base flex items-center justify-center"></i>
-                                </div>
-                                <span class="text-sm font-medium">Overview</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button data-view="rnf-transactions"
-                                class="nav-item relative group w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/6 transition-all">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-7 h-7 flex items-center justify-center text-teal-400 drop-shadow-[0_0_8px_rgba(20,184,166,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(20,184,166,0.9)] transition-all">
-                                        <i class="fa-solid fa-receipt text-base flex items-center justify-center"></i>
-                                    </div>
-                                    <span class="text-sm font-medium">Transactions</span>
-                                </div>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Group: Administration -->
-                <div>
-                    <div class="px-3 mb-2">
-                        <span class="text-[9px] uppercase font-bold tracking-widest text-slate-400/60">Administration</span>
-                    </div>
-                    <ul class="space-y-0.5">
-                        <li>
-                            <button data-view="rnf-apps"
-                                class="nav-item relative group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/6 transition-all">
-                                <div class="w-7 h-7 flex items-center justify-center text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.65)] group-hover:drop-shadow-[0_0_12px_rgba(245,158,11,0.9)] transition-all">
-                                    <i class="fa-solid fa-cubes text-base flex items-center justify-center"></i>
-                                </div>
-                                <span class="text-sm font-medium">Master Apps</span>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
+                    <span class="text-sm font-medium">Master Apps</span>
+                  </button>
+                </li>
+              </ul>
             </div>
+          </div>
         </nav>
 
         <!-- Bottom: User -->
         <div class="p-4 border-t border-white/6">
-            <div class="flex items-center justify-between p-1.5 rounded-xl hover:bg-white/4 transition-colors">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-linear-to-tr from-cyan-500 to-violet-600 flex items-center justify-center text-xs font-bold text-white shadow-glow-cyan">
-                        AD
-                    </div>
-                    <div class="min-w-0">
-                        <p class="text-xs font-semibold text-slate-200 truncate">Administrator</p>
-                        <p class="text-[10px] text-slate-400 truncate">Super Admin</p>
-                    </div>
-                </div>
-                <button id="btnLogoutSidebar" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors" title="Logout" aria-label="Keluar dari akun admin">
-                    <i class="fa-solid fa-right-from-bracket text-sm" aria-hidden="true"></i>
-                </button>
+          <div
+            class="flex items-center justify-between p-1.5 rounded-xl hover:bg-white/4 transition-colors">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <img
+                src="/images/boy.svg"
+                alt="Administrator"
+                class="w-8 h-8 rounded-full object-cover bg-white/95 border border-black shadow-glow-cyan" />
+              <div class="min-w-0">
+                <p class="text-xs font-semibold text-slate-200 truncate">
+                  Administrator
+                </p>
+                <p class="text-[10px] text-slate-400 truncate">Super Admin</p>
+              </div>
             </div>
+            <button
+              id="btnLogoutSidebar"
+              class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+              title="Logout"
+              aria-label="Keluar dari akun admin">
+              <i
+                class="fa-solid fa-right-from-bracket text-sm"
+                aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
-    </aside>
+      </aside>
 
-    <!-- ════════════════════════════════════════════════════════ -->
-    <!-- MAIN CONTENT WRAPPER                                     -->
-    <!-- ════════════════════════════════════════════════════════ -->
-    <div class="flex-1 flex flex-col min-w-0">
-
+      <!-- ════════════════════════════════════════════════════════ -->
+      <!-- MAIN CONTENT WRAPPER                                     -->
+      <!-- ════════════════════════════════════════════════════════ -->
+      <div class="flex-1 flex flex-col min-w-0">
         <!-- ── Sticky Top Navbar ──────────────────────────────── -->
-        <header class="liquid-navbar h-16 min-h-16 sticky top-0 lg:top-5 z-40 rounded-2xl px-4 sm:px-6 mb-4 flex items-center justify-between gap-3">
+        <header
+          class="liquid-navbar h-16 min-h-16 sticky top-0 lg:top-5 z-40 rounded-2xl px-4 sm:px-6 mb-4 flex items-center justify-between gap-3">
+          <!-- Left: 2-Bar Toggle + Breadcrumb -->
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <!-- Modern 2-Bar Stylist Panel Toggle (mobile & tablet) -->
+            <button
+              id="btnSidebarToggle"
+              aria-label="Toggle Sidebar"
+              class="btn-sidebar-toggle relative z-50"
+              onclick="toggleSidebar()">
+              <div class="btn-sidebar-toggle-inner">
+                <span class="bar bar-1"></span>
+                <span class="bar bar-2"></span>
+              </div>
+            </button>
 
-            <!-- Left: 2-Bar Toggle + Breadcrumb -->
-            <div class="flex items-center gap-3 flex-1 min-w-0">
-                <!-- Modern 2-Bar Stylist Panel Toggle (mobile & tablet) -->
-                <button id="btnSidebarToggle" aria-label="Toggle Sidebar" class="btn-sidebar-toggle relative z-50" onclick="toggleSidebar()">
-                    <div class="btn-sidebar-toggle-inner">
-                        <span class="bar bar-1"></span>
-                        <span class="bar bar-2"></span>
-                    </div>
-                </button>
+            <!-- Breadcrumb -->
+            <nav
+              class="flex items-center gap-1.5 text-xs font-medium text-slate-400 truncate">
+              <i
+                class="fa-solid fa-house text-cyan-400/70 text-xs"
+                aria-hidden="true"></i>
+              <span class="text-slate-400">/</span>
+              <span
+                id="breadcrumbSection"
+                class="hover:text-slate-200 cursor-pointer transition-colors"
+                >Bot Rental</span
+              >
+              <span class="text-slate-400">/</span>
+              <span id="breadcrumbCurrent" class="text-cyan-400 font-semibold"
+                >Bot Telegram</span
+              >
+            </nav>
+          </div>
 
-                <!-- Breadcrumb -->
-                <nav class="flex items-center gap-1.5 text-xs font-medium text-slate-400 truncate">
-                    <i class="fa-solid fa-house text-cyan-400/70 text-xs" aria-hidden="true"></i>
-                    <span class="text-slate-400">/</span>
-                    <span id="breadcrumbSection" class="hover:text-slate-200 cursor-pointer transition-colors">Bot Rental</span>
-                    <span class="text-slate-400">/</span>
-                    <span id="breadcrumbCurrent" class="text-cyan-400 font-semibold">Bot Telegram</span>
-                </nav>
+          <!-- Right: Actions -->
+          <div class="flex items-center gap-3">
+            <div
+              class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300">
+              <span
+                class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="font-medium text-[11px] text-slate-300"
+                >Live System</span
+              >
             </div>
-
-            <!-- Right: Actions -->
-            <div class="flex items-center gap-3">
-                <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span class="font-medium text-[11px] text-slate-300">Live System</span>
-                </div>
-                <!-- Refresh (context-aware: Bot Rental) -->
-                <button id="btnRefresh" class="btn-glass flex gap-1.5 items-center" aria-label="Muat ulang data">
-                    <i class="fa-solid fa-rotate text-cyan-400 text-xs" aria-hidden="true"></i>
-                    <span class="text-xs">Refresh</span>
-                </button>
-            </div>
+            <!-- Refresh (context-aware: Bot Rental) -->
+            <button
+              id="btnRefresh"
+              class="btn-glass flex gap-1.5 items-center"
+              aria-label="Muat ulang data">
+              <i
+                class="fa-solid fa-rotate text-cyan-400 text-xs"
+                aria-hidden="true"></i>
+              <span class="text-xs">Refresh</span>
+            </button>
+          </div>
         </header>
 
         <!-- ── Main Content ────────────────────────────────────── -->
         <main class="flex-1 space-y-5">
+          <!-- ──────────────────────────────────────────────── -->
+          <!-- METRICS: Bot Rental SaaS                         -->
+          <!-- ──────────────────────────────────────────────── -->
+          <div
+            id="metrics-rental"
+            class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="stat-card hover:border-cyan-500/30">
+              <div class="flex items-center justify-between mb-1">
+                <span
+                  class="text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                  >Total Tenants</span
+                >
+                <div
+                  class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                  <i class="fa-solid fa-store text-sm" aria-hidden="true"></i>
+                </div>
+              </div>
+              <div
+                class="text-2xl font-black text-white tabular-nums"
+                id="statTotalTenants">
+                —
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill bg-linear-to-r from-cyan-400 to-teal-400 w-3/4"></div>
+              </div>
+            </div>
+            <div class="stat-card hover:border-emerald-500/30">
+              <div class="flex items-center justify-between mb-1">
+                <span
+                  class="text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                  >Active</span
+                >
+                <div
+                  class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <i
+                    class="fa-solid fa-circle-check text-sm"
+                    aria-hidden="true"></i>
+                </div>
+              </div>
+              <div
+                class="text-2xl font-black text-white tabular-nums"
+                id="statActiveTenants">
+                —
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill bg-linear-to-r from-emerald-400 to-cyan-400 w-3/4"></div>
+              </div>
+            </div>
+            <div class="stat-card hover:border-amber-500/30">
+              <div class="flex items-center justify-between mb-1">
+                <span
+                  class="text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                  >Expiring Soon</span
+                >
+                <div
+                  class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <i
+                    class="fa-solid fa-hourglass-half text-sm"
+                    aria-hidden="true"></i>
+                </div>
+              </div>
+              <div
+                class="text-2xl font-black text-amber-400 tabular-nums"
+                id="statExpiring">
+                —
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill bg-linear-to-r from-amber-400 to-rose-400 w-1/4"></div>
+              </div>
+            </div>
+            <div class="stat-card hover:border-violet-500/30">
+              <div class="flex items-center justify-between mb-1">
+                <span
+                  class="text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                  >Total Revenue</span
+                >
+                <div
+                  class="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+                  <i
+                    class="fa-solid fa-money-bill-wave text-sm"
+                    aria-hidden="true"></i>
+                </div>
+              </div>
+              <div
+                class="text-xl font-black bg-linear-to-r from-cyan-300 to-teal-200 bg-clip-text text-transparent tabular-nums"
+                id="statRevenue">
+                —
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill bg-linear-to-r from-violet-400 to-cyan-400 w-4/5"></div>
+              </div>
+            </div>
+          </div>
 
-            <!-- ──────────────────────────────────────────────── -->
-            <!-- METRICS: Bot Rental SaaS                         -->
-            <!-- ──────────────────────────────────────────────── -->
-            <div id="metrics-rental" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div class="stat-card hover:border-cyan-500/30">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Tenants</span>
-                        <div class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                            <i class="fa-solid fa-store text-sm" aria-hidden="true"></i>
-                        </div>
-                    </div>
-                    <div class="text-2xl font-black text-white tabular-nums" id="statTotalTenants">—</div>
-                    <div class="progress-bar"><div class="progress-fill bg-linear-to-r from-cyan-400 to-teal-400 w-3/4"></div></div>
+          <!-- ──────────────────────────────────────────────── -->
+          <!-- METRICS: RNF Shop                                -->
+          <!-- ──────────────────────────────────────────────── -->
+          <div
+            id="metrics-rnfshop"
+            class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+            style="display: none">
+            <div class="stat-card hover:border-emerald-500/30">
+              <div class="flex items-center justify-between mb-1">
+                <span
+                  class="text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                  >Incoming</span
+                >
+                <div
+                  class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <i
+                    class="fa-solid fa-arrow-trend-up text-sm"
+                    aria-hidden="true"></i>
                 </div>
-                <div class="stat-card hover:border-emerald-500/30">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active</span>
-                        <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                            <i class="fa-solid fa-circle-check text-sm" aria-hidden="true"></i>
-                        </div>
-                    </div>
-                    <div class="text-2xl font-black text-white tabular-nums" id="statActiveTenants">—</div>
-                    <div class="progress-bar"><div class="progress-fill bg-linear-to-r from-emerald-400 to-cyan-400 w-3/4"></div></div>
+              </div>
+              <div
+                class="text-xl font-black text-emerald-400 tabular-nums"
+                id="rnf-stat-incoming">
+                Rp 0
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill bg-linear-to-r from-emerald-400 to-teal-400 w-4/5"></div>
+              </div>
+            </div>
+            <div class="stat-card hover:border-rose-500/30">
+              <div class="flex items-center justify-between mb-1">
+                <span
+                  class="text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                  >Outgoing</span
+                >
+                <div
+                  class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                  <i
+                    class="fa-solid fa-arrow-trend-down text-sm"
+                    aria-hidden="true"></i>
                 </div>
-                <div class="stat-card hover:border-amber-500/30">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Expiring Soon</span>
-                        <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                            <i class="fa-solid fa-hourglass-half text-sm" aria-hidden="true"></i>
-                        </div>
-                    </div>
-                    <div class="text-2xl font-black text-amber-400 tabular-nums" id="statExpiring">—</div>
-                    <div class="progress-bar"><div class="progress-fill bg-linear-to-r from-amber-400 to-rose-400 w-1/4"></div></div>
+              </div>
+              <div
+                class="text-xl font-black text-rose-400 tabular-nums"
+                id="rnf-stat-outgoing">
+                Rp 0
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill bg-linear-to-r from-rose-400 to-pink-400 w-1/3"></div>
+              </div>
+            </div>
+            <div class="stat-card hover:border-cyan-500/30">
+              <div class="flex items-center justify-between mb-1">
+                <span
+                  class="text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                  >Net Profit</span
+                >
+                <div
+                  class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                  <i class="fa-solid fa-wallet text-sm" aria-hidden="true"></i>
                 </div>
-                <div class="stat-card hover:border-violet-500/30">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Revenue</span>
-                        <div class="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-                            <i class="fa-solid fa-money-bill-wave text-sm" aria-hidden="true"></i>
-                        </div>
-                    </div>
-                    <div class="text-xl font-black bg-linear-to-r from-cyan-300 to-teal-200 bg-clip-text text-transparent tabular-nums" id="statRevenue">—</div>
-                    <div class="progress-bar"><div class="progress-fill bg-linear-to-r from-violet-400 to-cyan-400 w-4/5"></div></div>
+              </div>
+              <div
+                class="text-xl font-black text-cyan-400 tabular-nums"
+                id="rnf-stat-profit">
+                Rp 0
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill bg-linear-to-r from-cyan-400 to-teal-400 w-3/5"></div>
+              </div>
+            </div>
+            <div class="stat-card hover:border-violet-500/30">
+              <div class="flex items-center justify-between mb-1">
+                <span
+                  class="text-[11px] font-bold uppercase tracking-wider text-slate-400"
+                  >Total Transaksi</span
+                >
+                <div
+                  class="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+                  <i class="fa-solid fa-receipt text-sm" aria-hidden="true"></i>
                 </div>
+              </div>
+              <div
+                class="text-2xl font-black text-violet-300 tabular-nums"
+                id="rnf-stat-count">
+                0
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill bg-linear-to-r from-violet-400 to-indigo-400 w-2/3"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ════════════════════════════════════════════════ -->
+          <!-- VIEW 1: BOT TELEGRAM                             -->
+          <!-- ════════════════════════════════════════════════ -->
+          <section id="view-telegram" class="view-section active">
+            <!-- Header bar -->
+            <div class="liquid-card p-4 sm:p-5 mb-4">
+              <!-- Top row: Title/Subtitle on left, Action buttons on right (PC) or stacked (Mobile) -->
+              <div
+                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3.5">
+                <div class="flex items-center gap-3">
+                  <i class="fa-brands fa-telegram text-sky-400 text-2xl"></i>
+                  <div>
+                    <h2
+                      class="font-bold text-white text-base sm:text-lg leading-tight">
+                      Telegram Active Subscriptions
+                    </h2>
+                    <p class="text-xs text-slate-400">
+                      Real-time tenant monitoring &amp; subscription management
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="btn-glass btn-cyan text-xs"
+                    id="btnCopyTelegram"
+                    aria-label="Salin data tabel Telegram">
+                    <i class="fa-regular fa-copy" aria-hidden="true"></i
+                    ><span>Copy CSV</span>
+                  </button>
+                  <a
+                    href="https://docs.google.com/spreadsheets/d/13olCZtXPwaSdfCNI8GXdat_mKXPxJ-Om4vfJw81cL_I/edit?usp=sharing"
+                    target="_blank"
+                    rel="noopener"
+                    class="btn-glass btn-emerald text-xs no-underline inline-flex items-center gap-1.5"
+                    aria-label="Buka spreadsheet langganan Telegram">
+                    <i class="fa-solid fa-file-excel" aria-hidden="true"></i
+                    ><span>Spreadsheet</span>
+                  </a>
+                </div>
+              </div>
+              <!-- Bottom row: Search bar -->
+              <div class="search-bar-wrapper relative w-full">
+                <i
+                  class="fa-solid fa-magnifying-glass search-bar-icon text-cyan-400"
+                  aria-hidden="true"></i>
+                <input
+                  type="search"
+                  id="searchTelegram"
+                  autocomplete="off"
+                  placeholder="Cari Bot ID, Shop Name, @username..."
+                  class="input-glass search-bar-input w-full text-xs"
+                  aria-label="Cari Bot ID, Shop Name, atau Username Telegram" />
+              </div>
+            </div>
+            <div class="table-glass overflow-x-auto hide-scrollbar">
+              <table>
+                <colgroup>
+                  <col class="w-[18%]" />
+                  <col class="w-[26%]" />
+                  <col class="w-[14%]" />
+                  <col class="w-[14%]" />
+                  <col class="w-[14%]" />
+                  <col class="w-[14%]" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th class="text-left">Bot ID</th>
+                    <th class="text-left">Shop Name (@username)</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Rental</th>
+                    <th class="text-center">Expiry</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tenantsTableBody">
+                  <tr>
+                    <td colspan="6" class="text-center py-12 text-slate-400">
+                      <i
+                        class="fa-solid fa-spinner fa-spin text-xl text-cyan-400 block mb-2"
+                        aria-hidden="true"></i>
+                      Loading data...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ════════════════════════════════════════════════ -->
+          <!-- VIEW 2: BOT WHATSAPP                             -->
+          <!-- ════════════════════════════════════════════════ -->
+          <section id="view-whatsapp" class="view-section">
+            <!-- Header bar -->
+            <div class="liquid-card p-4 sm:p-5 mb-4">
+              <!-- Top row: Title/Subtitle on left, Action buttons on right (PC) or stacked (Mobile) -->
+              <div
+                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3.5">
+                <div class="flex items-center gap-3">
+                  <i
+                    class="fa-brands fa-whatsapp text-emerald-400 text-2xl"></i>
+                  <div>
+                    <h2
+                      class="font-bold text-white text-base sm:text-lg leading-tight">
+                      WhatsApp Active Subscriptions
+                    </h2>
+                    <p class="text-xs text-slate-400">
+                      Real-time tenant monitoring &amp; subscription management
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="btn-glass btn-emerald text-xs"
+                    id="btnCopyWhatsapp"
+                    aria-label="Salin data tabel WhatsApp">
+                    <i class="fa-regular fa-copy" aria-hidden="true"></i
+                    ><span>Copy CSV</span>
+                  </button>
+                  <a
+                    href="https://docs.google.com/spreadsheets/d/1ZrDqkxFLZx0dK6IP8Fo2LbtqFhqjioUmIRQtyLObzdI/edit?usp=sharing"
+                    target="_blank"
+                    rel="noopener"
+                    class="btn-glass btn-cyan text-xs no-underline inline-flex items-center gap-1.5"
+                    aria-label="Buka spreadsheet langganan WhatsApp">
+                    <i class="fa-solid fa-file-excel" aria-hidden="true"></i
+                    ><span>Spreadsheet</span>
+                  </a>
+                </div>
+              </div>
+              <!-- Bottom row: Search bar -->
+              <div class="search-bar-wrapper relative w-full">
+                <i
+                  class="fa-solid fa-magnifying-glass search-bar-icon text-emerald-400"
+                  aria-hidden="true"></i>
+                <input
+                  type="search"
+                  id="searchWhatsapp"
+                  autocomplete="off"
+                  placeholder="Cari Group ID, Group Name, Renter..."
+                  class="input-glass search-bar-input w-full text-xs"
+                  aria-label="Cari Group ID, Group Name, atau Renter WhatsApp" />
+              </div>
+            </div>
+            <div class="table-glass overflow-x-auto hide-scrollbar">
+              <table>
+                <colgroup>
+                  <col class="w-[20%]" />
+                  <col class="w-[24%]" />
+                  <col class="w-[16%]" />
+                  <col class="w-[12%]" />
+                  <col class="w-[14%]" />
+                  <col class="w-[14%]" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th class="text-left">Group ID</th>
+                    <th class="text-left">Group Name</th>
+                    <th class="text-center">Renter</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Expiry</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="waGroupsTableBody">
+                  <tr>
+                    <td colspan="6" class="text-center py-12 text-slate-400">
+                      <i
+                        class="fa-solid fa-spinner fa-spin text-xl text-emerald-400 block mb-2"
+                        aria-hidden="true"></i>
+                      Loading data...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ════════════════════════════════════════════════ -->
+          <!-- VIEW 3: RNF SHOP – OVERVIEW & GRAFIK (CONSOLIDATED) -->
+          <!-- ════════════════════════════════════════════════ -->
+          <section id="view-rnf-overview" class="view-section space-y-4">
+            <!-- Unified Financial & Sales Overview Card -->
+            <div
+              class="liquid-card card-overflow-visible relative z-20 p-5 sm:p-6 mb-4">
+              <div
+                class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                    <span class="material-symbols-outlined text-xl"
+                      >analytics</span
+                    >
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-base text-white tracking-tight">
+                      Financial Overview &amp; Trends
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                      Comprehensive cash flow analysis, net profit and store
+                      revenue performance
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Comprehensive Filter Bar -->
+              <div
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 items-end pt-2 pb-5 border-b border-white/6">
+                <!-- Transaction Type -->
+                <div class="flex flex-col gap-1.5 min-w-0">
+                  <label
+                    for="chart-type-filter"
+                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Transaction Type
+                  </label>
+                  <select id="chart-type-filter" class="w-full">
+                    <option value="all" selected>All Transactions</option>
+                    <option value="incoming">Incoming Only</option>
+                    <option value="outgoing">Outgoing Only</option>
+                  </select>
+                </div>
+
+                <!-- Time Period -->
+                <div class="flex flex-col gap-1.5 min-w-0">
+                  <label
+                    for="chart-filter"
+                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Time Period
+                  </label>
+                  <select id="chart-filter" class="w-full">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month" selected>This Month</option>
+                    <option value="2months">Last 2 Months</option>
+                    <option value="6months">Last 6 Months</option>
+                    <option value="1year">Last 1 Year</option>
+                  </select>
+                </div>
+
+                <!-- From Date -->
+                <div class="flex flex-col gap-1.5 min-w-0">
+                  <label
+                    for="date-from"
+                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    From Date
+                  </label>
+                  <div class="relative">
+                    <input
+                      id="date-from"
+                      type="date"
+                      required
+                      placeholder="dd/mm/yyyy"
+                      class="filter-date-input input-glass h-11 w-full min-w-0 text-xs font-medium rounded-xl pl-3.5 pr-10 outline-none shadow-2xs"
+                      aria-label="Filter dari tanggal transaksi" />
+                    <span
+                      class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <svg
+                        class="w-4 h-4"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path
+                          d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- To Date -->
+                <div class="flex flex-col gap-1.5 min-w-0">
+                  <label
+                    for="date-to"
+                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    To Date
+                  </label>
+                  <div class="relative">
+                    <input
+                      id="date-to"
+                      type="date"
+                      required
+                      placeholder="dd/mm/yyyy"
+                      class="filter-date-input input-glass h-11 w-full min-w-0 text-xs font-medium rounded-xl pl-3.5 pr-10 outline-none shadow-2xs"
+                      aria-label="Filter sampai tanggal transaksi" />
+                    <span
+                      class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <svg
+                        class="w-4 h-4"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path
+                          d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Clear Filter -->
+                <div
+                  class="col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-1 flex flex-col justify-end min-w-0">
+                  <button
+                    id="btnClearChartFilter"
+                    type="button"
+                    class="h-11 w-full text-xs font-bold text-slate-300 hover:text-rose-400 bg-white/5 hover:bg-rose-950/30 border border-white/10 hover:border-rose-800/50 rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 shadow-2xs cursor-pointer"
+                    title="Clear Filter"
+                    aria-label="Reset chart filters">
+                    <span
+                      class="material-symbols-outlined text-lg"
+                      aria-hidden="true"
+                      >filter_alt_off</span
+                    >
+                    <span>Clear Filter</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Integrated Sales Overview Chart Canvas -->
+              <div class="pt-5">
+                <div class="flex items-center gap-2 mb-3">
+                  <span
+                    class="material-symbols-outlined text-emerald-400 text-lg"
+                    >trending_up</span
+                  >
+                  <h4 class="font-bold text-white text-sm">
+                    Sales &amp; Cash Flow Trends
+                  </h4>
+                </div>
+                <div class="chart-canvas-wrapper h-72 sm:h-80 w-full">
+                  <canvas id="rnf-chart-trend"></canvas>
+                </div>
+              </div>
             </div>
 
-            <!-- ──────────────────────────────────────────────── -->
-            <!-- METRICS: RNF Shop                                -->
-            <!-- ──────────────────────────────────────────────── -->
-            <div id="metrics-rnfshop" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" style="display:none;">
-                <div class="stat-card hover:border-emerald-500/30">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Incoming</span>
-                        <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                            <i class="fa-solid fa-arrow-trend-up text-sm" aria-hidden="true"></i>
-                        </div>
+            <!-- Bottom Row: Recent Activities + Top Best Seller (Matching Reference) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+              <!-- Recent Activities (7 cols on lg) -->
+              <div
+                class="lg:col-span-7 liquid-card p-5 sm:p-6 flex flex-col justify-between h-full">
+                <div>
+                  <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="material-symbols-outlined text-cyan-400 text-xl"
+                        >history</span
+                      >
+                      <h3 class="font-bold text-base text-white tracking-tight">
+                        Recent Activities
+                      </h3>
                     </div>
-                    <div class="text-xl font-black text-emerald-400 tabular-nums" id="rnf-stat-incoming">Rp 0</div>
-                    <div class="progress-bar"><div class="progress-fill bg-linear-to-r from-emerald-400 to-teal-400 w-4/5"></div></div>
+                    <button
+                      id="ov-btn-view-all-trx"
+                      type="button"
+                      class="btn-glass px-3 py-1 text-xs font-semibold text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center gap-1 transition-all group active:scale-95 cursor-pointer"
+                      aria-label="Lihat semua transaksi RNF Shop">
+                      <span>View All</span>
+                      <span
+                        class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform"
+                        aria-hidden="true"
+                        >arrow_forward</span
+                      >
+                    </button>
+                  </div>
+                  <div class="overflow-x-auto hide-scrollbar">
+                    <table class="w-full text-left text-sm">
+                      <thead>
+                        <tr
+                          class="border-b border-white/10 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                          <th class="px-3 py-3 font-semibold text-left">
+                            DATE
+                          </th>
+                          <th class="px-3 py-3 font-semibold text-center">
+                            TYPE
+                          </th>
+                          <th class="px-3 py-3 font-semibold text-left">APP</th>
+                          <th class="px-3 py-3 font-semibold text-left">
+                            CUSTOMER
+                          </th>
+                          <th class="px-3 py-3 font-semibold text-right">
+                            AMOUNT
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody
+                        id="recent-activities-table-body"
+                        class="divide-y divide-white/4 text-xs">
+                        <tr>
+                          <td
+                            colspan="5"
+                            class="text-center py-8 text-slate-400">
+                            <i
+                              class="fa-solid fa-spinner fa-spin text-cyan-400 mr-1.5"
+                              aria-hidden="true"></i>
+                            Memuat aktivitas...
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div class="stat-card hover:border-rose-500/30">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Outgoing</span>
-                        <div class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                            <i class="fa-solid fa-arrow-trend-down text-sm" aria-hidden="true"></i>
-                        </div>
+              </div>
+
+              <!-- Top Best Seller (5 cols on lg) -->
+              <div
+                class="lg:col-span-5 liquid-card p-5 sm:p-6 flex flex-col justify-between h-full">
+                <div>
+                  <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="material-symbols-outlined text-amber-400 text-xl"
+                        >trophy</span
+                      >
+                      <h3 class="font-bold text-base text-white tracking-tight">
+                        Top Best Sellers
+                      </h3>
                     </div>
-                    <div class="text-xl font-black text-rose-400 tabular-nums" id="rnf-stat-outgoing">Rp 0</div>
-                    <div class="progress-bar"><div class="progress-fill bg-linear-to-r from-rose-400 to-pink-400 w-1/3"></div></div>
-                </div>
-                <div class="stat-card hover:border-cyan-500/30">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Net Profit</span>
-                        <div class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                            <i class="fa-solid fa-wallet text-sm" aria-hidden="true"></i>
-                        </div>
+                    <button
+                      id="ov-btn-view-catalog"
+                      type="button"
+                      class="btn-glass px-3 py-1 text-xs font-semibold text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-1 transition-all group active:scale-95 cursor-pointer"
+                      aria-label="Buka katalog aplikasi RNF Shop">
+                      <span>Catalog</span>
+                      <span
+                        class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform"
+                        aria-hidden="true"
+                        >arrow_forward</span
+                      >
+                    </button>
+                  </div>
+                  <div id="top-products-list" class="space-y-3">
+                    <div class="text-center py-8 text-slate-400 text-xs">
+                      <i
+                        class="fa-solid fa-spinner fa-spin text-amber-400 mr-1.5"
+                        aria-hidden="true"></i>
+                      Memuat best sellers...
                     </div>
-                    <div class="text-xl font-black text-cyan-400 tabular-nums" id="rnf-stat-profit">Rp 0</div>
-                    <div class="progress-bar"><div class="progress-fill bg-linear-to-r from-cyan-400 to-teal-400 w-3/5"></div></div>
+                  </div>
                 </div>
-                <div class="stat-card hover:border-violet-500/30">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Transaksi</span>
-                        <div class="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-                            <i class="fa-solid fa-receipt text-sm" aria-hidden="true"></i>
-                        </div>
-                    </div>
-                    <div class="text-2xl font-black text-violet-300 tabular-nums" id="rnf-stat-count">0</div>
-                    <div class="progress-bar"><div class="progress-fill bg-linear-to-r from-violet-400 to-indigo-400 w-2/3"></div></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ════════════════════════════════════════════════ -->
+          <!-- VIEW 4: RNF SHOP – DATA TRANSAKSI                -->
+          <!-- ════════════════════════════════════════════════ -->
+          <section id="view-rnf-transactions" class="view-section space-y-4">
+            <!-- Toolbar Card -->
+            <div
+              class="liquid-card card-overflow-visible relative z-20 p-4 sm:p-5">
+              <!-- Title + Action Buttons -->
+              <div
+                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <div>
+                  <h2 class="font-bold text-white text-base sm:text-lg">
+                    Transactions
+                  </h2>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    Manage all cash inflow &amp; outflow transactions
+                  </p>
                 </div>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    id="btn-add-trx"
+                    class="btn-glass btn-cyan text-xs"
+                    aria-label="Tambah transaksi manual baru">
+                    <i class="fa-solid fa-plus-circle" aria-hidden="true"></i
+                    ><span>Add Transaction</span>
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-toggle-import"
+                    class="btn-glass btn-violet text-xs"
+                    aria-label="Buka panel import receipts">
+                    <i
+                      class="fa-solid fa-wand-magic-sparkles"
+                      aria-hidden="true"></i
+                    ><span>Import Receipts</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Row 1: Full-Width Search Bar -->
+              <div class="mb-3">
+                <div class="search-bar-wrapper relative w-full">
+                  <i
+                    class="fa-solid fa-magnifying-glass search-bar-icon text-teal-400"
+                    aria-hidden="true"></i>
+                  <input
+                    type="search"
+                    id="searchInput"
+                    autocomplete="off"
+                    class="input-glass search-bar-input w-full text-xs"
+                    placeholder="Search customer / note / app..."
+                    aria-label="Cari transaksi customer, note, atau aplikasi" />
+                </div>
+              </div>
+
+              <!-- Row 2: 5 Filter Columns with Consistent Labels matching Reference Repo -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <!-- Sort Date -->
+                <div class="flex flex-col gap-1.5 min-w-0">
+                  <label
+                    for="sortBy"
+                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Sort By
+                  </label>
+                  <select
+                    id="sortBy"
+                    class="input-glass text-xs h-11 w-full"
+                    aria-label="Urutkan transaksi">
+                    <option value="date_desc">Newest First</option>
+                    <option value="date_asc">Oldest First</option>
+                    <option value="amount_desc">Highest Amount</option>
+                    <option value="amount_asc">Lowest Amount</option>
+                  </select>
+                </div>
+
+                <!-- All Types -->
+                <div class="flex flex-col gap-1.5 min-w-0">
+                  <label
+                    for="filterType"
+                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Transaction Type
+                  </label>
+                  <select
+                    id="filterType"
+                    class="input-glass text-xs h-11 w-full"
+                    aria-label="Filter tipe transaksi">
+                    <option value="all">All Transactions</option>
+                    <option value="incoming">Incoming Only</option>
+                    <option value="outgoing">Outgoing Only</option>
+                  </select>
+                </div>
+
+                <!-- Date From -->
+                <div class="flex flex-col gap-1.5 min-w-0">
+                  <label
+                    for="filterDateFrom"
+                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    From Date
+                  </label>
+                  <div class="relative">
+                    <input
+                      type="date"
+                      id="filterDateFrom"
+                      class="filter-date-input input-glass text-xs h-11 w-full pl-3.5 pr-10"
+                      placeholder="dd/mm/yyyy"
+                      title="From Date"
+                      aria-label="Filter transaksi dari tanggal" />
+                    <span
+                      class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <svg
+                        class="w-4 h-4"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path
+                          d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Date To -->
+                <div class="flex flex-col gap-1.5 min-w-0">
+                  <label
+                    for="filterDateTo"
+                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    To Date
+                  </label>
+                  <div class="relative">
+                    <input
+                      type="date"
+                      id="filterDateTo"
+                      class="filter-date-input input-glass text-xs h-11 w-full pl-3.5 pr-10"
+                      placeholder="dd/mm/yyyy"
+                      title="To Date"
+                      aria-label="Filter transaksi sampai tanggal" />
+                    <span
+                      class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <svg
+                        class="w-4 h-4"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path
+                          d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Clear Filter (Disejajarkan ke bawah dan hover diselaraskan dengan Overview) -->
+                <div class="flex flex-col justify-end min-w-0">
+                  <button
+                    type="button"
+                    id="btnClearDateFilter"
+                    class="h-11 w-full text-xs font-bold text-slate-300 hover:text-rose-400 bg-white/5 hover:bg-rose-950/30 border border-white/10 hover:border-rose-800/50 rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 shadow-2xs"
+                    title="Clear Filter"
+                    aria-label="Reset transaction filters">
+                    <span
+                      class="material-symbols-outlined text-lg"
+                      aria-hidden="true"
+                      >filter_alt_off</span
+                    >
+                    <span>Clear Filter</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <!-- ════════════════════════════════════════════════ -->
-            <!-- VIEW 1: BOT TELEGRAM                             -->
-            <!-- ════════════════════════════════════════════════ -->
-            <section id="view-telegram" class="view-section active">
-                <!-- Header bar -->
-                <div class="liquid-card p-4 sm:p-5 mb-4">
-                    <!-- Top row: Title/Subtitle on left, Action buttons on right (PC) or stacked (Mobile) -->
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3.5">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-brands fa-telegram text-sky-400 text-2xl"></i>
-                            <div>
-                                <h2 class="font-bold text-white text-base sm:text-lg leading-tight">Telegram Active Subscriptions</h2>
-                                <p class="text-xs text-slate-400">Real-time tenant monitoring &amp; subscription management</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button class="btn-glass btn-cyan text-xs" id="btnCopyTelegram" aria-label="Salin data tabel Telegram">
-                                <i class="fa-regular fa-copy" aria-hidden="true"></i><span>Copy CSV</span>
-                            </button>
-                            <a href="https://docs.google.com/spreadsheets/d/13olCZtXPwaSdfCNI8GXdat_mKXPxJ-Om4vfJw81cL_I/edit?usp=sharing"
-                                target="_blank" rel="noopener" class="btn-glass btn-emerald text-xs no-underline inline-flex items-center gap-1.5" aria-label="Buka spreadsheet langganan Telegram">
-                                <i class="fa-solid fa-file-excel" aria-hidden="true"></i><span>Spreadsheet</span>
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Bottom row: Search bar -->
-                    <div class="search-bar-wrapper relative w-full">
-                        <i class="fa-solid fa-magnifying-glass search-bar-icon text-cyan-400" aria-hidden="true"></i>
-                        <input type="search" id="searchTelegram" autocomplete="off" placeholder="Cari Bot ID, Shop Name, @username..."
-                            class="input-glass search-bar-input w-full text-xs" aria-label="Cari Bot ID, Shop Name, atau Username Telegram">
-                    </div>
+            <!-- Collapsible Import Raw Panel (Option A Embedded) -->
+            <div
+              id="rnf-import-panel"
+              class="liquid-card p-5 sm:p-6 hidden transition-all">
+              <div class="flex items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
+                    <i
+                      class="fa-solid fa-wand-magic-sparkles"
+                      aria-hidden="true"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-white text-sm">
+                      Telegram Receipt Parser
+                    </h3>
+                    <p class="text-xs text-slate-400">
+                      Paste "TRANSAKSI SUKSES" receipt text from your bot to
+                      auto-parse
+                    </p>
+                  </div>
                 </div>
-                <div class="table-glass overflow-x-auto hide-scrollbar">
-                    <table>
-                        <colgroup>
-                            <col class="w-[18%]">
-                            <col class="w-[26%]">
-                            <col class="w-[14%]">
-                            <col class="w-[14%]">
-                            <col class="w-[14%]">
-                            <col class="w-[14%]">
-                        </colgroup>
-                        <thead>
-                            <tr>
-                                <th class="text-left">Bot ID</th>
-                                <th class="text-left">Shop Name (@username)</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-center">Rental</th>
-                                <th class="text-center">Expiry</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tenantsTableBody">
-                            <tr><td colspan="6" class="text-center py-12 text-slate-400">
-                                <i class="fa-solid fa-spinner fa-spin text-xl text-cyan-400 block mb-2" aria-hidden="true"></i>
-                                Loading data...
-                            </td></tr>
-                        </tbody>
-                    </table>
+                <button
+                  type="button"
+                  id="btn-close-import-panel"
+                  class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 text-xs"
+                  title="Close Panel"
+                  aria-label="Tutup panel import receipts">
+                  <i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i>
+                </button>
+              </div>
+
+              <textarea
+                id="rnf-raw-import-text"
+                class="input-glass w-full font-mono text-xs"
+                rows="6"
+                style="resize: vertical; min-height: 140px"
+                placeholder="Paste bot Telegram transaction receipt here... Example:&#10;TRANSAKSI SUKSES&#10;ID : 1829684122&#10;Produk : CANVA&#10;Total Pembayaran : Rp 8.000&#10;Fee QRIS : Rp 356&#10;Dibayar : 15/09/2026 | 21:00"></textarea>
+
+              <div
+                class="flex flex-wrap items-center justify-between gap-3 mt-4">
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    id="btn-parse-receipts"
+                    class="btn-glass btn-violet text-xs">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Parse
+                    Receipt Messages
+                  </button>
+                  <div
+                    id="rnf-import-summary"
+                    class="hidden text-xs text-slate-400"></div>
                 </div>
-            </section>
+                <button
+                  type="button"
+                  id="btn-save-import"
+                  class="btn-glass btn-emerald text-xs hidden">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Parsed
+                  Transactions
+                </button>
+              </div>
 
-            <!-- ════════════════════════════════════════════════ -->
-            <!-- VIEW 2: BOT WHATSAPP                             -->
-            <!-- ════════════════════════════════════════════════ -->
-            <section id="view-whatsapp" class="view-section">
-                <!-- Header bar -->
-                <div class="liquid-card p-4 sm:p-5 mb-4">
-                    <!-- Top row: Title/Subtitle on left, Action buttons on right (PC) or stacked (Mobile) -->
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3.5">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-brands fa-whatsapp text-emerald-400 text-2xl"></i>
-                            <div>
-                                <h2 class="font-bold text-white text-base sm:text-lg leading-tight">WhatsApp Active Subscriptions</h2>
-                                <p class="text-xs text-slate-400">Real-time tenant monitoring &amp; subscription management</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button class="btn-glass btn-emerald text-xs" id="btnCopyWhatsapp" aria-label="Salin data tabel WhatsApp">
-                                <i class="fa-regular fa-copy" aria-hidden="true"></i><span>Copy CSV</span>
-                            </button>
-                            <a href="https://docs.google.com/spreadsheets/d/1ZrDqkxFLZx0dK6IP8Fo2LbtqFhqjioUmIRQtyLObzdI/edit?usp=sharing"
-                                target="_blank" rel="noopener" class="btn-glass btn-cyan text-xs no-underline inline-flex items-center gap-1.5" aria-label="Buka spreadsheet langganan WhatsApp">
-                                <i class="fa-solid fa-file-excel" aria-hidden="true"></i><span>Spreadsheet</span>
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Bottom row: Search bar -->
-                    <div class="search-bar-wrapper relative w-full">
-                        <i class="fa-solid fa-magnifying-glass search-bar-icon text-emerald-400" aria-hidden="true"></i>
-                        <input type="search" id="searchWhatsapp" autocomplete="off" placeholder="Cari Group ID, Group Name, Renter..."
-                            class="input-glass search-bar-input w-full text-xs" aria-label="Cari Group ID, Group Name, atau Renter WhatsApp">
-                    </div>
-                </div>
-                <div class="table-glass overflow-x-auto hide-scrollbar">
-                    <table>
-                        <colgroup>
-                            <col class="w-[20%]">
-                            <col class="w-[24%]">
-                            <col class="w-[16%]">
-                            <col class="w-[12%]">
-                            <col class="w-[14%]">
-                            <col class="w-[14%]">
-                        </colgroup>
-                        <thead>
-                            <tr>
-                                <th class="text-left">Group ID</th>
-                                <th class="text-left">Group Name</th>
-                                <th class="text-center">Renter</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-center">Expiry</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="waGroupsTableBody">
-                            <tr><td colspan="6" class="text-center py-12 text-slate-400">
-                                <i class="fa-solid fa-spinner fa-spin text-xl text-emerald-400 block mb-2" aria-hidden="true"></i>
-                                Loading data...
-                            </td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+              <div id="rnf-import-preview" class="mt-4 overflow-x-auto"></div>
+            </div>
 
-            <!-- ════════════════════════════════════════════════ -->
-            <!-- VIEW 3: RNF SHOP – OVERVIEW & GRAFIK (CONSOLIDATED) -->
-            <!-- ════════════════════════════════════════════════ -->
-            <section id="view-rnf-overview" class="view-section space-y-4">
+            <!-- Table Card Container with Integrated Footer Pagination -->
+            <div class="table-glass">
+              <div class="overflow-x-auto hide-scrollbar">
+                <table class="min-w-full">
+                  <thead>
+                    <tr
+                      class="border-b border-white/10 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      <th class="px-3 py-3 font-semibold text-left">DATE</th>
+                      <th class="px-3 py-3 font-semibold text-center">TYPE</th>
+                      <th class="px-3 py-3 font-semibold text-left">APP</th>
+                      <th class="px-3 py-3 font-semibold text-left">
+                        CUSTOMER
+                      </th>
+                      <th class="px-3 py-3 font-semibold text-left">
+                        NOTE / FEE
+                      </th>
+                      <th class="px-3 py-3 font-semibold text-right">AMOUNT</th>
+                      <th class="px-3 py-3 font-semibold text-center">
+                        ACTIONS
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="rnf-transactions-body">
+                    <tr>
+                      <td colspan="7" class="text-center py-12 text-slate-400">
+                        <i
+                          class="fa-solid fa-spinner fa-spin text-xl text-cyan-400 block mb-2"
+                          aria-hidden="true"></i>
+                        Loading transactions...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
-                <!-- Unified Financial & Sales Overview Card -->
-                <div class="liquid-card card-overflow-visible relative z-20 p-5 sm:p-6 mb-4">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                                <span class="material-symbols-outlined text-xl">analytics</span>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-base text-white tracking-tight">Financial Overview &amp; Trends</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Comprehensive cash flow analysis, net profit and store revenue performance</p>
-                            </div>
-                        </div>
-                    </div>
+              <!-- Integrated Table Footer for Pagination (macOS/iOS Liquid Glass Style) -->
+              <div
+                id="rnf-pagination-container"
+                class="px-4 py-3 bg-white/2 border-t border-white/6">
+                <!-- Dynamic Pagination injected here -->
+              </div>
+            </div>
+          </section>
 
-                    <!-- Comprehensive Filter Bar -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 items-end pt-2 pb-5 border-b border-white/6">
-                        <!-- Transaction Type -->
-                        <div class="flex flex-col gap-1.5 min-w-0">
-                            <label for="chart-type-filter" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                Transaction Type
-                            </label>
-                            <select id="chart-type-filter" class="w-full">
-                                <option value="all" selected>All Transactions</option>
-                                <option value="incoming">Incoming Only</option>
-                                <option value="outgoing">Outgoing Only</option>
-                            </select>
-                        </div>
-
-                        <!-- Time Period -->
-                        <div class="flex flex-col gap-1.5 min-w-0">
-                            <label for="chart-filter" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                Time Period
-                            </label>
-                            <select id="chart-filter" class="w-full">
-                                <option value="all">All Time</option>
-                                <option value="today">Today</option>
-                                <option value="week">This Week</option>
-                                <option value="month" selected>This Month</option>
-                                <option value="2months">Last 2 Months</option>
-                                <option value="6months">Last 6 Months</option>
-                                <option value="1year">Last 1 Year</option>
-                            </select>
-                        </div>
-
-                        <!-- From Date -->
-                        <div class="flex flex-col gap-1.5 min-w-0">
-                            <label for="date-from" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                From Date
-                            </label>
-                            <div class="relative">
-                                <input id="date-from" type="date" required placeholder="dd/mm/yyyy" class="filter-date-input input-glass h-11 w-full min-w-0 text-xs font-medium rounded-xl pl-3.5 pr-10 outline-none shadow-2xs" aria-label="Filter dari tanggal transaksi" />
-                                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
-                                    </svg>
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- To Date -->
-                        <div class="flex flex-col gap-1.5 min-w-0">
-                            <label for="date-to" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                To Date
-                            </label>
-                            <div class="relative">
-                                <input id="date-to" type="date" required placeholder="dd/mm/yyyy" class="filter-date-input input-glass h-11 w-full min-w-0 text-xs font-medium rounded-xl pl-3.5 pr-10 outline-none shadow-2xs" aria-label="Filter sampai tanggal transaksi" />
-                                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
-                                    </svg>
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Clear Filter -->
-                        <div class="col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-1 flex flex-col justify-end min-w-0">
-                            <button id="btnClearChartFilter" type="button" class="h-11 w-full text-xs font-bold text-slate-300 hover:text-rose-400 bg-white/5 hover:bg-rose-950/30 border border-white/10 hover:border-rose-800/50 rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 shadow-2xs cursor-pointer" title="Clear Filter" aria-label="Reset chart filters">
-                                <span class="material-symbols-outlined text-lg" aria-hidden="true">filter_alt_off</span>
-                                <span>Clear Filter</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Integrated Sales Overview Chart Canvas -->
-                    <div class="pt-5">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="material-symbols-outlined text-emerald-400 text-lg">trending_up</span>
-                            <h4 class="font-bold text-white text-sm">Sales &amp; Cash Flow Trends</h4>
-                        </div>
-                        <div class="chart-canvas-wrapper h-72 sm:h-80 w-full">
-                            <canvas id="rnf-chart-trend"></canvas>
-                        </div>
-                    </div>
+          <!-- ════════════════════════════════════════════════ -->
+          <!-- VIEW 6: MASTER APPS                              -->
+          <!-- ════════════════════════════════════════════════ -->
+          <section id="view-rnf-apps" class="view-section space-y-4">
+            <!-- Header + Search/Filter Toolbar Card -->
+            <div
+              class="liquid-card card-overflow-visible relative z-20 p-4 sm:p-5">
+              <div class="flex flex-col gap-3.5">
+                <!-- Row 1: Title & Subtitle (Left) + Add App Button (Right) -->
+                <div
+                  class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div class="min-w-0">
+                    <h2
+                      class="font-bold text-white text-base sm:text-lg flex items-center gap-2">
+                      <i class="fa-solid fa-cubes text-amber-400"></i> Digital
+                      Product Catalog
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                      Manage master digital applications data and availability
+                      status
+                    </p>
+                  </div>
+                  <div class="shrink-0">
+                    <button
+                      type="button"
+                      id="btn-open-add-app"
+                      class="btn-glass btn-amber text-xs w-full sm:w-auto justify-center"
+                      aria-label="Buka form tambah produk digital baru">
+                      <i class="fa-solid fa-plus" aria-hidden="true"></i
+                      ><span>Add App</span>
+                    </button>
+                  </div>
                 </div>
 
-                <!-- Bottom Row: Recent Activities + Top Best Seller (Matching Reference) -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-                    <!-- Recent Activities (7 cols on lg) -->
-                    <div class="lg:col-span-7 liquid-card p-5 sm:p-6 flex flex-col justify-between h-full">
-                        <div>
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-cyan-400 text-xl">history</span>
-                                    <h3 class="font-bold text-base text-white tracking-tight">Recent Activities</h3>
-                                </div>
-                                <button id="ov-btn-view-all-trx" type="button" class="btn-glass px-3 py-1 text-xs font-semibold text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center gap-1 transition-all group active:scale-95 cursor-pointer" aria-label="Lihat semua transaksi RNF Shop">
-                                    <span>View All</span>
-                                    <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform" aria-hidden="true">arrow_forward</span>
-                                </button>
-                            </div>
-                            <div class="overflow-x-auto hide-scrollbar">
-                                <table class="w-full text-left text-sm">
-                                    <thead>
-                                        <tr class="border-b border-white/10 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                                            <th class="px-3 py-3 font-semibold text-left">DATE</th>
-                                            <th class="px-3 py-3 font-semibold text-center">TYPE</th>
-                                            <th class="px-3 py-3 font-semibold text-left">APP</th>
-                                            <th class="px-3 py-3 font-semibold text-left">CUSTOMER</th>
-                                            <th class="px-3 py-3 font-semibold text-right">AMOUNT</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="recent-activities-table-body" class="divide-y divide-white/4 text-xs">
-                                        <tr><td colspan="5" class="text-center py-8 text-slate-400">
-                                            <i class="fa-solid fa-spinner fa-spin text-cyan-400 mr-1.5" aria-hidden="true"></i> Memuat aktivitas...
-                                        </td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Top Best Seller (5 cols on lg) -->
-                    <div class="lg:col-span-5 liquid-card p-5 sm:p-6 flex flex-col justify-between h-full">
-                        <div>
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-amber-400 text-xl">trophy</span>
-                                    <h3 class="font-bold text-base text-white tracking-tight">Top Best Sellers</h3>
-                                </div>
-                                <button id="ov-btn-view-catalog" type="button" class="btn-glass px-3 py-1 text-xs font-semibold text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-1 transition-all group active:scale-95 cursor-pointer" aria-label="Buka katalog aplikasi RNF Shop">
-                                    <span>Catalog</span>
-                                    <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform" aria-hidden="true">arrow_forward</span>
-                                </button>
-                            </div>
-                            <div id="top-products-list" class="space-y-3">
-                                <div class="text-center py-8 text-slate-400 text-xs">
-                                    <i class="fa-solid fa-spinner fa-spin text-amber-400 mr-1.5" aria-hidden="true"></i> Memuat best sellers...
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ════════════════════════════════════════════════ -->
-            <!-- VIEW 4: RNF SHOP – DATA TRANSAKSI                -->
-            <!-- ════════════════════════════════════════════════ -->
-            <section id="view-rnf-transactions" class="view-section space-y-4">
-
-                <!-- Toolbar Card -->
-                <div class="liquid-card card-overflow-visible relative z-20 p-4 sm:p-5">
-                    <!-- Title + Action Buttons -->
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                        <div>
-                            <h2 class="font-bold text-white text-base sm:text-lg">Transactions</h2>
-                            <p class="text-xs text-slate-400 mt-0.5">Manage all cash inflow &amp; outflow transactions</p>
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            <button type="button" id="btn-add-trx" class="btn-glass btn-cyan text-xs" aria-label="Tambah transaksi manual baru">
-                                <i class="fa-solid fa-plus-circle" aria-hidden="true"></i><span>Add Transaction</span>
-                            </button>
-                            <button type="button" id="btn-toggle-import" class="btn-glass btn-violet text-xs" aria-label="Buka panel import receipts">
-                                <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i><span>Import Receipts</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Row 1: Full-Width Search Bar -->
-                    <div class="mb-3">
-                        <div class="search-bar-wrapper relative w-full">
-                            <i class="fa-solid fa-magnifying-glass search-bar-icon text-teal-400" aria-hidden="true"></i>
-                            <input type="search" id="searchInput" autocomplete="off" class="input-glass search-bar-input w-full text-xs" placeholder="Search customer / note / app..." aria-label="Cari transaksi customer, note, atau aplikasi">
-                        </div>
-                    </div>
-
-                    <!-- Row 2: 5 Filter Columns with Consistent Labels matching Reference Repo -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                        <!-- Sort Date -->
-                        <div class="flex flex-col gap-1.5 min-w-0">
-                            <label for="sortBy" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                Sort By
-                            </label>
-                            <select id="sortBy" class="input-glass text-xs h-11 w-full" aria-label="Urutkan transaksi">
-                                <option value="date_desc">Newest First</option>
-                                <option value="date_asc">Oldest First</option>
-                                <option value="amount_desc">Highest Amount</option>
-                                <option value="amount_asc">Lowest Amount</option>
-                            </select>
-                        </div>
-
-                        <!-- All Types -->
-                        <div class="flex flex-col gap-1.5 min-w-0">
-                            <label for="filterType" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                Transaction Type
-                            </label>
-                            <select id="filterType" class="input-glass text-xs h-11 w-full" aria-label="Filter tipe transaksi">
-                                <option value="all">All Transactions</option>
-                                <option value="incoming">Incoming Only</option>
-                                <option value="outgoing">Outgoing Only</option>
-                            </select>
-                        </div>
-
-                        <!-- Date From -->
-                        <div class="flex flex-col gap-1.5 min-w-0">
-                            <label for="filterDateFrom" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                From Date
-                            </label>
-                            <div class="relative">
-                                <input type="date" id="filterDateFrom" class="filter-date-input input-glass text-xs h-11 w-full pl-3.5 pr-10" placeholder="dd/mm/yyyy" title="From Date" aria-label="Filter transaksi dari tanggal">
-                                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
-                                    </svg>
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Date To -->
-                        <div class="flex flex-col gap-1.5 min-w-0">
-                            <label for="filterDateTo" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                To Date
-                            </label>
-                            <div class="relative">
-                                <input type="date" id="filterDateTo" class="filter-date-input input-glass text-xs h-11 w-full pl-3.5 pr-10" placeholder="dd/mm/yyyy" title="To Date" aria-label="Filter transaksi sampai tanggal">
-                                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
-                                    </svg>
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Clear Filter (Disejajarkan ke bawah dan hover diselaraskan dengan Overview) -->
-                        <div class="flex flex-col justify-end min-w-0">
-                            <button type="button" id="btnClearDateFilter" class="h-11 w-full text-xs font-bold text-slate-300 hover:text-rose-400 bg-white/5 hover:bg-rose-950/30 border border-white/10 hover:border-rose-800/50 rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 shadow-2xs" title="Clear Filter" aria-label="Reset transaction filters">
-                                <span class="material-symbols-outlined text-lg" aria-hidden="true">filter_alt_off</span>
-                                <span>Clear Filter</span>
-                            </button>
-                        </div>
-                    </div>
+                <!-- Row 2: Full-Width Search Bar -->
+                <div class="search-bar-wrapper relative w-full">
+                  <i
+                    class="fa-solid fa-magnifying-glass search-bar-icon text-amber-400"
+                    aria-hidden="true"></i>
+                  <input
+                    type="search"
+                    id="rnf-apps-search"
+                    autocomplete="off"
+                    class="input-glass search-bar-input w-full text-xs"
+                    placeholder="Search app..."
+                    aria-label="Cari nama aplikasi katalog" />
                 </div>
 
-                <!-- Collapsible Import Raw Panel (Option A Embedded) -->
-                <div id="rnf-import-panel" class="liquid-card p-5 sm:p-6 hidden transition-all">
-                    <div class="flex items-center justify-between gap-3 mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-                                <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-white text-sm">Telegram Receipt Parser</h3>
-                                <p class="text-xs text-slate-400">Paste "TRANSAKSI SUKSES" receipt text from your bot to auto-parse</p>
-                            </div>
-                        </div>
-                        <button type="button" id="btn-close-import-panel" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 text-xs" title="Close Panel" aria-label="Tutup panel import receipts">
-                            <i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i>
-                        </button>
-                    </div>
+                <!-- Row 3: Filter Dropdown + Clear Filter Button (Identical to Transactions / Overview Style) -->
+                <div
+                  class="flex flex-wrap items-end gap-3 pt-2 border-t border-white/6">
+                  <div class="flex flex-col gap-1.5 w-full sm:w-64 min-w-0">
+                    <label
+                      for="rnf-apps-sort"
+                      class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Sort &amp; Filter
+                    </label>
+                    <select
+                      id="rnf-apps-sort"
+                      class="input-glass text-xs h-11 w-full"
+                      aria-label="Filter katalog aplikasi">
+                      <option value="sold_desc">Sold High (Terlaris)</option>
+                      <option value="sold_asc">
+                        Sold Low (Paling Sedikit)
+                      </option>
+                      <option value="name_asc">Name A-Z</option>
+                      <option value="name_desc">Name Z-A</option>
+                    </select>
+                  </div>
 
-                    <textarea id="rnf-raw-import-text" class="input-glass w-full font-mono text-xs" rows="6"
-                        style="resize:vertical; min-height: 140px;"
-                        placeholder="Paste bot Telegram transaction receipt here... Example:&#10;TRANSAKSI SUKSES&#10;ID : 1829684122&#10;Produk : CANVA&#10;Total Pembayaran : Rp 8.000&#10;Fee QRIS : Rp 356&#10;Dibayar : 15/09/2026 | 21:00"></textarea>
-
-                    <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
-                        <div class="flex items-center gap-2">
-                            <button type="button" id="btn-parse-receipts" class="btn-glass btn-violet text-xs">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> Parse Receipt Messages
-                            </button>
-                            <div id="rnf-import-summary" class="hidden text-xs text-slate-400"></div>
-                        </div>
-                        <button type="button" id="btn-save-import" class="btn-glass btn-emerald text-xs hidden">
-                            <i class="fa-solid fa-floppy-disk"></i> Save Parsed Transactions
-                        </button>
-                    </div>
-
-                    <div id="rnf-import-preview" class="mt-4 overflow-x-auto"></div>
+                  <div
+                    class="flex flex-col justify-end w-full sm:w-auto min-w-0">
+                    <button
+                      type="button"
+                      id="btn-clear-apps-filter"
+                      class="h-11 px-4 text-xs font-bold text-slate-300 hover:text-rose-400 bg-white/5 hover:bg-rose-950/30 border border-white/10 hover:border-rose-800/50 rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 shadow-2xs cursor-pointer"
+                      title="Clear Filter"
+                      aria-label="Reset filter pencarian aplikasi">
+                      <span
+                        class="material-symbols-outlined text-lg"
+                        aria-hidden="true"
+                        >filter_alt_off</span
+                      >
+                      <span>Clear Filter</span>
+                    </button>
+                  </div>
                 </div>
+              </div>
+            </div>
 
-                <!-- Table Card Container with Integrated Footer Pagination -->
-                <div class="table-glass">
-                    <div class="overflow-x-auto hide-scrollbar">
-                        <table class="min-w-full">
-                            <thead>
-                                <tr class="border-b border-white/10 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                                    <th class="px-3 py-3 font-semibold text-left">DATE</th>
-                                    <th class="px-3 py-3 font-semibold text-center">TYPE</th>
-                                    <th class="px-3 py-3 font-semibold text-left">APP</th>
-                                    <th class="px-3 py-3 font-semibold text-left">CUSTOMER</th>
-                                    <th class="px-3 py-3 font-semibold text-left">NOTE / FEE</th>
-                                    <th class="px-3 py-3 font-semibold text-right">AMOUNT</th>
-                                    <th class="px-3 py-3 font-semibold text-center">ACTIONS</th>
-                                </tr>
-                            </thead>
-                            <tbody id="rnf-transactions-body">
-                                <tr><td colspan="7" class="text-center py-12 text-slate-400">
-                                    <i class="fa-solid fa-spinner fa-spin text-xl text-cyan-400 block mb-2" aria-hidden="true"></i>
-                                    Loading transactions...
-                                </td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Integrated Table Footer for Pagination (macOS/iOS Liquid Glass Style) -->
-                    <div id="rnf-pagination-container" class="px-4 py-3 bg-white/2 border-t border-white/6">
-                        <!-- Dynamic Pagination injected here -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- ════════════════════════════════════════════════ -->
-            <!-- VIEW 6: MASTER APPS                              -->
-            <!-- ════════════════════════════════════════════════ -->
-            <section id="view-rnf-apps" class="view-section space-y-4">
-                <!-- Header + Search/Filter Toolbar Card -->
-                <div class="liquid-card card-overflow-visible relative z-20 p-4 sm:p-5">
-                    <div class="flex flex-col gap-3.5">
-                        <!-- Row 1: Title & Subtitle (Left) + Add App Button (Right) -->
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <div class="min-w-0">
-                                <h2 class="font-bold text-white text-base sm:text-lg flex items-center gap-2">
-                                    <i class="fa-solid fa-cubes text-amber-400"></i> Digital Product Catalog
-                                </h2>
-                                <p class="text-xs text-slate-400 mt-0.5">Manage master digital applications data and availability status</p>
-                            </div>
-                            <div class="shrink-0">
-                                <button type="button" id="btn-open-add-app" class="btn-glass btn-amber text-xs w-full sm:w-auto justify-center" aria-label="Buka form tambah produk digital baru">
-                                    <i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add App</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Row 2: Full-Width Search Bar -->
-                        <div class="search-bar-wrapper relative w-full">
-                            <i class="fa-solid fa-magnifying-glass search-bar-icon text-amber-400" aria-hidden="true"></i>
-                            <input type="search" id="rnf-apps-search" autocomplete="off" class="input-glass search-bar-input w-full text-xs" placeholder="Search app..." aria-label="Cari nama aplikasi katalog">
-                        </div>
-
-                        <!-- Row 3: Filter Dropdown + Clear Filter Button (Identical to Transactions / Overview Style) -->
-                        <div class="flex flex-wrap items-end gap-3 pt-2 border-t border-white/6">
-                            <div class="flex flex-col gap-1.5 w-full sm:w-64 min-w-0">
-                                <label for="rnf-apps-sort" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                    Sort &amp; Filter
-                                </label>
-                                <select id="rnf-apps-sort" class="input-glass text-xs h-11 w-full" aria-label="Filter katalog aplikasi">
-                                    <option value="sold_desc">Sold High (Terlaris)</option>
-                                    <option value="sold_asc">Sold Low (Paling Sedikit)</option>
-                                    <option value="name_asc">Name A-Z</option>
-                                    <option value="name_desc">Name Z-A</option>
-                                </select>
-                            </div>
-
-                            <div class="flex flex-col justify-end w-full sm:w-auto min-w-0">
-                                <button type="button" id="btn-clear-apps-filter" class="h-11 px-4 text-xs font-bold text-slate-300 hover:text-rose-400 bg-white/5 hover:bg-rose-950/30 border border-white/10 hover:border-rose-800/50 rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 shadow-2xs cursor-pointer" title="Clear Filter" aria-label="Reset filter pencarian aplikasi">
-                                    <span class="material-symbols-outlined text-lg" aria-hidden="true">filter_alt_off</span>
-                                    <span>Clear Filter</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Apps Grid (Optimized responsive columns: prevents cramping on tablet) -->
-                <div id="rnf-apps-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-                    <!-- Dynamically injected -->
-                </div>
-            </section>
-
+            <!-- Apps Grid (Optimized responsive columns: prevents cramping on tablet) -->
+            <div
+              id="rnf-apps-grid"
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+              <!-- Dynamically injected -->
+            </div>
+          </section>
         </main>
 
         <!-- Footer -->
         <footer class="mt-6 py-4 text-center text-slate-400 text-xs">
-            &copy; 2025–2026 Super Dashboard &middot; RNFBOT & RNF SHOP Console
+          &copy; 2025–2026 Super Dashboard &middot; RNFBOT & RNF SHOP Console
         </footer>
+      </div>
     </div>
-</div>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- MODALS: BOT RENTAL SAAS                                      -->
-<!-- ════════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="actionModal">
-    <div class="modal-box">
-        <div class="flex items-center justify-between p-5 border-b border-white/7">
-            <h3 class="font-bold text-white" id="modalTitle">Modal Title</h3>
-            <button class="icon-btn icon-btn-red" onclick="closeModal()" aria-label="Tutup modal konfirmasi"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- MODALS: BOT RENTAL SAAS                                      -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="actionModal">
+      <div class="modal-box">
+        <div
+          class="flex items-center justify-between p-5 border-b border-white/7">
+          <h3 class="font-bold text-white" id="modalTitle">Modal Title</h3>
+          <button
+            class="icon-btn icon-btn-red"
+            onclick="closeModal()"
+            aria-label="Tutup modal konfirmasi">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
         </div>
         <div class="p-5" id="modalBody"></div>
         <div class="flex justify-end gap-2 px-5 pb-5" id="modalFooter"></div>
+      </div>
     </div>
-</div>
 
-<div class="modal-overlay" id="reminderModal">
-    <div class="modal-box" style="max-width:560px;">
-        <div class="flex items-center justify-between p-5 border-b border-white/7">
-            <h3 class="font-bold text-white flex items-center gap-2">
-                <i class="fa-regular fa-clipboard text-amber-400" aria-hidden="true"></i>
-                <span id="reminderModalTitle">Pratinjau Teks Tagihan</span>
-            </h3>
-            <button class="icon-btn icon-btn-red" onclick="closeReminderModal()" aria-label="Tutup modal pengingat tagihan"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    <div class="modal-overlay" id="reminderModal">
+      <div
+        class="modal-wrapper reminder-modal-box"
+        id="reminderModalBox"
+        style="max-width: 580px">
+        <!-- Modal Header (Liquid Glass) -->
+        <div
+          class="flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5 border-b border-white/8 relative">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-lg transition-all"
+              id="reminderBrandIconWrap">
+              <i
+                class="fa-brands fa-telegram text-sky-400"
+                id="reminderBrandIcon"
+                aria-hidden="true"></i>
+            </div>
+            <div>
+              <h3
+                class="font-bold text-white text-sm sm:text-base tracking-tight flex items-center gap-2"
+                id="reminderModalTitle">
+                Pratinjau Tagihan
+              </h3>
+              <p class="text-[11px] text-slate-400" id="reminderModalCaption">
+                Format pengingat tagihan resmi ekosistem RNF
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            onclick="closeReminderModal()"
+            aria-label="Tutup modal pengingat tagihan">
+            <i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i>
+          </button>
         </div>
-        <div class="p-5">
-            <div id="reminderModalSubtitle" class="mb-3 p-2.5 rounded-xl bg-white/4 border border-white/7 text-xs text-slate-400 flex flex-wrap gap-2"></div>
-            <textarea id="reminderTextarea" class="reminder-textarea" spellcheck="false" aria-label="Teks pratinjau tagihan"></textarea>
-        </div>
-        <div class="p-5 pt-0 flex flex-col gap-2">
-            <button id="btnSendWaFromModal" class="btn-glass btn-emerald justify-center w-full py-2.5 hidden" aria-label="Kirim teks tagihan ke WhatsApp">
-                <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Kirim ke WhatsApp
-            </button>
+
+        <!-- Modal Scrollable Body -->
+        <div
+          class="p-4 sm:p-6 space-y-3 overflow-y-auto flex-1 min-h-0 reminder-modal-body">
+          <!-- Recipient Badges Bar -->
+          <div
+            id="reminderModalSubtitle"
+            class="p-2.5 sm:p-3 rounded-xl bg-white/3 border border-white/7 text-xs text-slate-300 flex flex-wrap items-center gap-2"></div>
+
+          <!-- Textarea Container with Liquid Glass Frame -->
+          <div class="relative">
+            <textarea
+              id="reminderTextarea"
+              class="reminder-textarea"
+              spellcheck="false"
+              aria-label="Teks pratinjau tagihan"></textarea>
+            <div
+              class="flex items-center justify-between text-[11px] text-slate-400 mt-1.5 px-1">
+              <span id="reminderCharCount" class="flex items-center gap-1"
+                ><i class="fa-regular fa-file-lines text-slate-500"></i> Siap
+                kirim</span
+              >
+              <span class="text-slate-500 italic"
+                >Dapat diedit sebelum disalin/dikirim</span
+              >
+            </div>
+          </div>
+
+          <!-- Quick Inline Phone Input (WhatsApp Only - if number missing) -->
+          <div
+            id="reminderPhoneInputWrap"
+            class="p-3 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 space-y-1.5"
+            style="display: none">
+            <label
+              for="reminderTargetPhone"
+              class="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300">
+              <i class="fa-brands fa-whatsapp text-emerald-400"></i> Nomor
+              Tujuan WhatsApp:
+            </label>
             <div class="flex gap-2">
-                <button id="btnCopyFromModal" class="btn-glass btn-cyan flex-1 justify-center py-2.5" aria-label="Salin teks tagihan">
-                    <i class="fa-regular fa-copy" aria-hidden="true"></i> Salin Teks
-                </button>
-                <button class="btn-glass flex-1 justify-center py-2.5" onclick="closeReminderModal()" aria-label="Tutup jendela pengingat">Tutup</button>
+              <input
+                type="tel"
+                id="reminderTargetPhone"
+                class="input-glass w-full text-xs h-9 px-3 rounded-lg bg-black/40 border border-white/10 text-white placeholder:text-slate-500 focus:border-emerald-400 outline-none"
+                placeholder="Contoh: 08123456789 atau 628123456789"
+                aria-label="Nomor WhatsApp Tujuan" />
             </div>
+            <p class="text-[10px] text-slate-400">
+              Nomor grup ini belum tersimpan. Masukkan nomor atau langsung klik
+              kirim untuk memilih kontak di WhatsApp.
+            </p>
+          </div>
         </div>
-    </div>
-</div>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- MODAL: RNF SHOP – ADD/EDIT TRANSACTION (iOS LIQUID GLASS)    -->
-<!-- ════════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="modal-trx">
-    <div class="modal-wrapper modal-incoming" id="modal-trx-box">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between px-6 py-5 border-b border-white/8">
-            <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400" id="modal-trx-icon-wrap">
-                    <span class="material-symbols-outlined text-lg" aria-hidden="true">payments</span>
-                </div>
-                <div>
-                    <h3 class="font-bold text-white text-base tracking-tight" id="modal-trx-title">Add Transaction</h3>
-                    <p class="text-[11px] text-slate-400">Record cash inflow or outflow</p>
-                </div>
-            </div>
-            <button type="button" id="btn-close-trx-modal" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" aria-label="Tutup modal transaksi">
-                <span class="material-symbols-outlined text-lg" aria-hidden="true">close</span>
+        <!-- Modal Action Footer -->
+        <div
+          class="px-5 sm:px-6 py-4 border-t border-white/8 bg-white/1 flex flex-col gap-2.5">
+          <button
+            type="button"
+            id="btnSendWaFromModal"
+            class="btn-glass btn-emerald justify-center w-full py-2.5 sm:py-3 text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-500/10 cursor-pointer"
+            style="display: none"
+            aria-label="Kirim teks tagihan ke WhatsApp">
+            <i class="fa-brands fa-whatsapp text-base" aria-hidden="true"></i>
+            <span>Kirim ke WhatsApp</span>
+          </button>
+          <div class="flex gap-2 w-full">
+            <button
+              type="button"
+              id="btnCopyFromModal"
+              class="btn-glass btn-cyan flex-1 justify-center py-2.5 text-xs sm:text-sm font-semibold cursor-pointer"
+              aria-label="Salin teks tagihan">
+              <i class="fa-regular fa-copy" aria-hidden="true"></i>
+              <span>Salin Teks</span>
             </button>
+            <button
+              type="button"
+              class="btn-glass flex-1 justify-center py-2.5 text-xs sm:text-sm font-medium text-slate-300 hover:text-white cursor-pointer"
+              onclick="closeReminderModal()"
+              aria-label="Tutup jendela pengingat">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- MODAL: RNF SHOP – ADD/EDIT TRANSACTION (iOS LIQUID GLASS)    -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-trx">
+      <div class="modal-wrapper modal-incoming" id="modal-trx-box">
+        <!-- Modal Header -->
+        <div
+          class="flex items-center justify-between px-6 py-5 border-b border-white/8">
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400"
+              id="modal-trx-icon-wrap">
+              <span class="material-symbols-outlined text-lg" aria-hidden="true"
+                >payments</span
+              >
+            </div>
+            <div>
+              <h3
+                class="font-bold text-white text-base tracking-tight"
+                id="modal-trx-title">
+                Add Transaction
+              </h3>
+              <p class="text-[11px] text-slate-400">
+                Record cash inflow or outflow
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            id="btn-close-trx-modal"
+            class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            aria-label="Tutup modal transaksi">
+            <span class="material-symbols-outlined text-lg" aria-hidden="true"
+              >close</span
+            >
+          </button>
         </div>
 
         <form id="form-trx-modal" class="p-6 space-y-4">
-            <input type="hidden" id="modal-trx-id">
-            <input type="hidden" id="modal-trx-type" value="incoming">
+          <input type="hidden" id="modal-trx-id" />
+          <input type="hidden" id="modal-trx-type" value="incoming" />
 
-            <!-- Liquid Segmented Pill for IN / OUT -->
-            <div class="liquid-segmented-pill">
-                <button type="button" id="seg-btn-incoming" class="liquid-segmented-item active-incoming" aria-label="Pilih tipe transaksi incoming">
-                    <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_upward</span>
-                    <span>Incoming (IN)</span>
-                </button>
-                <button type="button" id="seg-btn-outgoing" class="liquid-segmented-item" aria-label="Pilih tipe transaksi outgoing">
-                    <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_downward</span>
-                    <span>Outgoing (OUT)</span>
-                </button>
-            </div>
-
-            <!-- Amount Hero Field with Rp Badge -->
-            <div>
-                <label for="modal-trx-amount" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                    Amount (IDR) <span class="text-rose-400">*</span>
-                </label>
-                <div class="relative">
-                    <div class="absolute left-3.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-lg bg-white/10 text-slate-300 font-bold text-xs pointer-events-none">
-                        Rp
-                    </div>
-                    <input type="number" id="modal-trx-amount" class="input-glass w-full text-sm font-bold h-12 pl-14 pr-4 tabular" placeholder="0" min="1" required aria-label="Jumlah nominal rupiah transaksi">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                    <label for="modal-trx-app" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                        Application <span class="text-rose-400">*</span>
-                    </label>
-                    <select id="modal-trx-app" class="input-glass w-full text-xs h-11" required aria-label="Pilih nama aplikasi">
-                        <option value="">Select App...</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="modal-trx-date" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                        Date <span class="text-rose-400">*</span>
-                    </label>
-                    <div class="relative">
-                        <input type="date" id="modal-trx-date" class="filter-date-input input-glass w-full text-xs h-11 pl-3.5 pr-10" required aria-label="Tanggal transaksi">
-                        <span class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <label for="modal-trx-customer" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                    Customer ID / Name <span class="text-rose-400">*</span>
-                </label>
-                <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base pointer-events-none" aria-hidden="true">person</span>
-                    <input type="text" id="modal-trx-customer" class="input-glass w-full text-xs h-11 pl-10 pr-3.5" placeholder="e.g. 1829684122 or Budi" required aria-label="ID atau Nama Customer">
-                </div>
-            </div>
-
-            <div>
-                <label for="modal-trx-note" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                    Note / Variation <span class="text-slate-400 font-normal lowercase">(optional)</span>
-                </label>
-                <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base pointer-events-none" aria-hidden="true">description</span>
-                    <input type="text" id="modal-trx-note" class="input-glass w-full text-xs h-11 pl-10 pr-3.5" placeholder="e.g. 1 Month Shared / Fee QRIS Rp 350" aria-label="Catatan atau variasi produk">
-                </div>
-            </div>
-
-            <button type="submit" id="btn-save-trx-submit" class="btn-glass btn-emerald w-full justify-center py-3 text-xs font-bold mt-2 shadow-lg cursor-pointer" aria-label="Simpan transaksi">
-                <span class="material-symbols-outlined text-base mr-1.5" aria-hidden="true">save</span>
-                <span>Save Transaction</span>
+          <!-- Liquid Segmented Pill for IN / OUT -->
+          <div class="liquid-segmented-pill">
+            <button
+              type="button"
+              id="seg-btn-incoming"
+              class="liquid-segmented-item active-incoming"
+              aria-label="Pilih tipe transaksi incoming">
+              <span
+                class="material-symbols-outlined text-base"
+                aria-hidden="true"
+                >arrow_upward</span
+              >
+              <span>Incoming (IN)</span>
             </button>
-        </form>
-    </div>
-</div>
+            <button
+              type="button"
+              id="seg-btn-outgoing"
+              class="liquid-segmented-item"
+              aria-label="Pilih tipe transaksi outgoing">
+              <span
+                class="material-symbols-outlined text-base"
+                aria-hidden="true"
+                >arrow_downward</span
+              >
+              <span>Outgoing (OUT)</span>
+            </button>
+          </div>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- MODAL: RNF SHOP – ADD APPLICATION                           -->
-<!-- ════════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="modal-app">
-    <div class="modal-wrapper" style="max-width:420px;">
-        <div class="flex items-center justify-between p-5 border-b border-white/10">
-            <h3 class="font-bold text-white text-base flex items-center gap-2">
-                <i class="fa-solid fa-cubes text-amber-400" aria-hidden="true"></i>
-                <span>Add New Application</span>
-            </h3>
-            <button type="button" id="btn-close-app-modal" class="icon-btn icon-btn-red" aria-label="Tutup modal tambah aplikasi"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+          <!-- Amount Hero Field with Rp Badge -->
+          <div>
+            <label
+              for="modal-trx-amount"
+              class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              Amount (IDR) <span class="text-rose-400">*</span>
+            </label>
+            <div class="relative">
+              <div
+                class="absolute left-3.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-lg bg-white/10 text-slate-300 font-bold text-xs pointer-events-none">
+                Rp
+              </div>
+              <input
+                type="number"
+                id="modal-trx-amount"
+                class="input-glass w-full text-sm font-bold h-12 pl-14 pr-4 tabular"
+                placeholder="0"
+                min="1"
+                required
+                aria-label="Jumlah nominal rupiah transaksi" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label
+                for="modal-trx-app"
+                class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Application <span class="text-rose-400">*</span>
+              </label>
+              <select
+                id="modal-trx-app"
+                class="input-glass w-full text-xs h-11"
+                required
+                aria-label="Pilih nama aplikasi">
+                <option value="">Select App...</option>
+              </select>
+            </div>
+            <div>
+              <label
+                for="modal-trx-date"
+                class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Date <span class="text-rose-400">*</span>
+              </label>
+              <div class="relative">
+                <input
+                  type="date"
+                  id="modal-trx-date"
+                  class="filter-date-input input-glass w-full text-xs h-11 pl-3.5 pr-10"
+                  required
+                  aria-label="Tanggal transaksi" />
+                <span
+                  class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <svg
+                    class="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true">
+                    <path
+                      d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label
+              for="modal-trx-customer"
+              class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              Customer ID / Name <span class="text-rose-400">*</span>
+            </label>
+            <div class="relative">
+              <span
+                class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base pointer-events-none"
+                aria-hidden="true"
+                >person</span
+              >
+              <input
+                type="text"
+                id="modal-trx-customer"
+                class="input-glass w-full text-xs h-11 pl-10 pr-3.5"
+                placeholder="e.g. 1829684122 or Budi"
+                required
+                aria-label="ID atau Nama Customer" />
+            </div>
+          </div>
+
+          <div>
+            <label
+              for="modal-trx-note"
+              class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              Note / Variation
+              <span class="text-slate-400 font-normal lowercase"
+                >(optional)</span
+              >
+            </label>
+            <div class="relative">
+              <span
+                class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base pointer-events-none"
+                aria-hidden="true"
+                >description</span
+              >
+              <input
+                type="text"
+                id="modal-trx-note"
+                class="input-glass w-full text-xs h-11 pl-10 pr-3.5"
+                placeholder="e.g. 1 Month Shared / Fee QRIS Rp 350"
+                aria-label="Catatan atau variasi produk" />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            id="btn-save-trx-submit"
+            class="btn-glass btn-emerald w-full justify-center py-3 text-xs font-bold mt-2 shadow-lg cursor-pointer"
+            aria-label="Simpan transaksi">
+            <span
+              class="material-symbols-outlined text-base mr-1.5"
+              aria-hidden="true"
+              >save</span
+            >
+            <span>Save Transaction</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- MODAL: RNF SHOP – ADD APPLICATION                           -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-app">
+      <div class="modal-wrapper" style="max-width: 420px">
+        <div
+          class="flex items-center justify-between p-5 border-b border-white/10">
+          <h3 class="font-bold text-white text-base flex items-center gap-2">
+            <i class="fa-solid fa-cubes text-amber-400" aria-hidden="true"></i>
+            <span>Add New Application</span>
+          </h3>
+          <button
+            type="button"
+            id="btn-close-app-modal"
+            class="icon-btn icon-btn-red"
+            aria-label="Tutup modal tambah aplikasi">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
         </div>
         <form id="form-app-modal" class="p-5 sm:p-6 space-y-4">
-            <div>
-                <label for="modal-app-name" class="block text-xs text-slate-400 mb-1.5 font-semibold">Application Name</label>
-                <input type="text" id="modal-app-name" class="input-glass w-full text-xs h-11" style="text-transform:uppercase;" placeholder="e.g. CANVA, NETFLIX, SPOTIFY" required aria-label="Nama Aplikasi Baru">
-            </div>
-            <button type="submit" class="btn-glass btn-amber w-full justify-center py-3 text-xs font-bold shadow-lg" aria-label="Simpan aplikasi baru">
-                <i class="fa-solid fa-floppy-disk mr-1.5" aria-hidden="true"></i> Save Application
-            </button>
+          <div>
+            <label
+              for="modal-app-name"
+              class="block text-xs text-slate-400 mb-1.5 font-semibold"
+              >Application Name</label
+            >
+            <input
+              type="text"
+              id="modal-app-name"
+              class="input-glass w-full text-xs h-11"
+              style="text-transform: uppercase"
+              placeholder="e.g. CANVA, NETFLIX, SPOTIFY"
+              required
+              aria-label="Nama Aplikasi Baru" />
+          </div>
+          <button
+            type="submit"
+            class="btn-glass btn-amber w-full justify-center py-3 text-xs font-bold shadow-lg"
+            aria-label="Simpan aplikasi baru">
+            <i class="fa-solid fa-floppy-disk mr-1.5" aria-hidden="true"></i>
+            Save Application
+          </button>
         </form>
+      </div>
     </div>
-</div>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- TOASTS                                                        -->
-<!-- ════════════════════════════════════════════════════════════ -->
-<div id="toastContainer"></div>
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- TOASTS                                                        -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="toastContainer"></div>
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- SCRIPTS                                                       -->
-<!-- ════════════════════════════════════════════════════════════ -->
-<script type="module" src="/js/master/masterDashboard.js?v=3.0"></script>
-</body>
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- SCRIPTS                                                       -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <script type="module" src="/js/master/masterDashboard.js?v=3.0"></script>
+  </body>
 </html>

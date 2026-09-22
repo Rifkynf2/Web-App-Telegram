@@ -1,4 +1,4 @@
-import { tg, tgUser, currentBotId, catalogData, fetchCatalog, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant, urlParams, refreshTelegramData } from '../shared/store.js';
+import { tg, tgUser, currentBotId, catalogData, fetchCatalog, clearCatalogCache, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant, urlParams, refreshTelegramData } from '../shared/store.js';
 import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, formatRestockDate, resolveTierPrice, escAttr } from '../shared/utils.js';
 
 // ── Mock Catalog (preview mode tanpa API) ──────────────────────────────────────
@@ -294,6 +294,7 @@ export async function initBuyerApp() {
     bindDetailPageEvents();
     bindCheckoutModalEvents();
     bindSearchEvents();
+    bindRefreshCatalogEvent();
 
     const botUsername = getBotUsername() || currentBotId;
     if (btnBackToBot && botUsername) {
@@ -384,7 +385,7 @@ function updateSearchPlaceholders(text) {
 
 function stepRunningPlaceholder() {
   clearTimeout(runningPlaceholderTimeout);
-  if (!isRunningPlaceholderActive) return;
+  if (!isRunningPlaceholderActive || (typeof document !== 'undefined' && document.hidden)) return;
   if (elInputSearch && elInputSearch.value.length > 0) return;
 
   const phrases = getPlaceholderPhrases();
@@ -396,10 +397,10 @@ function stepRunningPlaceholder() {
 
     if (charIndex >= currentPhrase.length) {
       isDeleting = true;
-      runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 1600);
+      runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 1800);
       return;
     }
-    runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 90);
+    runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 100);
   } else {
     charIndex--;
     updateSearchPlaceholders(currentPhrase.substring(0, charIndex));
@@ -407,14 +408,15 @@ function stepRunningPlaceholder() {
     if (charIndex <= 0) {
       isDeleting = false;
       typewriterIndex = (typewriterIndex + 1) % phrases.length;
-      runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 300);
+      runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 400);
       return;
     }
-    runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 45);
+    runningPlaceholderTimeout = setTimeout(stepRunningPlaceholder, 60);
   }
 }
 
 function startRunningPlaceholder() {
+  if (typeof document !== 'undefined' && document.hidden) return;
   isRunningPlaceholderActive = true;
   clearTimeout(runningPlaceholderTimeout);
   stepRunningPlaceholder();
@@ -524,6 +526,36 @@ function bindSearchEvents() {
     });
   }
 
+  // Idle-aware & scroll-aware placeholder to free main-thread on mobile
+  let scrollPauseTimeout = null;
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (isRunningPlaceholderActive) {
+        stopRunningPlaceholder();
+      }
+      clearTimeout(scrollPauseTimeout);
+      scrollPauseTimeout = setTimeout(() => {
+        if (!elInputSearch || elInputSearch.value.length === 0) {
+          startRunningPlaceholder();
+        }
+      }, 500);
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (document.hidden) {
+        stopRunningPlaceholder();
+      } else if (!elInputSearch || elInputSearch.value.length === 0) {
+        startRunningPlaceholder();
+      }
+    },
+    { passive: true }
+  );
+
   startRunningPlaceholder();
 }
 
@@ -557,6 +589,27 @@ function clearAllSearch() {
   if (elBtnClearSearch) elBtnClearSearch.classList.add('hidden');
   startRunningPlaceholder();
   renderBuyerProducts();
+}
+
+function bindRefreshCatalogEvent() {
+  const btnRefresh = document.getElementById('btn-refresh-catalog');
+  if (!btnRefresh) return;
+  btnRefresh.addEventListener('click', async () => {
+    const icon = btnRefresh.querySelector('i');
+    if (icon) icon.classList.add('fa-spin');
+    try {
+      clearCatalogCache();
+      const freshCatalog = await fetchCatalog(true);
+      currentCatalogList = [...freshCatalog];
+      renderBuyerProducts(currentCatalogList);
+    } catch (e) {
+      console.error('[Buyer] Refresh error:', e);
+    } finally {
+      setTimeout(() => {
+        if (icon) icon.classList.remove('fa-spin');
+      }, 500);
+    }
+  });
 }
 
 // ── Shop Branding & User Identity ─────────────────────────────────────────────
@@ -1157,6 +1210,12 @@ async function handleCheckout() {
 
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || 'Checkout gagal diproses');
+
+    clearCatalogCache();
+    fetchCatalog(true).then((freshCatalog) => {
+      currentCatalogList = [...freshCatalog];
+      renderBuyerProducts(currentCatalogList);
+    }).catch(() => {});
 
     closeDetailPage();
     setTimeout(() => showCheckoutModal('QRIS Terkirim ke Telegram', 'Pesanan Anda sudah diteruskan ke bot. Silakan cek chat Telegram untuk melihat QRIS dan menyelesaikan pembayaran.'), 350);

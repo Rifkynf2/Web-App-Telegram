@@ -1,5 +1,5 @@
 // public/js/tenant-admin/adminStock.js
-import { currentBotId, urlParams } from '../shared/store.js';
+import { currentBotId, urlParams, clearCatalogCache } from '../shared/store.js';
 import { refreshAdminData } from './adminProducts.js';
 
 const adminStockSlide = document.getElementById('admin-stock-slide');
@@ -185,6 +185,7 @@ export function initAdminStock() {
 
                     Swal.fire({ icon: 'success', title: 'Stok Dikosongkan', ...getSwalTheme(), showConfirmButton: false, timer: 1500 });
 
+                    clearCatalogCache();
                     await refreshAdminData();
                     updateStockStats();
                 } catch (e) {
@@ -214,8 +215,26 @@ export function initAdminStock() {
     }
 }
 
+let isGlobalSelectClickListenerBound = false;
+
+function ensureGlobalSelectClickListener() {
+    if (isGlobalSelectClickListenerBound) return;
+    isGlobalSelectClickListenerBound = true;
+    document.addEventListener('click', (e) => {
+        document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
+            if (!w.contains(e.target)) {
+                w.classList.remove('open');
+                const parentCard = w.closest('.liquid-glass');
+                if (parentCard) parentCard.style.zIndex = '';
+            }
+        });
+    });
+}
+
 export function initSmoothSelect(selectEl, onChange) {
     if (!selectEl) return null;
+    ensureGlobalSelectClickListener();
+
     let wrapper = selectEl.closest('.custom-select-wrapper');
     if (!wrapper) {
         wrapper = document.createElement('div');
@@ -249,14 +268,6 @@ export function initSmoothSelect(selectEl, onChange) {
                 wrapper.classList.add('open');
                 const parentCard = wrapper.closest('.liquid-glass');
                 if (parentCard) parentCard.style.zIndex = '50';
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!wrapper.contains(e.target)) {
-                wrapper.classList.remove('open');
-                const parentCard = wrapper.closest('.liquid-glass');
-                if (parentCard) parentCard.style.zIndex = '';
             }
         });
     }
@@ -434,9 +445,13 @@ async function renderStockItems() {
     const btnNext      = document.getElementById('btn-stock-next');
 
     try {
-        const snapshot = await fetchStockSnapshot(variantId);
-        currentSnapshot = snapshot;
-        const items = Array.isArray(snapshot.items) ? snapshot.items : [];
+        let snapshot = currentSnapshot;
+        if (!snapshot || String(currentSnapshotVariantId) !== String(variantId)) {
+            snapshot = await fetchStockSnapshot(variantId);
+            currentSnapshot = snapshot;
+            currentSnapshotVariantId = String(variantId);
+        }
+        const items = Array.isArray(snapshot?.items) ? snapshot.items : [];
 
         stockListContainer.innerHTML = '';
         if (items.length === 0) {
@@ -515,6 +530,7 @@ async function deleteStockItem(id, btn) {
             if (!response.ok) throw new Error(result.error || 'Gagal menghapus item stok');
 
             Swal.fire({ icon: 'success', title: 'Terhapus', ...getSwalTheme(), timer: 1000, showConfirmButton: false });
+            clearCatalogCache();
             await refreshAdminData();
             updateStockStats();
         } catch (e) {
@@ -717,6 +733,7 @@ async function finalizeStockSave(lines, variantId, skipped = 0) {
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || 'Gagal menyimpan stok');
 
+        clearCatalogCache();
         await refreshAdminData();
 
         Swal.fire({
