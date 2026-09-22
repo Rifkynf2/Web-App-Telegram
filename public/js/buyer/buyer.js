@@ -294,7 +294,6 @@ export async function initBuyerApp() {
     bindDetailPageEvents();
     bindCheckoutModalEvents();
     bindSearchEvents();
-    bindRefreshCatalogEvent();
 
     const botUsername = getBotUsername() || currentBotId;
     if (btnBackToBot && botUsername) {
@@ -589,27 +588,6 @@ function clearAllSearch() {
   if (elBtnClearSearch) elBtnClearSearch.classList.add('hidden');
   startRunningPlaceholder();
   renderBuyerProducts();
-}
-
-function bindRefreshCatalogEvent() {
-  const btnRefresh = document.getElementById('btn-refresh-catalog');
-  if (!btnRefresh) return;
-  btnRefresh.addEventListener('click', async () => {
-    const icon = btnRefresh.querySelector('i');
-    if (icon) icon.classList.add('fa-spin');
-    try {
-      clearCatalogCache();
-      const freshCatalog = await fetchCatalog(true);
-      currentCatalogList = [...freshCatalog];
-      renderBuyerProducts(currentCatalogList);
-    } catch (e) {
-      console.error('[Buyer] Refresh error:', e);
-    } finally {
-      setTimeout(() => {
-        if (icon) icon.classList.remove('fa-spin');
-      }, 500);
-    }
-  });
 }
 
 // ── Shop Branding & User Identity ─────────────────────────────────────────────
@@ -1367,6 +1345,8 @@ function switchTab(tab) {
     // Ensure all cards in the active view are rendered with visible class (never blank)
     inEl.querySelectorAll('.card-scroll').forEach((el) => {
       el.classList.add('visible');
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
     });
 
     inEl.style.opacity = '1';
