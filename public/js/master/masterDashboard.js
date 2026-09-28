@@ -799,19 +799,14 @@ function formatRemainingDaysText(days, isExpired = false) {
     return `Minus ${Math.abs(days)} days`;
 }
 
-// ── Member Since Formatter (2 Baris) ───────────────────────────────────────
-function formatMemberSinceHtml(dateStr) {
+// ── Member Since Duration & Formatter ───────────────────────────────────────
+function calculateMemberDurationText(dateStr) {
     if (!dateStr) return '';
     const startDate = new Date(dateStr);
     if (isNaN(startDate.getTime())) return '';
 
-    const dd = String(startDate.getDate()).padStart(2, '0');
-    const mm = String(startDate.getMonth() + 1).padStart(2, '0');
-    const yy = String(startDate.getFullYear()).slice(-2);
-    const dateFormatted = `${dd}/${mm}/${yy}`;
-
     const now = new Date();
-    if (startDate > now) return dateFormatted;
+    if (startDate > now) return '';
 
     let years = now.getFullYear() - startDate.getFullYear();
     let months = now.getMonth() - startDate.getMonth();
@@ -832,7 +827,23 @@ function formatMemberSinceHtml(dateStr) {
     if (months > 0) parts.push(`${months} mo`);
     if (days > 0 || parts.length === 0) parts.push(`${days} d`);
 
-    return `${dateFormatted}<br><small style="color:var(--text-muted); font-size:0.75rem;">(${parts.join(' ')})</small>`;
+    return parts.join(' ');
+}
+
+function formatMemberSinceHtml(dateStr) {
+    if (!dateStr) return '';
+    const startDate = new Date(dateStr);
+    if (isNaN(startDate.getTime())) return '';
+
+    const dd = String(startDate.getDate()).padStart(2, '0');
+    const mm = String(startDate.getMonth() + 1).padStart(2, '0');
+    const yy = String(startDate.getFullYear()).slice(-2);
+    const dateFormatted = `${dd}/${mm}/${yy}`;
+
+    const duration = calculateMemberDurationText(dateStr);
+    if (!duration) return dateFormatted;
+
+    return `${dateFormatted}<br><small style="color:var(--text-muted); font-size:0.75rem;">(${duration})</small>`;
 }
 
 function escapeHtml(str) {
@@ -1332,12 +1343,14 @@ function generateTelegramCsv(tenants) {
 
         let memberSince = '-';
         if (t.created_at || t.createdAt) {
-            const d = new Date(t.created_at || t.createdAt);
+            const rawDate = t.created_at || t.createdAt;
+            const d = new Date(rawDate);
             if (!isNaN(d.getTime())) {
                 const dd = String(d.getDate()).padStart(2, '0');
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
                 const yyyy = d.getFullYear();
-                memberSince = `${dd}/${mm}/${yyyy}`;
+                const duration = calculateMemberDurationText(rawDate);
+                memberSince = duration ? `${dd}/${mm}/${yyyy} (${duration})` : `${dd}/${mm}/${yyyy}`;
             }
         }
 
@@ -1394,7 +1407,8 @@ function generateWaCsv(groups) {
                 const dd = String(d.getDate()).padStart(2, '0');
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
                 const yyyy = d.getFullYear();
-                memberSince = `${dd}/${mm}/${yyyy}`;
+                const duration = calculateMemberDurationText(g.joined_at);
+                memberSince = duration ? `${dd}/${mm}/${yyyy} (${duration})` : `${dd}/${mm}/${yyyy}`;
             }
         }
 
@@ -1504,12 +1518,11 @@ function confirmToggleStatus(botId, username, action, btn) {
     `;
 
     modalFooter.innerHTML = `
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-ghost" id="cancelModalBtn" onclick="closeModal()">Cancel</button>
         <button class="btn ${isSuspend ? 'btn-warning' : 'btn-success'}" id="confirmToggleBtn">Yes, ${verb}</button>
     `;
 
     document.getElementById('confirmToggleBtn').onclick = () => {
-        closeModal();
         updateTenantStatus(botId, action, btn);
     };
 
@@ -1520,8 +1533,27 @@ async function updateTenantStatus(botId, action, btn) {
     if (isPreviewMode) return showToast('Preview mode — actions are disabled', 'error');
     if (isMutatingTenant) return;
 
+    const confirmBtn = document.getElementById('confirmToggleBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const originalConfirmHtml = confirmBtn ? confirmBtn.innerHTML : '';
+    const isSuspend = action === 'suspend';
+    const verb = isSuspend ? 'Suspend' : 'Activate';
+    const loadingVerb = isSuspend ? 'Suspending...' : 'Activating...';
+
     isMutatingTenant = true;
-    if (btn) btn.disabled = true;
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${loadingVerb}`;
+    }
+    if (cancelBtn) cancelBtn.disabled = true;
+
+    let originalBtnHtml = '';
+    if (btn) {
+        btn.disabled = true;
+        originalBtnHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+    }
+
     try {
         const res = await fetch(`${API_BASE}/tenants`, {
             method: 'PUT',
@@ -1536,12 +1568,21 @@ async function updateTenantStatus(botId, action, btn) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        closeModal();
         invalidateStatsCache(); // Data changed — bust the cache
         loadTenants();
         loadStats();
     } catch (err) {
         showToast(err.message, 'error');
-        if (btn) btn.disabled = false;
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalConfirmHtml || `Yes, ${verb}`;
+        }
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+        }
     } finally {
         isMutatingTenant = false;
     }
@@ -1561,12 +1602,11 @@ function confirmDelete(botId, username) {
     `;
 
     modalFooter.innerHTML = `
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-ghost" id="cancelModalBtn" onclick="closeModal()">Cancel</button>
         <button class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete Forever</button>
     `;
 
     document.getElementById('confirmDeleteBtn').onclick = () => {
-        closeModal();
         executeDelete(botId);
     };
 
@@ -1574,10 +1614,20 @@ function confirmDelete(botId, username) {
 }
 
 async function executeDelete(botId) {
-    if (isPreviewMode) { closeModal(); return showToast('Preview mode — actions are disabled', 'error'); }
+    if (isPreviewMode) return showToast('Preview mode — actions are disabled', 'error');
     if (isMutatingTenant) return;
+
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const originalConfirmHtml = confirmBtn ? confirmBtn.innerHTML : '';
+
     isMutatingTenant = true;
-    closeModal();
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Deleting...`;
+    }
+    if (cancelBtn) cancelBtn.disabled = true;
+
     try {
         const res = await fetch(`${API_BASE}/tenants?bot_id=${botId}`, {
             method: 'DELETE',
@@ -1588,11 +1638,17 @@ async function executeDelete(botId) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        closeModal();
         invalidateStatsCache(); // Data changed — bust the cache
         loadTenants();
         loadStats();
     } catch (err) {
         showToast(err.message, 'error');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalConfirmHtml || 'Yes, Delete Forever';
+        }
+        if (cancelBtn) cancelBtn.disabled = false;
     } finally {
         isMutatingTenant = false;
     }
@@ -1613,7 +1669,7 @@ function showRenewModal(botId, username) {
     `;
 
     modalFooter.innerHTML = `
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-ghost" id="cancelModalBtn" onclick="closeModal()">Cancel</button>
         <button class="btn btn-success" id="confirmRenewBtn">Confirm Extend</button>
     `;
 
@@ -1625,12 +1681,22 @@ function showRenewModal(botId, username) {
 }
 
 async function executeRenew(botId) {
-    if (isPreviewMode) { closeModal(); return showToast('Preview mode — actions are disabled', 'error'); }
+    if (isPreviewMode) return showToast('Preview mode — actions are disabled', 'error');
     if (isMutatingTenant) return;
-    isMutatingTenant = true;
 
-    const days = parseInt(document.getElementById('manualDays').value, 10) || 31;
-    closeModal();
+    const inputDays = document.getElementById('manualDays');
+    const confirmBtn = document.getElementById('confirmRenewBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const originalConfirmHtml = confirmBtn ? confirmBtn.innerHTML : '';
+    const days = parseInt(inputDays?.value, 10) || 31;
+
+    isMutatingTenant = true;
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Extending...`;
+    }
+    if (cancelBtn) cancelBtn.disabled = true;
+    if (inputDays) inputDays.disabled = true;
 
     try {
         const res = await fetch(`${API_BASE}/subscriptions`, {
@@ -1646,11 +1712,18 @@ async function executeRenew(botId) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        closeModal();
         invalidateStatsCache(); // Data changed — bust the cache
         loadTenants();
         loadStats();
     } catch (err) {
         showToast(err.message, 'error');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalConfirmHtml || 'Confirm Extend';
+        }
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (inputDays) inputDays.disabled = false;
     } finally {
         isMutatingTenant = false;
     }
@@ -1674,7 +1747,7 @@ function showWaExtendModal(g) {
     `;
 
     modalFooter.innerHTML = `
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-ghost" id="cancelModalBtn" onclick="closeModal()">Cancel</button>
         <button class="btn btn-success" id="confirmWaExtendBtn">Confirm Extend</button>
     `;
 
@@ -1683,12 +1756,22 @@ function showWaExtendModal(g) {
 }
 
 async function executeWaExtend(groupId) {
-    if (isPreviewMode) { closeModal(); return showToast('Preview mode — actions are disabled', 'error'); }
+    if (isPreviewMode) return showToast('Preview mode — actions are disabled', 'error');
     if (isMutatingWaGroup) return;
-    isMutatingWaGroup = true;
 
-    const days = parseInt(document.getElementById('waExtendDays').value, 10) || 31;
-    closeModal();
+    const inputDays = document.getElementById('waExtendDays');
+    const confirmBtn = document.getElementById('confirmWaExtendBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const originalConfirmHtml = confirmBtn ? confirmBtn.innerHTML : '';
+    const days = parseInt(inputDays?.value, 10) || 31;
+
+    isMutatingWaGroup = true;
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Extending...`;
+    }
+    if (cancelBtn) cancelBtn.disabled = true;
+    if (inputDays) inputDays.disabled = true;
 
     try {
         const res = await fetch(`${API_BASE}/wa-groups`, {
@@ -1704,11 +1787,18 @@ async function executeWaExtend(groupId) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        closeModal();
         invalidateStatsCache(); // Data changed — bust the cache
         loadWaGroups();
         loadStats();
     } catch (err) {
         showToast(err.message, 'error');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalConfirmHtml || 'Confirm Extend';
+        }
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (inputDays) inputDays.disabled = false;
     } finally {
         isMutatingWaGroup = false;
     }
@@ -1732,12 +1822,11 @@ function confirmWaToggleStatus(g, btn) {
     `;
 
     modalFooter.innerHTML = `
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-ghost" id="cancelModalBtn" onclick="closeModal()">Cancel</button>
         <button class="btn ${willDeactivate ? 'btn-warning' : 'btn-success'}" id="confirmWaToggleBtn">Yes, ${verb}</button>
     `;
 
     document.getElementById('confirmWaToggleBtn').onclick = () => {
-        closeModal();
         executeWaToggle(g.id, !willDeactivate, btn);
     };
 
@@ -1748,8 +1837,25 @@ async function executeWaToggle(groupId, targetActive, btn) {
     if (isPreviewMode) return showToast('Preview mode — actions are disabled', 'error');
     if (isMutatingWaGroup) return;
 
+    const confirmBtn = document.getElementById('confirmWaToggleBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const originalConfirmHtml = confirmBtn ? confirmBtn.innerHTML : '';
+    const verb = targetActive ? 'Activate' : 'Deactivate';
+    const loadingVerb = targetActive ? 'Activating...' : 'Deactivating...';
+
     isMutatingWaGroup = true;
-    if (btn) btn.disabled = true;
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${loadingVerb}`;
+    }
+    if (cancelBtn) cancelBtn.disabled = true;
+
+    let originalBtnHtml = '';
+    if (btn) {
+        btn.disabled = true;
+        originalBtnHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+    }
 
     try {
         const res = await fetch(`${API_BASE}/wa-groups`, {
@@ -1765,12 +1871,21 @@ async function executeWaToggle(groupId, targetActive, btn) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        closeModal();
         invalidateStatsCache(); // Data changed — bust the cache
         loadWaGroups();
         loadStats();
     } catch (err) {
         showToast(err.message, 'error');
-        if (btn) btn.disabled = false;
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalConfirmHtml || `Yes, ${verb}`;
+        }
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+        }
     } finally {
         isMutatingWaGroup = false;
     }
@@ -1790,12 +1905,11 @@ function confirmWaDelete(g) {
     `;
 
     modalFooter.innerHTML = `
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-ghost" id="cancelModalBtn" onclick="closeModal()">Cancel</button>
         <button class="btn btn-danger" id="confirmWaDeleteBtn">Yes, Delete Forever</button>
     `;
 
     document.getElementById('confirmWaDeleteBtn').onclick = () => {
-        closeModal();
         executeWaDelete(g.id);
     };
 
@@ -1805,7 +1919,17 @@ function confirmWaDelete(g) {
 async function executeWaDelete(groupId) {
     if (isPreviewMode) return showToast('Preview mode — actions are disabled', 'error');
     if (isMutatingWaGroup) return;
+
+    const confirmBtn = document.getElementById('confirmWaDeleteBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const originalConfirmHtml = confirmBtn ? confirmBtn.innerHTML : '';
+
     isMutatingWaGroup = true;
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Deleting...`;
+    }
+    if (cancelBtn) cancelBtn.disabled = true;
 
     try {
         const res = await fetch(`${API_BASE}/wa-groups?id=${groupId}`, {
@@ -1817,11 +1941,17 @@ async function executeWaDelete(groupId) {
         if (!data.success) throw new Error(data.error);
 
         showToast(data.message, 'success');
+        closeModal();
         invalidateStatsCache(); // Data changed — bust the cache
         loadWaGroups();
         loadStats();
     } catch (err) {
         showToast(err.message, 'error');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalConfirmHtml || 'Yes, Delete Forever';
+        }
+        if (cancelBtn) cancelBtn.disabled = false;
     } finally {
         isMutatingWaGroup = false;
     }
