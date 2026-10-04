@@ -135,6 +135,36 @@ const detailPageBtnPlusDesk = document.getElementById('detail-page-btn-plus-desk
 const btnDetailCheckoutDesk = document.getElementById('btn-detail-checkout-desk');
 const detailCheckoutTextDesk = document.getElementById('detail-checkout-text-desk');
 
+// Voucher Elements
+const detailPageVoucherBox = document.getElementById('detail-page-voucher-box');
+const inputVoucherCode = document.getElementById('input-voucher-code');
+const btnClearVoucherInput = document.getElementById('btn-clear-voucher-input');
+const btnApplyVoucher = document.getElementById('btn-apply-voucher');
+const btnRemoveVoucher = document.getElementById('btn-remove-voucher');
+const voucherStatusBadge = document.getElementById('voucher-status-badge');
+const voucherAppliedInfo = document.getElementById('voucher-applied-info');
+const voucherAppliedTitle = document.getElementById('voucher-applied-title');
+const voucherAppliedDesc = document.getElementById('voucher-applied-desc');
+const voucherFeedbackBox = document.getElementById('voucher-feedback-box');
+const voucherFeedbackIcon = document.getElementById('voucher-feedback-icon');
+const voucherFeedbackMsg = document.getElementById('voucher-feedback-msg');
+const detailPageDiscountTag = document.getElementById('detail-page-discount-tag');
+const detailPageDiscountDeskTag = document.getElementById('detail-page-discount-desk-tag');
+
+function triggerHaptic(type = 'light') {
+  try {
+    const haptic = window.Telegram?.WebApp?.HapticFeedback;
+    if (!haptic) return;
+    if (type === 'success' || type === 'error' || type === 'warning') {
+      haptic.notificationOccurred(type);
+    } else if (type === 'medium' || type === 'heavy' || type === 'light') {
+      haptic.impactOccurred(type);
+    }
+  } catch (e) {
+    // Silent fallback
+  }
+}
+
 // Checkout Modal
 const checkoutModal = document.getElementById('checkout-modal');
 const btnCloseModal = document.getElementById('btn-close-modal');
@@ -154,6 +184,8 @@ let activeProduct = null;
 let activeVariant = null;
 let currentQty = 0;
 let isCheckoutSubmitting = false;
+let appliedVoucher = null;
+let isApplyingVoucher = false;
 let currentCatalogList = [];
 let currentSearchQuery = '';
 let runningPlaceholderTimeout = null;
@@ -829,6 +861,7 @@ function openDetailPage(product) {
   activeProduct = product;
   activeVariant = null;
   currentQty = 0;
+  resetVoucherState();
 
   // Populate header & image
   if (detailPageHeaderTitle) detailPageHeaderTitle.textContent = product.name;
@@ -919,9 +952,13 @@ function closeDetailPage() {
   activeProduct = null;
   activeVariant = null;
   currentQty = 0;
+  resetVoucherState();
 }
 
 function selectDetailVariant(variant, chipElement) {
+  if (activeVariant?.id !== variant?.id) {
+    resetVoucherState();
+  }
   activeVariant = variant;
   const stock = typeof variant.stock === 'number' ? Math.max(0, variant.stock) : 0;
   const min = stock <= 0 ? 0 : Math.min(variant.min_qty || 1, stock);
@@ -1004,6 +1041,10 @@ function selectDetailVariant(variant, chipElement) {
 
 function updateDetailQty(change) {
   if (!activeVariant) return;
+  if (appliedVoucher?.type === 'FREE' && change > 0) {
+    showVoucherFeedback('Voucher gratis dibatasi hanya 1 pcs per klaim', 'info');
+    return;
+  }
   const stock = typeof activeVariant.stock === 'number' ? Math.max(0, activeVariant.stock) : 0;
   if (stock <= 0) {
     currentQty = 0;
@@ -1061,21 +1102,39 @@ function updateDetailQtyDisplay() {
 
   const basePrice = parseInt(activeVariant.price, 10) || 0;
   const unitPrice = resolveTierPrice(activeVariant, currentQty);
-  const isDiscounted = unitPrice < basePrice;
-  const total = formatCurrency(currentQty * unitPrice);
+  const rawSubtotal = currentQty * unitPrice;
+  let finalSubtotal = rawSubtotal;
+  let voucherDiscount = 0;
+  const isFreeVoucher = appliedVoucher?.type === 'FREE';
+
+  if (appliedVoucher) {
+    if (isFreeVoucher) {
+      currentQty = 1;
+      voucherDiscount = unitPrice;
+      finalSubtotal = 0;
+    } else {
+      voucherDiscount = Math.min(rawSubtotal, appliedVoucher.discount || 0);
+      finalSubtotal = Math.max(0, rawSubtotal - voucherDiscount);
+    }
+  }
+
+  const isDiscounted = (unitPrice < basePrice) || (voucherDiscount > 0);
+  const total = formatCurrency(finalSubtotal);
   const originalTotal = formatCurrency(currentQty * basePrice);
   const canCheckout = currentQty > 0 && currentQty <= stock && !isCheckoutSubmitting;
 
   let btnLabel = 'Pilih Varian Dulu';
   if (stock <= 0) {
     btnLabel = 'Stok Habis';
+  } else if (isFreeVoucher) {
+    btnLabel = '🎁 Klaim Gratis Sekarang';
   } else if (currentQty > 0) {
     btnLabel = 'Beli Sekarang';
   }
 
   // Update button states (+ and - buttons)
-  const canIncrease = stock > 0 && currentQty < max;
-  const canDecrease = stock > 0 && currentQty > min;
+  const canIncrease = !isFreeVoucher && stock > 0 && currentQty < max;
+  const canDecrease = !isFreeVoucher && stock > 0 && currentQty > min;
 
   [detailPageBtnPlus, detailPageBtnPlusDesk].forEach((btn) => {
     if (!btn) return;
@@ -1139,6 +1198,25 @@ function updateDetailQtyDisplay() {
     btnDetailCheckoutDesk.style.opacity = canCheckout ? '1' : '0.5';
   }
   if (detailCheckoutTextDesk) detailCheckoutTextDesk.textContent = btnLabel;
+
+  // Voucher discount badges
+  const discountText = isFreeVoucher ? 'Gratis 100%' :  `Hemat ${formatCurrency(voucherDiscount)}`;
+  if (detailPageDiscountTag) {
+    if (voucherDiscount > 0) {
+      detailPageDiscountTag.textContent = discountText;
+      detailPageDiscountTag.classList.remove('hidden');
+    } else {
+      detailPageDiscountTag.classList.add('hidden');
+    }
+  }
+  if (detailPageDiscountDeskTag) {
+    if (voucherDiscount > 0) {
+      detailPageDiscountDeskTag.textContent = discountText;
+      detailPageDiscountDeskTag.classList.remove('hidden');
+    } else {
+      detailPageDiscountDeskTag.classList.add('hidden');
+    }
+  }
 }
 
 // ── Checkout ───────────────────────────────────────────────────────────────────
@@ -1160,7 +1238,8 @@ async function handleCheckout() {
   }
 
   isCheckoutSubmitting = true;
-  const loadingLabel = 'Membuat QRIS di Telegram...';
+  const isFreeVoucher = appliedVoucher?.type === 'FREE';
+  const loadingLabel = isFreeVoucher ? 'Mengklaim voucher gratis...' : 'Membuat QRIS di Telegram...';
   if (btnDetailCheckout) {
     btnDetailCheckout.disabled = true;
     btnDetailCheckout.style.opacity = '0.6';
@@ -1173,17 +1252,27 @@ async function handleCheckout() {
   if (detailCheckoutTextDesk) detailCheckoutTextDesk.textContent = loadingLabel;
 
   try {
+    const payload = isFreeVoucher
+      ? {
+          bot_id: currentBotId,
+          action: 'claim_free',
+          variant_id: activeVariant.id,
+          voucher_code: appliedVoucher.code,
+        }
+      : {
+          bot_id: currentBotId,
+          variant_id: activeVariant.id,
+          qty: currentQty,
+          voucher_code: appliedVoucher?.code || null,
+        };
+
     const response = await fetch('/api/webapp/checkout', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Telegram-Init-Data': tg?.initData || '',
       },
-      body: JSON.stringify({
-        bot_id: currentBotId,
-        variant_id: activeVariant.id,
-        qty: currentQty,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json().catch(() => ({}));
@@ -1196,7 +1285,11 @@ async function handleCheckout() {
     }).catch(() => {});
 
     closeDetailPage();
-    setTimeout(() => showCheckoutModal('QRIS Terkirim ke Telegram', 'Pesanan Anda sudah diteruskan ke bot. Silakan cek chat Telegram untuk melihat QRIS dan menyelesaikan pembayaran.'), 350);
+    if (isFreeVoucher) {
+      setTimeout(() => showCheckoutModal('Klaim Gratis Berhasil!', 'Pesanan Anda dengan voucher gratis telah berhasil diproses. Produk sedang disiapkan dan dikirimkan ke chat Telegram Anda.'), 350);
+    } else {
+      setTimeout(() => showCheckoutModal('QRIS Terkirim ke Telegram', 'Pesanan Anda sudah diteruskan ke bot. Silakan cek chat Telegram untuk melihat QRIS dan menyelesaikan pembayaran.'), 350);
+    }
   } catch (err) {
     console.error('[Buyer] Checkout failed:', err.message);
     try {
@@ -1224,6 +1317,176 @@ function showCheckoutModal(title, description) {
 }
 
 // ── Event Binding ──────────────────────────────────────────────────────────────
+// ── Voucher Management ────────────────────────────────────────────────────────
+function resetVoucherState() {
+  appliedVoucher = null;
+  isApplyingVoucher = false;
+  if (inputVoucherCode) inputVoucherCode.value = '';
+  if (btnClearVoucherInput) btnClearVoucherInput.classList.add('hidden');
+    btnClearVoucherInput.classList.remove('flex');
+  if (voucherAppliedInfo) {
+    voucherAppliedInfo.classList.add('hidden');
+    voucherAppliedInfo.classList.remove('flex', 'flex-col');
+  }
+  const inputContainer = document.getElementById('voucher-input-container');
+  if (inputContainer) inputContainer.classList.remove('hidden');
+  if (voucherFeedbackBox) {
+    voucherFeedbackBox.classList.add('hidden');
+  }
+  if (voucherFeedbackMsg) {
+    voucherFeedbackMsg.textContent = '';
+  }
+  if (detailPageDiscountTag) detailPageDiscountTag.classList.add('hidden');
+  if (detailPageDiscountDeskTag) detailPageDiscountDeskTag.classList.add('hidden');
+}
+
+function showVoucherFeedback(message, type = 'error') {
+  if (!voucherFeedbackBox || !voucherFeedbackMsg) return;
+  if (!message) {
+    voucherFeedbackBox.classList.add('hidden');
+    voucherFeedbackMsg.textContent = '';
+    return;
+  }
+  voucherFeedbackBox.classList.remove('hidden');
+  voucherFeedbackMsg.textContent = message;
+  if (type === 'error') {
+    voucherFeedbackBox.className = 'mt-2 p-2 px-3 rounded-xl text-[11px] font-medium flex items-center gap-2 bg-red-500/10 border border-red-500/25 text-red-400';
+    if (voucherFeedbackIcon) {
+      voucherFeedbackIcon.innerHTML = '<svg class="w-3.5 h-3.5 text-red-400 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>';
+    }
+    triggerHaptic('error');
+  } else if (type === 'success') {
+    voucherFeedbackBox.className = 'mt-2 p-2 px-3 rounded-xl text-[11px] font-medium flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400';
+    if (voucherFeedbackIcon) {
+      voucherFeedbackIcon.innerHTML = '<svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
+    }
+    triggerHaptic('success');
+  } else {
+    voucherFeedbackBox.className = 'mt-2 p-2 px-3 rounded-xl text-[11px] font-medium flex items-center gap-2 bg-white/5 border border-white/10 text-gray-300';
+    if (voucherFeedbackIcon) {
+      voucherFeedbackIcon.innerHTML = '<svg class="w-3.5 h-3.5 text-gray-400 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>';
+    }
+  }
+}
+
+async function applyVoucher() {
+  if (isApplyingVoucher) return;
+  if (!activeVariant || currentQty < 1) {
+    showVoucherFeedback('Pilih varian produk terlebih dahulu', 'error');
+    return;
+  }
+
+  const code = (inputVoucherCode?.value || '').trim().toUpperCase();
+  if (!code) {
+    showVoucherFeedback('Masukkan kode voucher promo', 'error');
+    return;
+  }
+
+  isApplyingVoucher = true;
+  if (btnApplyVoucher) {
+    btnApplyVoucher.disabled = true;
+    btnApplyVoucher.innerHTML = '<svg class="animate-spin w-3.5 h-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+  }
+
+  try {
+    const unitPrice = resolveTierPrice(activeVariant, currentQty);
+    const subtotal = unitPrice * currentQty;
+
+    // Support mock preview testing when running without bot_id
+    if (!currentBotId) {
+      if (code === 'PROMO5K') {
+        appliedVoucher = { code: 'PROMO5K', type: 'NOMINAL', discount: 5000, min_spend: 0 };
+      } else if (code === 'FREE100') {
+        appliedVoucher = { code: 'FREE100', type: 'FREE', discount: unitPrice, min_spend: 0 };
+      } else {
+        showVoucherFeedback('Kode tidak valid di mode preview (coba: PROMO5K atau FREE100)', 'error');
+        return;
+      }
+    } else {
+      const response = await fetch('/api/webapp/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Telegram-Init-Data': tg?.initData || '',
+        },
+        body: JSON.stringify({
+          bot_id: currentBotId,
+          action: 'validate_voucher',
+          voucher_code: code,
+          product_id: activeProduct?.id,
+          subtotal,
+          qty: currentQty,
+        }),
+      });
+
+      const res = await response.json().catch(() => ({}));
+      if (!response.ok || !res.success) {
+        throw new Error(res.error || 'Gagal memvalidasi voucher');
+      }
+
+      if (!res.data?.valid) {
+        showVoucherFeedback(res.data?.reason || 'Voucher tidak valid atau tidak memenuhi syarat', 'error');
+        return;
+      }
+
+      const vData = res.data;
+      appliedVoucher = {
+        code: vData.code || code,
+        type: vData.voucher?.type || 'NOMINAL',
+        discount: vData.discount || 0,
+        min_spend: vData.voucher?.min_spend || 0,
+        discount_value: vData.voucher?.discount_value || 0,
+      };
+    }
+
+    // If Free voucher, clamp currentQty to 1
+    if (appliedVoucher.type === 'FREE' && currentQty !== 1) {
+      currentQty = 1;
+    }
+
+    // Dismiss soft keyboard on mobile
+    inputVoucherCode?.blur();
+
+    // Update UI
+    const inputContainer = document.getElementById('voucher-input-container');
+    if (inputContainer) inputContainer.classList.add('hidden');
+    if (voucherAppliedInfo) {
+      voucherAppliedInfo.classList.remove('hidden');
+      voucherAppliedInfo.classList.add('flex', 'flex-col');
+    }
+    if (voucherAppliedTitle) voucherAppliedTitle.textContent = appliedVoucher.code;
+    const tagDiscountEl = document.getElementById('voucher-applied-tag-discount');
+    const descTextEl = document.getElementById('voucher-applied-desc-text');
+    if (appliedVoucher.type === 'FREE') {
+      if (tagDiscountEl) tagDiscountEl.textContent = '(-100% Gratis)';
+      if (descTextEl) descTextEl.textContent = 'Voucher gratis 1 pcs berhasil diterapkan pada pesanan ini';
+    } else {
+      if (tagDiscountEl) tagDiscountEl.textContent = `(-${formatCurrency(appliedVoucher.discount)})`;
+      if (descTextEl) descTextEl.textContent = `Hemat ${formatCurrency(appliedVoucher.discount)} otomatis memotong total belanja Anda`;
+    }
+
+    showVoucherFeedback('');
+    triggerHaptic('success');
+
+    updateDetailQtyDisplay();
+  } catch (err) {
+    showVoucherFeedback(err.message || 'Gagal memproses voucher', 'error');
+  } finally {
+    isApplyingVoucher = false;
+    if (btnApplyVoucher) {
+      btnApplyVoucher.disabled = false;
+      btnApplyVoucher.innerHTML = '<span class="btn-text">Pakai</span>';
+    }
+  }
+}
+
+function removeVoucher() {
+  triggerHaptic('light');
+  resetVoucherState();
+  showVoucherFeedback('');
+  updateDetailQtyDisplay();
+}
+
 function bindDetailPageEvents() {
   if (btnBackCatalog) btnBackCatalog.addEventListener('click', closeDetailPage);
   document.getElementById('btn-back-to-home')?.addEventListener('click', closeDetailPage);
@@ -1237,6 +1500,38 @@ function bindDetailPageEvents() {
   if (detailPageBtnMinDesk) detailPageBtnMinDesk.addEventListener('click', () => updateDetailQty(-1));
   if (detailPageBtnPlusDesk) detailPageBtnPlusDesk.addEventListener('click', () => updateDetailQty(1));
   if (btnDetailCheckoutDesk) btnDetailCheckoutDesk.addEventListener('click', handleCheckout);
+
+  // Voucher events
+  if (btnApplyVoucher) btnApplyVoucher.addEventListener('click', applyVoucher);
+  if (btnRemoveVoucher) btnRemoveVoucher.addEventListener('click', removeVoucher);
+  if (inputVoucherCode) {
+    inputVoucherCode.addEventListener('input', () => {
+      if (btnClearVoucherInput) {
+        if (inputVoucherCode.value.trim().length > 0) {
+          btnClearVoucherInput.classList.remove('hidden');
+          btnClearVoucherInput.classList.add('flex');
+        } else {
+          btnClearVoucherInput.classList.add('hidden');
+          btnClearVoucherInput.classList.remove('flex');
+        }
+      }
+    });
+    inputVoucherCode.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyVoucher();
+      }
+    });
+  }
+  if (btnClearVoucherInput) {
+    btnClearVoucherInput.addEventListener('click', () => {
+      triggerHaptic('light');
+      inputVoucherCode.value = '';
+      btnClearVoucherInput.classList.add('hidden');
+      inputVoucherCode.focus();
+      showVoucherFeedback('');
+    });
+  }
 }
 
 function bindCheckoutModalEvents() {

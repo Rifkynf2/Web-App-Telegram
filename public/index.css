@@ -1505,6 +1505,64 @@ html[data-theme="light"] #btn-back-to-home:hover {
 /* Stock count in detail page — darker emerald in light mode */
 html[data-theme="light"] #detail-page-stock { color: #059669 !important; }
 html[data-theme="light"] .text-emerald-400\/80 { color: #059669 !important; }
+/* Voucher Promo in detail page (Light mode contrast) */
+html[data-theme="light"] #detail-page-voucher-box .text-amber-400 { color: #b45309 !important; }
+html[data-theme="light"] #voucher-status-pill { color: #b45309 !important; }
+html[data-theme="light"] .voucher-input-liquid {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(217, 119, 6, 0.25) !important;
+  color: #1e1b4b !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .voucher-input-liquid:focus {
+  background: #ffffff !important;
+  border-color: #d97706 !important;
+  box-shadow: 0 0 12px rgba(217, 119, 6, 0.2) !important;
+}
+html[data-theme="light"] .voucher-ticket-card {
+  background: linear-gradient(135deg, rgba(209, 250, 229, 0.7) 0%, rgba(254, 243, 199, 0.6) 100%) !important;
+  border: 1px dashed rgba(5, 150, 105, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.06) !important;
+}
+html[data-theme="light"] #voucher-applied-info .bg-amber-500\/10 {
+  background: rgba(254, 243, 199, 0.8) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+html[data-theme="light"] #voucher-applied-title {
+  color: #92400e !important;
+}
+html[data-theme="light"] #voucher-applied-tag-discount {
+  color: #047857 !important;
+}
+html[data-theme="light"] #voucher-applied-desc {
+  color: #047857 !important;
+}
+html[data-theme="light"] .btn-remove-voucher-pill {
+  background: rgba(254, 226, 226, 0.8) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #dc2626 !important;
+}
+html[data-theme="light"] .btn-remove-voucher-pill:hover {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+html[data-theme="light"] .btn-liquid-amber {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(180, 83, 9, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25) !important;
+}
+html[data-theme="light"] #voucher-feedback-box.bg-red-500\/10 {
+  background: rgba(254, 242, 242, 0.9) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #b91c1c !important;
+}
+html[data-theme="light"] #voucher-feedback-box.bg-emerald-500\/10 {
+  background: rgba(236, 253, 245, 0.9) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #047857 !important;
+}
+
 
 /* ── Profile page ── */
 html[data-theme="light"] #profile-view .text-white { color: #1e1d35 !important; }
@@ -2411,6 +2469,56 @@ html[data-theme="light"] .custom-select-option.selected {
 .btn-liquid-primary:active {
   transform: scale(0.98);
 }
+
+/* Amber Glass Button (Voucher Pakai) */
+.btn-liquid-amber {
+  min-width: 76px;
+  height: 34px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(12px) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
+}
+.btn-liquid-amber:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%) !important;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  transform: translateY(-1px);
+}
+.btn-liquid-amber:active {
+  transform: scale(0.96);
+}
+.btn-liquid-amber:disabled {
+  opacity: 0.65;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Voucher Input Liquid styling */
+.voucher-input-liquid {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+  color: #fff !important;
+  transition: all 0.25s ease !important;
+}
+.voucher-input-liquid:focus {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
+  border-color: rgba(245, 158, 11, 0.55) !important;
+  border-top-color: rgba(251, 191, 36, 0.8) !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  outline: none !important;
+}
+
+
+
 
 /* Add Button (+ TAMBAH) */
 .btn-liquid-add {

@@ -110,6 +110,104 @@ async function getBuyerProfile(req, res) {
  * Header: X-Telegram-Init-Data
  */
 async function createCheckout(req, res) {
+    const action = req.body?.action;
+
+    // Handle voucher validation relay
+    if (action === 'validate_voucher') {
+        const voucherCode = req.body?.voucher_code;
+        const productId = req.body?.product_id;
+        const subtotal = parseInt(req.body?.subtotal, 10) || 0;
+        const qty = parseInt(req.body?.qty, 10) || 1;
+
+        if (!voucherCode) {
+            return error(res, 'Kode voucher harus diisi');
+        }
+
+        try {
+            const ctx = await resolveBuyerContext(req);
+            if (ctx.error) return sendContextError(res, ctx.error);
+
+            const relayResponse = await fetch(`${ctx.botApiBaseUrl}/api/internal/voucher/validate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Api-Secret': process.env.INTERNAL_API_SECRET,
+                },
+                body: JSON.stringify({
+                    chat_id: ctx.chatId,
+                    code: voucherCode,
+                    product_id: productId,
+                    subtotal,
+                    qty,
+                }),
+            });
+
+            const relayData = await relayResponse.json().catch(() => ({}));
+            if (!relayResponse.ok) {
+                return error(res, relayData.error || 'Gagal memvalidasi voucher', relayResponse.status);
+            }
+
+            return success(res, relayData);
+        } catch (err) {
+            console.error('[API/webapp/checkout:validate_voucher] Error:', err.message);
+            return serverError(res);
+        }
+    }
+
+    // Handle 100% free voucher claim relay
+    if (action === 'claim_free') {
+        const variantId = req.body?.variant_id;
+        const voucherCode = req.body?.voucher_code;
+
+        if (!variantId || !voucherCode) {
+            return error(res, 'variant_id and voucher_code are required for claim_free');
+        }
+
+        try {
+            const ctx = await resolveBuyerContext(req);
+            if (ctx.error) return sendContextError(res, ctx.error);
+
+            const { data: sub } = await getMasterSupabase()
+                .from('subscriptions')
+                .select('expiry_date')
+                .eq('bot_id', ctx.botId)
+                .order('expiry_date', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (sub && new Date(sub.expiry_date) < new Date()) {
+                return forbidden(res, 'Masa sewa toko telah habis. Hubungi pemilik toko.');
+            }
+
+            const relayResponse = await fetch(`${ctx.botApiBaseUrl}/api/internal/checkout/claim-free`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Api-Secret': process.env.INTERNAL_API_SECRET,
+                },
+                body: JSON.stringify({
+                    chat_id: ctx.chatId,
+                    username: ctx.username,
+                    variant_id: variantId,
+                    voucher_code: voucherCode,
+                }),
+            });
+
+            const relayData = await relayResponse.json().catch(() => ({}));
+            if (!relayResponse.ok) {
+                return error(res, relayData.error || 'Klaim voucher gratis gagal', relayResponse.status);
+            }
+
+            return success(res, {
+                trx_id: relayData.trx_id,
+                total_amount: 0,
+                is_free: true,
+            });
+        } catch (err) {
+            console.error('[API/webapp/checkout:claim_free] Error:', err.message);
+            return serverError(res);
+        }
+    }
     const variantId = req.body?.variant_id;
     const qty = parseInt(req.body?.qty, 10) || 0;
 
@@ -144,6 +242,7 @@ async function createCheckout(req, res) {
                 username: ctx.username,
                 variant_id: variantId,
                 qty,
+                voucher_code: req.body?.voucher_code || null,
             }),
         });
 

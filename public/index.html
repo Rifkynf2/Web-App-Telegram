@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="RNFBOT Store - Belanja produk digital premium, aplikasi, dan layanan otomatisasi bot Telegram secara cepat, aman, dan instan." />
+    <meta
+      name="description"
+      content="RNFBOT Store - Belanja produk digital premium, aplikasi, dan layanan otomatisasi bot Telegram secara cepat, aman, dan instan." />
     <title>Home - RNFBOT Store</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="canonical" href="https://app.rnfbot.my.id/" />
@@ -15,22 +17,40 @@
 
     <!-- Open Graph / SEO Social Metadata -->
     <meta property="og:title" content="Home - RNFBOT Store" />
-    <meta property="og:description" content="RNFBOT Store - Belanja produk digital premium, aplikasi, dan layanan otomatisasi bot Telegram secara cepat, aman, dan instan." />
+    <meta
+      property="og:description"
+      content="RNFBOT Store - Belanja produk digital premium, aplikasi, dan layanan otomatisasi bot Telegram secara cepat, aman, dan instan." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://app.rnfbot.my.id/" />
-    <meta property="og:image" content="https://app.rnfbot.my.id/images/Logo%20RNFBOT.webp" />
+    <meta
+      property="og:image"
+      content="https://app.rnfbot.my.id/images/Logo%20RNFBOT.webp" />
 
     <!-- Telegram Web App SDK (Placed at top of head synchronously per Telegram Docs) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <!-- Performance: Preload local self-hosted Outfit font -->
-    <link rel="preload" href="/fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link
+      rel="preload"
+      href="/fonts/outfit-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin />
 
     <!-- Performance: Preload local Font Awesome solid font -->
-    <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin />
+    <link
+      rel="preload"
+      href="/webfonts/fa-solid-900.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin />
 
     <!-- Performance: Preload core stylesheet -->
-    <link rel="preload" href="style/style.css?v=2.5" as="style" fetchpriority="high" />
+    <link
+      rel="preload"
+      href="style/style.css?v=2.5"
+      as="style"
+      fetchpriority="high" />
 
     <!-- Performance: Flatten ES Module dependency tree (Eliminates 2.16s critical request chaining) -->
     <link rel="modulepreload" href="js/buyer/buyer-main.js?v=2.5" />
@@ -47,7 +67,7 @@
         background-color: var(--bg-body, #0a0a0c);
         color: var(--text-primary, #ffffff);
         font-family:
-          'Outfit',
+          "Outfit",
           system-ui,
           -apple-system,
           sans-serif;
@@ -74,40 +94,47 @@
 
     <!-- Global Theme Script: Must run synchronously to eliminate FOUC on reload -->
     <script type="module">
-      import { initTheme, toggleTheme } from './js/shared/theme.js';
+      import { initTheme, toggleTheme } from "./js/shared/theme.js";
       initTheme();
       window.toggleTheme = toggleTheme;
       const bindToggle = () => {
-        const btn = document.getElementById('btn-theme-toggle');
-        if (btn) btn.addEventListener('click', toggleTheme);
+        const btn = document.getElementById("btn-theme-toggle");
+        if (btn) btn.addEventListener("click", toggleTheme);
       };
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bindToggle);
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bindToggle);
       } else {
         bindToggle();
       }
       requestAnimationFrame(() => {
-        document.body.classList.add('theme-loaded');
+        document.body.classList.add("theme-loaded");
       });
     </script>
     <script type="module" src="js/buyer/buyer-main.js?v=2.5" defer></script>
- 
+
     <!-- Local Self-Hosted Stylesheets (Zero External CDN Dependency) -->
     <link href="style/style.css?v=2.5" rel="stylesheet" />
     <link rel="preload" href="style/fontawesome.min.css" as="style" />
-    <link rel="stylesheet" href="style/fontawesome.min.css" media="print" onload="this.media='all'" />
-    <noscript><link rel="stylesheet" href="style/fontawesome.min.css" /></noscript>
+    <link
+      rel="stylesheet"
+      href="style/fontawesome.min.css"
+      media="print"
+      onload="this.media = 'all'" />
+    <noscript
+      ><link rel="stylesheet" href="style/fontawesome.min.css"
+    /></noscript>
 
     <!-- Instant Preview Detection & Instant LCP Resolution -->
     <script>
       const urlParams = new URLSearchParams(window.location.search);
-      const isPreview = urlParams.get('preview') === 'true' || urlParams.get('preview') === '1';
+      const isPreview =
+        urlParams.get("preview") === "true" || urlParams.get("preview") === "1";
       if (isPreview) {
-        document.documentElement.classList.add('is-preview');
+        document.documentElement.classList.add("is-preview");
         // Preset header shop name immediately on DOM ready to eliminate 2.49s LCP render delay
-        document.addEventListener('DOMContentLoaded', () => {
-          const shopNameEl = document.getElementById('header-shop-name');
-          if (shopNameEl) shopNameEl.textContent = 'Preview Toko';
+        document.addEventListener("DOMContentLoaded", () => {
+          const shopNameEl = document.getElementById("header-shop-name");
+          if (shopNameEl) shopNameEl.textContent = "Preview Toko";
         });
       }
     </script>
@@ -119,35 +146,42 @@
         display: none !important;
       }
     </style>
-
-
   </head>
   <body
     class="bg-linear-to-br from-[#020617] via-[#0f0c29] to-[#020617] text-gray-100 min-h-screen text-sm antialiased relative pb-28"
     style="font-family: &quot;Outfit&quot;, sans-serif">
-
     <!-- Telegram Fallback / Simple Elegant iOS Liquid Glass -->
     <div
       id="telegram-fallback"
       class="fixed inset-0 z-1000 bg-[#030712] text-gray-100 flex items-center justify-center p-4 sm:p-6 overflow-y-auto selection:bg-indigo-500 selection:text-white"
-      style="font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;">
-      
+      style="
+        font-family:
+          &quot;Outfit&quot;,
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+      ">
       <!-- Ambient Lighting Glow (Subtle & Calming) -->
       <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div class="absolute top-[10%] left-1/2 -translate-x-1/2 w-125 h-87.5 rounded-full bg-linear-to-b from-indigo-600/20 via-purple-600/10 to-transparent blur-[130px]"></div>
-        <div class="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-100 h-75 rounded-full bg-blue-600/10 blur-[130px]"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[24px_24px] opacity-60"></div>
+        <div
+          class="absolute top-[10%] left-1/2 -translate-x-1/2 w-125 h-87.5 rounded-full bg-linear-to-b from-indigo-600/20 via-purple-600/10 to-transparent blur-[130px]"></div>
+        <div
+          class="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-100 h-75 rounded-full bg-blue-600/10 blur-[130px]"></div>
+        <div
+          class="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] bg-size-[24px_24px] opacity-60"></div>
       </div>
 
       <!-- Center Card: Simple & Elegant iOS Liquid Glass with Masked Running Border -->
       <div class="relative z-10 w-full max-w-md my-auto">
-        <div class="ios-glass-card card-running-border rounded-4xl p-6 sm:p-9 text-center relative overflow-hidden shadow-2xl">
-          
+        <div
+          class="ios-glass-card card-running-border rounded-4xl p-6 sm:p-9 text-center relative overflow-hidden shadow-2xl">
           <!-- Specular Highlight Line on Top Border -->
-          <div class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/40 to-transparent"></div>
-          
+          <div
+            class="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/40 to-transparent"></div>
+
           <!-- Official Logo Emblem (iOS Squircle) -->
-          <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-[22px] sm:rounded-[26px] p-1.5 bg-white/10 border border-white/20 shadow-xl shadow-indigo-500/20 mx-auto mb-5 relative group">
+          <div
+            class="w-20 h-20 sm:w-24 sm:h-24 rounded-[22px] sm:rounded-[26px] p-1.5 bg-white/10 border border-white/20 shadow-xl shadow-indigo-500/20 mx-auto mb-5 relative group">
             <img
               src="images/Logo RNFBOT.webp"
               alt="RNF BOT"
@@ -158,22 +192,29 @@
           </div>
 
           <!-- Status Indicator Pill -->
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/6 border border-white/10 text-gray-300 text-[11px] font-semibold mb-4">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div
+            class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/6 border border-white/10 text-gray-300 text-[11px] font-semibold mb-4">
+            <span
+              class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span class="tracking-wide">Ekosistem Bot Telegram</span>
           </div>
 
           <!-- Headline -->
-          <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug mb-3">
+          <h1
+            class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug mb-3">
             Otomasi Toko Digital &amp;<br />
-            <span class="text-transparent bg-clip-text bg-linear-to-r from-sky-400 via-sky-300 to-indigo-400 drop-shadow-[0_2px_12px_rgba(56,189,248,0.25)]">
+            <span
+              class="text-transparent bg-clip-text bg-linear-to-r from-sky-400 via-sky-300 to-indigo-400 drop-shadow-[0_2px_12px_rgba(56,189,248,0.25)]">
               Bot Telegram
             </span>
           </h1>
 
           <!-- Description -->
-          <p class="text-gray-300/80 text-xs sm:text-sm font-normal leading-relaxed max-w-xs sm:max-w-sm mx-auto mb-7">
-            Aplikasi toko dan sistem transaksi ini terintegrasi langsung di dalam Telegram. Kunjungi website resmi kami untuk informasi penyewaan bot dan fitur lengkap lainnya.
+          <p
+            class="text-gray-300/80 text-xs sm:text-sm font-normal leading-relaxed max-w-xs sm:max-w-sm mx-auto mb-7">
+            Aplikasi toko dan sistem transaksi ini terintegrasi langsung di
+            dalam Telegram. Kunjungi website resmi kami untuk informasi
+            penyewaan bot dan fitur lengkap lainnya.
           </p>
 
           <!-- Buttons: Clean, Focused, Only 2 Buttons -->
@@ -182,7 +223,8 @@
             <a
               href="https://rnfbot.my.id"
               class="group w-full py-3.5 px-5 rounded-2xl bg-linear-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-indigo-600/30 border border-indigo-400/30 active:scale-[0.98] transition-all duration-200 decoration-0">
-              <i class="fa-solid fa-arrow-up-right-from-square text-xs text-indigo-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+              <i
+                class="fa-solid fa-arrow-up-right-from-square text-xs text-indigo-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
               <span>Kunjungi Website Resmi</span>
             </a>
 
@@ -198,27 +240,34 @@
           </div>
 
           <!-- Subtle Footer Note -->
-          <div class="mt-6 pt-5 border-t border-white/8 flex items-center justify-between text-[11px] text-gray-400">
-            <a href="https://t.me/rnf_shopp" target="_blank" rel="noopener noreferrer" class="hover:text-gray-300 transition-colors flex items-center gap-1.5">
+          <div
+            class="mt-6 pt-5 border-t border-white/8 flex items-center justify-between text-[11px] text-gray-400">
+            <a
+              href="https://t.me/rnf_shopp"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-gray-300 transition-colors flex items-center gap-1.5">
               <i class="fa-brands fa-telegram text-sky-400"></i>
               <span>Hubungi Creator</span>
             </a>
             <span>&copy; 2026 RNF BOT SYSTEM</span>
           </div>
-
         </div>
       </div>
-
     </div>
-
 
     <!-- Background Dot Matrix & Ambient Glow -->
     <div class="bg-dot-matrix"></div>
     <div class="bg-decoration"><span></span><span></span><span></span></div>
 
     <!-- Header Pill (Preview Toko in Buyer Mode) -->
-    <header id="header-pill" class="fixed top-4 left-1/2 z-50 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl bg-transparent! border-0! shadow-none!" style="background: transparent;">
-      <div id="header-pill-inner" class="running-border flex items-center px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full shadow-2xl relative w-full overflow-hidden">
+    <header
+      id="header-pill"
+      class="fixed top-4 left-1/2 z-50 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl bg-transparent! border-0! shadow-none!"
+      style="background: transparent">
+      <div
+        id="header-pill-inner"
+        class="running-border flex items-center px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full shadow-2xl relative w-full overflow-hidden">
         <!-- Back Button (Shown when search is active - pure floating icon, no border) -->
         <button
           id="btn-close-search"
@@ -229,26 +278,50 @@
         </button>
 
         <!-- Brand identity (Shop Logo + Shop Name) -->
-        <div id="header-brand-group" class="flex items-center gap-2.5 sm:gap-3 min-w-0 z-10 shrink-0 flex-1 sm:flex-initial">
-          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-linear-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-indigo-300 font-bold text-xs shrink-0 overflow-hidden relative border border-white/15 shadow-md shadow-indigo-500/10">
-            <span id="header-shop-initial" class="z-10"><i class="fa-solid fa-store"></i></span>
-            <img id="header-shop-logo" class="absolute inset-0 w-full h-full object-cover hidden z-20" alt="Logo Toko" />
+        <div
+          id="header-brand-group"
+          class="flex items-center gap-2.5 sm:gap-3 min-w-0 z-10 shrink-0 flex-1 sm:flex-initial">
+          <div
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-linear-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-indigo-300 font-bold text-xs shrink-0 overflow-hidden relative border border-white/15 shadow-md shadow-indigo-500/10">
+            <span id="header-shop-initial" class="z-10"
+              ><i class="fa-solid fa-store"></i
+            ></span>
+            <img
+              id="header-shop-logo"
+              class="absolute inset-0 w-full h-full object-cover hidden z-20"
+              alt="Logo Toko" />
           </div>
           <div class="min-w-0">
-            <p id="header-shop-name" class="text-xs sm:text-sm font-black text-white tracking-wide truncate max-w-37.5 sm:max-w-70 md:max-w-105">RNF BOT SYSTEM</p>
+            <p
+              id="header-shop-name"
+              class="text-xs sm:text-sm font-black text-white tracking-wide truncate max-w-37.5 sm:max-w-70 md:max-w-105">
+              RNF BOT SYSTEM
+            </p>
           </div>
         </div>
 
         <!-- Search Bar Container (Exact Admin Panel Liquid Glass Search Box) -->
         <div id="header-search-container" class="relative z-10 ml-auto">
           <div class="search-box" id="navbar-search-box">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide-search shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide-search shrink-0">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
             <input
               type="search"
               id="input-search"
               placeholder="Cari aplikasi..."
-              autocomplete="off"
-            />
+              autocomplete="off" />
             <button
               id="btn-clear-search"
               type="button"
@@ -260,13 +333,28 @@
         </div>
 
         <!-- Action Controls (Right side: Mobile Search Toggle + Theme Toggle) -->
-        <div id="header-actions-group" class="flex items-center gap-1.5 shrink-0 z-10 ml-auto sm:ml-0">
+        <div
+          id="header-actions-group"
+          class="flex items-center gap-1.5 shrink-0 z-10 ml-auto sm:ml-0">
           <button
             id="btn-search-mobile-toggle"
             type="button"
             class="sm:hidden flex items-center justify-center text-sky-400 hover:text-sky-300 transition-all active:scale-90 hover:scale-110 cursor-pointer shrink-0 w-8 h-8"
             title="Cari aplikasi">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide-search">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
           </button>
           <button
             id="btn-theme-toggle"
@@ -282,49 +370,99 @@
     <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 relative z-10 pt-20">
       <!-- Loading State (Hidden by default, opt-in via .active) -->
-      <div id="loading-state" class="hidden" style="display: none !important;">
-        <svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve"><path fill="currentColor" d="M10,40c0,0,0-0.4,0-1.1c0-0.3,0-0.8,0-1.3c0-0.3,0-0.5,0-0.8c0-0.3,0.1-0.6,0.1-0.9c0.1-0.6,0.1-1.4,0.2-2.1 c0.2-0.8,0.3-1.6,0.5-2.5c0.2-0.9,0.6-1.8,0.8-2.8c0.3-1,0.8-1.9,1.2-3c0.5-1,1.1-2,1.7-3.1c0.7-1,1.4-2.1,2.2-3.1 c1.6-2.1,3.7-3.9,6-5.6c2.3-1.7,5-3,7.9-4.1c0.7-0.2,1.5-0.4,2.2-0.7c0.7-0.3,1.5-0.3,2.3-0.5c0.8-0.2,1.5-0.3,2.3-0.4l1.2-0.1 l0.6-0.1l0.3,0l0.1,0l0.1,0l0,0c0.1,0-0.1,0,0.1,0c1.5,0,2.9-0.1,4.5,0.2c0.8,0.1,1.6,0.1,2.4,0.3c0.8,0.2,1.5,0.3,2.3,0.5 c3,0.8,5.9,2,8.5,3.6c2.6,1.6,4.9,3.4,6.8,5.4c1,1,1.8,2.1,2.7,3.1c0.8,1.1,1.5,2.1,2.1,3.2c0.6,1.1,1.2,2.1,1.6,3.1 c0.4,1,0.9,2,1.2,3c0.3,1,0.6,1.9,0.8,2.7c0.2,0.9,0.3,1.6,0.5,2.4c0.1,0.4,0.1,0.7,0.2,1c0,0.3,0.1,0.6,0.1,0.9 c0.1,0.6,0.1,1,0.1,1.4C74,39.6,74,40,74,40c0.2,2.2-1.5,4.1-3.7,4.3s-4.1-1.5-4.3-3.7c0-0.1,0-0.2,0-0.3l0-0.4c0,0,0-0.3,0-0.9 c0-0.3,0-0.7,0-1.1c0-0.2,0-0.5,0-0.7c0-0.2-0.1-0.5-0.1-0.8c-0.1-0.6-0.1-1.2-0.2-1.9c-0.1-0.7-0.3-1.4-0.4-2.2 c-0.2-0.8-0.5-1.6-0.7-2.4c-0.3-0.8-0.7-1.7-1.1-2.6c-0.5-0.9-0.9-1.8-1.5-2.7c-0.6-0.9-1.2-1.8-1.9-2.7c-1.4-1.8-3.2-3.4-5.2-4.9 c-2-1.5-4.4-2.7-6.9-3.6c-0.6-0.2-1.3-0.4-1.9-0.6c-0.7-0.2-1.3-0.3-1.9-0.4c-1.2-0.3-2.8-0.4-4.2-0.5l-2,0c-0.7,0-1.4,0.1-2.1,0.1 c-0.7,0.1-1.4,0.1-2,0.3c-0.7,0.1-1.3,0.3-2,0.4c-2.6,0.7-5.2,1.7-7.5,3.1c-2.2,1.4-4.3,2.9-6,4.7c-0.9,0.8-1.6,1.8-2.4,2.7 c-0.7,0.9-1.3,1.9-1.9,2.8c-0.5,1-1,1.9-1.4,2.8c-0.4,0.9-0.8,1.8-1,2.6c-0.3,0.9-0.5,1.6-0.7,2.4c-0.2,0.7-0.3,1.4-0.4,2.1 c-0.1,0.3-0.1,0.6-0.2,0.9c0,0.3-0.1,0.6-0.1,0.8c0,0.5-0.1,0.9-0.1,1.3C10,39.6,10,40,10,40z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 40 40" to="360 40 40" dur="0.8s" repeatCount="indefinite"/></path><path fill="currentColor" d="M62,40.1c0,0,0,0.2-0.1,0.7c0,0.2,0,0.5-0.1,0.8c0,0.2,0,0.3,0,0.5c0,0.2-0.1,0.4-0.1,0.7 c-0.1,0.5-0.2,1-0.3,1.6c-0.2,0.5-0.3,1.1-0.5,1.8c-0.2,0.6-0.5,1.3-0.7,1.9c-0.3,0.7-0.7,1.3-1,2.1c-0.4,0.7-0.9,1.4-1.4,2.1 c-0.5,0.7-1.1,1.4-1.7,2c-1.2,1.3-2.7,2.5-4.4,3.6c-1.7,1-3.6,1.8-5.5,2.4c-2,0.5-4,0.7-6.2,0.7c-1.9-0.1-4.1-0.4-6-1.1 c-1.9-0.7-3.7-1.5-5.2-2.6c-1.5-1.1-2.9-2.3-4-3.7c-0.6-0.6-1-1.4-1.5-2c-0.4-0.7-0.8-1.4-1.2-2c-0.3-0.7-0.6-1.3-0.8-2 c-0.2-0.6-0.4-1.2-0.6-1.8c-0.1-0.6-0.3-1.1-0.4-1.6c-0.1-0.5-0.1-1-0.2-1.4c-0.1-0.9-0.1-1.5-0.1-2c0-0.5,0-0.7,0-0.7 s0,0.2,0.1,0.7c0.1,0.5,0,1.1,0.2,2c0.1,0.4,0.2,0.9,0.3,1.4c0.1,0.5,0.3,1,0.5,1.6c0.2,0.6,0.4,1.1,0.7,1.8 c0.3,0.6,0.6,1.2,0.9,1.9c0.4,0.6,0.8,1.3,1.2,1.9c0.5,0.6,1,1.3,1.6,1.8c1.1,1.2,2.5,2.3,4,3.2c1.5,0.9,3.2,1.6,5,2.1 c1.8,0.5,3.6,0.6,5.6,0.6c1.8-0.1,3.7-0.4,5.4-1c1.7-0.6,3.3-1.4,4.7-2.4c1.4-1,2.6-2.1,3.6-3.3c0.5-0.6,0.9-1.2,1.3-1.8 c0.4-0.6,0.7-1.2,1-1.8c0.3-0.6,0.6-1.2,0.8-1.8c0.2-0.6,0.4-1.1,0.5-1.7c0.1-0.5,0.2-1,0.3-1.5c0.1-0.4,0.1-0.8,0.1-1.2 c0-0.2,0-0.4,0.1-0.5c0-0.2,0-0.4,0-0.5c0-0.3,0-0.6,0-0.8c0-0.5,0-0.7,0-0.7c0-1.1,0.9-2,2-2s2,0.9,2,2C62,40,62,40.1,62,40.1z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 40 40" to="-360 40 40" dur="0.6s" repeatCount="indefinite"/></path></svg>
+      <div id="loading-state" class="hidden" style="display: none !important">
+        <svg
+          version="1.1"
+          class="svg-loader"
+          xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          x="0px"
+          y="0px"
+          viewBox="0 0 80 80"
+          xml:space="preserve">
+          <path
+            fill="currentColor"
+            d="M10,40c0,0,0-0.4,0-1.1c0-0.3,0-0.8,0-1.3c0-0.3,0-0.5,0-0.8c0-0.3,0.1-0.6,0.1-0.9c0.1-0.6,0.1-1.4,0.2-2.1 c0.2-0.8,0.3-1.6,0.5-2.5c0.2-0.9,0.6-1.8,0.8-2.8c0.3-1,0.8-1.9,1.2-3c0.5-1,1.1-2,1.7-3.1c0.7-1,1.4-2.1,2.2-3.1 c1.6-2.1,3.7-3.9,6-5.6c2.3-1.7,5-3,7.9-4.1c0.7-0.2,1.5-0.4,2.2-0.7c0.7-0.3,1.5-0.3,2.3-0.5c0.8-0.2,1.5-0.3,2.3-0.4l1.2-0.1 l0.6-0.1l0.3,0l0.1,0l0.1,0l0,0c0.1,0-0.1,0,0.1,0c1.5,0,2.9-0.1,4.5,0.2c0.8,0.1,1.6,0.1,2.4,0.3c0.8,0.2,1.5,0.3,2.3,0.5 c3,0.8,5.9,2,8.5,3.6c2.6,1.6,4.9,3.4,6.8,5.4c1,1,1.8,2.1,2.7,3.1c0.8,1.1,1.5,2.1,2.1,3.2c0.6,1.1,1.2,2.1,1.6,3.1 c0.4,1,0.9,2,1.2,3c0.3,1,0.6,1.9,0.8,2.7c0.2,0.9,0.3,1.6,0.5,2.4c0.1,0.4,0.1,0.7,0.2,1c0,0.3,0.1,0.6,0.1,0.9 c0.1,0.6,0.1,1,0.1,1.4C74,39.6,74,40,74,40c0.2,2.2-1.5,4.1-3.7,4.3s-4.1-1.5-4.3-3.7c0-0.1,0-0.2,0-0.3l0-0.4c0,0,0-0.3,0-0.9 c0-0.3,0-0.7,0-1.1c0-0.2,0-0.5,0-0.7c0-0.2-0.1-0.5-0.1-0.8c-0.1-0.6-0.1-1.2-0.2-1.9c-0.1-0.7-0.3-1.4-0.4-2.2 c-0.2-0.8-0.5-1.6-0.7-2.4c-0.3-0.8-0.7-1.7-1.1-2.6c-0.5-0.9-0.9-1.8-1.5-2.7c-0.6-0.9-1.2-1.8-1.9-2.7c-1.4-1.8-3.2-3.4-5.2-4.9 c-2-1.5-4.4-2.7-6.9-3.6c-0.6-0.2-1.3-0.4-1.9-0.6c-0.7-0.2-1.3-0.3-1.9-0.4c-1.2-0.3-2.8-0.4-4.2-0.5l-2,0c-0.7,0-1.4,0.1-2.1,0.1 c-0.7,0.1-1.4,0.1-2,0.3c-0.7,0.1-1.3,0.3-2,0.4c-2.6,0.7-5.2,1.7-7.5,3.1c-2.2,1.4-4.3,2.9-6,4.7c-0.9,0.8-1.6,1.8-2.4,2.7 c-0.7,0.9-1.3,1.9-1.9,2.8c-0.5,1-1,1.9-1.4,2.8c-0.4,0.9-0.8,1.8-1,2.6c-0.3,0.9-0.5,1.6-0.7,2.4c-0.2,0.7-0.3,1.4-0.4,2.1 c-0.1,0.3-0.1,0.6-0.2,0.9c0,0.3-0.1,0.6-0.1,0.8c0,0.5-0.1,0.9-0.1,1.3C10,39.6,10,40,10,40z">
+            <animateTransform
+              attributeType="xml"
+              attributeName="transform"
+              type="rotate"
+              from="0 40 40"
+              to="360 40 40"
+              dur="0.8s"
+              repeatCount="indefinite" />
+          </path>
+          <path
+            fill="currentColor"
+            d="M62,40.1c0,0,0,0.2-0.1,0.7c0,0.2,0,0.5-0.1,0.8c0,0.2,0,0.3,0,0.5c0,0.2-0.1,0.4-0.1,0.7 c-0.1,0.5-0.2,1-0.3,1.6c-0.2,0.5-0.3,1.1-0.5,1.8c-0.2,0.6-0.5,1.3-0.7,1.9c-0.3,0.7-0.7,1.3-1,2.1c-0.4,0.7-0.9,1.4-1.4,2.1 c-0.5,0.7-1.1,1.4-1.7,2c-1.2,1.3-2.7,2.5-4.4,3.6c-1.7,1-3.6,1.8-5.5,2.4c-2,0.5-4,0.7-6.2,0.7c-1.9-0.1-4.1-0.4-6-1.1 c-1.9-0.7-3.7-1.5-5.2-2.6c-1.5-1.1-2.9-2.3-4-3.7c-0.6-0.6-1-1.4-1.5-2c-0.4-0.7-0.8-1.4-1.2-2c-0.3-0.7-0.6-1.3-0.8-2 c-0.2-0.6-0.4-1.2-0.6-1.8c-0.1-0.6-0.3-1.1-0.4-1.6c-0.1-0.5-0.1-1-0.2-1.4c-0.1-0.9-0.1-1.5-0.1-2c0-0.5,0-0.7,0-0.7 s0,0.2,0.1,0.7c0.1,0.5,0,1.1,0.2,2c0.1,0.4,0.2,0.9,0.3,1.4c0.1,0.5,0.3,1,0.5,1.6c0.2,0.6,0.4,1.1,0.7,1.8 c0.3,0.6,0.6,1.2,0.9,1.9c0.4,0.6,0.8,1.3,1.2,1.9c0.5,0.6,1,1.3,1.6,1.8c1.1,1.2,2.5,2.3,4,3.2c1.5,0.9,3.2,1.6,5,2.1 c1.8,0.5,3.6,0.6,5.6,0.6c1.8-0.1,3.7-0.4,5.4-1c1.7-0.6,3.3-1.4,4.7-2.4c1.4-1,2.6-2.1,3.6-3.3c0.5-0.6,0.9-1.2,1.3-1.8 c0.4-0.6,0.7-1.2,1-1.8c0.3-0.6,0.6-1.2,0.8-1.8c0.2-0.6,0.4-1.1,0.5-1.7c0.1-0.5,0.2-1,0.3-1.5c0.1-0.4,0.1-0.8,0.1-1.2 c0-0.2,0-0.4,0.1-0.5c0-0.2,0-0.4,0-0.5c0-0.3,0-0.6,0-0.8c0-0.5,0-0.7,0-0.7c0-1.1,0.9-2,2-2s2,0.9,2,2C62,40,62,40.1,62,40.1z">
+            <animateTransform
+              attributeType="xml"
+              attributeName="transform"
+              type="rotate"
+              from="0 40 40"
+              to="-360 40 40"
+              dur="0.6s"
+              repeatCount="indefinite" />
+          </path>
+        </svg>
         <span class="loading-text">Memuat Produk...</span>
       </div>
 
       <!-- Error State -->
-      <div id="error-state" class="hidden flex-col items-center justify-center py-20 text-center">
-        <div class="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6">
+      <div
+        id="error-state"
+        class="hidden flex-col items-center justify-center py-20 text-center">
+        <div
+          class="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6">
           <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500"></i>
         </div>
-        <h2 id="error-title" class="text-2xl font-bold text-white mb-2">Toko Tidak Ditemukan</h2>
-        <p id="error-message" class="text-gray-400 max-w-sm">Tautan yang Anda tuju tidak valid atau bot sedang tidak aktif.</p>
+        <h2 id="error-title" class="text-2xl font-bold text-white mb-2">
+          Toko Tidak Ditemukan
+        </h2>
+        <p id="error-message" class="text-gray-400 max-w-sm">
+          Tautan yang Anda tuju tidak valid atau bot sedang tidak aktif.
+        </p>
       </div>
 
       <!-- Product Grid — 2 col mobile, 3 tablet, 4 desktop -->
-      <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div
+        id="product-grid"
+        class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         <!-- Liquid Glass Skeleton Shimmer Placeholders (Replaced dynamically once data resolves) -->
-        <div class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
-          <div class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
+        <div
+          class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
+          <div
+            class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
           <div class="space-y-2 px-1">
             <div class="h-3.5 bg-white/15 rounded-md w-3/4"></div>
             <div class="h-3 bg-white/10 rounded-md w-1/2"></div>
             <div class="h-7 bg-white/10 rounded-xl w-full mt-2"></div>
           </div>
         </div>
-        <div class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
-          <div class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
+        <div
+          class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
+          <div
+            class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
           <div class="space-y-2 px-1">
             <div class="h-3.5 bg-white/15 rounded-md w-2/3"></div>
             <div class="h-3 bg-white/10 rounded-md w-1/3"></div>
             <div class="h-7 bg-white/10 rounded-xl w-full mt-2"></div>
           </div>
         </div>
-        <div class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
-          <div class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
+        <div
+          class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
+          <div
+            class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
           <div class="space-y-2 px-1">
             <div class="h-3.5 bg-white/15 rounded-md w-3/4"></div>
             <div class="h-3 bg-white/10 rounded-md w-1/2"></div>
             <div class="h-7 bg-white/10 rounded-xl w-full mt-2"></div>
           </div>
         </div>
-        <div class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
-          <div class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
+        <div
+          class="card-scroll visible liquid-glass skeleton-shimmer flex flex-col p-2.5 pb-3 border border-white/5 rounded-2xl">
+          <div
+            class="product-card-canvas relative overflow-hidden w-full aspect-square rounded-xl bg-white/10 mb-2"></div>
           <div class="space-y-2 px-1">
             <div class="h-3.5 bg-white/15 rounded-md w-2/3"></div>
             <div class="h-3 bg-white/10 rounded-md w-1/3"></div>
@@ -335,19 +473,24 @@
 
       <!-- Profile View -->
       <div id="profile-view" class="hidden flex-col gap-4">
-
         <!-- Profile Card — iOS liquid glass -->
         <div
           class="card-scroll visible liquid-glass relative overflow-hidden flex flex-col items-center text-center p-8">
           <!-- Gradient glow -->
-          <div class="absolute inset-0 bg-linear-to-b from-blue-600/15 via-transparent to-transparent pointer-events-none"></div>
+          <div
+            class="absolute inset-0 bg-linear-to-b from-blue-600/15 via-transparent to-transparent pointer-events-none"></div>
 
           <!-- Avatar -->
           <div class="relative w-28 h-28 rounded-full mb-4 z-10 shrink-0">
             <div
               class="w-full h-full rounded-full flex items-center justify-center text-4xl text-white font-bold overflow-hidden"
               id="prof-initial"
-              style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); box-shadow: 0 0 0 4px rgba(59,130,246,0.25), 0 8px 24px rgba(59,130,246,0.3);">
+              style="
+                background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+                box-shadow:
+                  0 0 0 4px rgba(59, 130, 246, 0.25),
+                  0 8px 24px rgba(59, 130, 246, 0.3);
+              ">
               G
             </div>
             <img
@@ -356,37 +499,52 @@
               class="absolute inset-0 w-full h-full rounded-full object-cover hidden z-10"
               alt="Profile" />
             <!-- Online indicator -->
-            <div class="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#0a0a19] z-20"></div>
+            <div
+              class="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#0a0a19] z-20"></div>
           </div>
 
-          <h2 class="text-2xl font-black text-white z-10" id="prof-name">Guest User</h2>
-          <p class="text-gray-400 text-sm z-10 mb-6" id="prof-id">ID: Anonymous</p>
+          <h2 class="text-2xl font-black text-white z-10" id="prof-name">
+            Guest User
+          </h2>
+          <p class="text-gray-400 text-sm z-10 mb-6" id="prof-id">
+            ID: Anonymous
+          </p>
 
           <!-- Stats — pill bubbles -->
           <div class="w-full flex gap-3 z-10">
             <div
               class="prof-stat-card flex-3 flex flex-col items-start p-4 rounded-2xl glow-left-blue">
-              <span class="text-[10px] text-blue-400 uppercase tracking-widest mb-1 font-bold">Saldo Anda</span>
-              <span class="text-xl font-black text-blue-400" id="prof-balance">Rp 0</span>
+              <span
+                class="text-[10px] text-blue-400 uppercase tracking-widest mb-1 font-bold"
+                >Saldo Anda</span
+              >
+              <span class="text-xl font-black text-blue-400" id="prof-balance"
+                >Rp 0</span
+              >
             </div>
             <div
               class="prof-stat-card flex-1 flex flex-col items-center justify-center p-4 rounded-2xl">
-              <span class="text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-bold">Trx</span>
-              <span class="text-xl font-black text-white" id="prof-total-trx">0</span>
+              <span
+                class="text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-bold"
+                >Trx</span
+              >
+              <span class="text-xl font-black text-white" id="prof-total-trx"
+                >0</span
+              >
             </div>
           </div>
         </div>
 
         <!-- Help Card -->
-        <div
-          class="card-scroll visible liquid-glass p-4">
+        <div class="card-scroll visible liquid-glass p-4">
           <a
             href="#"
             id="btn-contact-admin"
             target="_blank"
             class="w-full flex items-center justify-between group p-3 rounded-2xl transition-all hover:bg-white/5">
             <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-indigo-400 help-icon-box">
+              <div
+                class="w-12 h-12 rounded-2xl flex items-center justify-center text-indigo-400 help-icon-box">
                 <i class="fa-solid fa-headset text-xl"></i>
               </div>
               <div class="text-left">
@@ -394,12 +552,12 @@
                 <p class="text-xs text-gray-400">Hubungi admin toko</p>
               </div>
             </div>
-            <div class="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 group-hover:text-white group-hover:bg-white/10 transition-all">
+            <div
+              class="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 group-hover:text-white group-hover:bg-white/10 transition-all">
               <i class="fa-solid fa-chevron-right text-xs"></i>
             </div>
           </a>
         </div>
-
       </div>
       <!-- End Buyer Layout -->
     </main>
@@ -408,8 +566,14 @@
     <div
       id="detail-page"
       class="detail-page-slide fixed inset-0 z-200 flex flex-col overflow-hidden"
-      style="background: linear-gradient(160deg, #060a15 0%, #090e1d 50%, #0d1425 100%);">
-
+      style="
+        background: linear-gradient(
+          160deg,
+          #060a15 0%,
+          #090e1d 50%,
+          #0d1425 100%
+        );
+      ">
       <!-- Background inside detail page -->
       <div class="bg-dot-matrix"></div>
       <div class="bg-decoration"><span></span><span></span><span></span></div>
@@ -418,27 +582,30 @@
       <div
         id="detail-page-header"
         class="shrink-0 flex items-center gap-3 px-4 py-3 liquid-glass specular-accent-border border-x-0 border-t-0 rounded-none shadow-lg relative z-10"
-        style="border-radius: 0 !important;">
+        style="border-radius: 0 !important">
         <button
           id="btn-back-catalog"
           class="btn-back-pulse w-10 h-10 rounded-full flex items-center justify-center text-gray-300 hover:text-white transition-all active:scale-90 shrink-0">
           <i class="fa-solid fa-chevron-left text-sm"></i>
         </button>
         <span id="detail-page-header-title" class="hidden"></span>
-        <button id="btn-back-to-home" class="flex-1 text-left text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition-colors pl-1">
-          <i class="fa-solid fa-house-chimney text-xs mr-1.5"></i>Kembali ke Beranda
+        <button
+          id="btn-back-to-home"
+          class="flex-1 text-left text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition-colors pl-1">
+          <i class="fa-solid fa-house-chimney text-xs mr-1.5"></i>Kembali ke
+          Beranda
         </button>
       </div>
 
       <!-- Body: stacked mobile → side-by-side tablet/desktop -->
-      <div class="flex-1 overflow-y-auto md:overflow-hidden md:flex relative z-10">
-
+      <div
+        class="flex-1 overflow-y-auto md:overflow-hidden md:flex relative z-10">
         <!-- LEFT: Image panel -->
-        <div class="shrink-0 md:w-[45%] flex items-center justify-center p-6 md:p-10 md:border-r md:border-white/5 md:overflow-hidden">
+        <div
+          class="shrink-0 md:w-[45%] flex items-center justify-center p-6 md:p-10 md:border-r md:border-white/5 md:overflow-hidden">
           <div
             id="detail-page-image"
-            class="product-card-canvas w-44 h-44 rounded-2xl shadow-xl shadow-black/40
-                   md:w-full md:h-auto md:aspect-square md:rounded-3xl md:max-w-sm flex items-center justify-center overflow-hidden p-3 relative">
+            class="product-card-canvas w-44 h-44 rounded-2xl shadow-xl shadow-black/40 md:w-full md:h-auto md:aspect-square md:rounded-3xl md:max-w-sm flex items-center justify-center overflow-hidden p-3 relative">
             <img
               id="detail-page-img"
               src=""
@@ -449,60 +616,269 @@
         </div>
 
         <!-- RIGHT: Info + controls -->
-        <div class="flex-1 px-4 py-4 flex flex-col gap-4 pb-36 md:pb-6 md:overflow-y-auto">
-
+        <div
+          class="flex-1 px-4 py-4 flex flex-col gap-4 pb-36 md:pb-6 md:overflow-y-auto">
           <!-- Name + Description -->
           <div>
-            <h2 id="detail-page-name" class="text-2xl font-black text-white leading-tight">Nama Produk</h2>
-            <p id="detail-page-desc" class="text-sm text-gray-400 mt-1.5 leading-relaxed"></p>
+            <h2
+              id="detail-page-name"
+              class="text-2xl font-black text-white leading-tight">
+              Nama Produk
+            </h2>
+            <p
+              id="detail-page-desc"
+              class="text-sm text-gray-400 mt-1.5 leading-relaxed"></p>
           </div>
 
           <!-- Stats: Terjual + Restock -->
           <div class="flex gap-3">
-            <div class="flex-1 flex flex-col gap-1 p-4 rounded-2xl liquid-glass glow-left-amber">
-              <span class="text-[10px] text-amber-400/70 uppercase tracking-widest font-bold">Terjual</span>
-              <span id="detail-page-sold" class="text-xl font-black text-amber-400">0</span>
+            <div
+              class="flex-1 flex flex-col gap-1 p-4 rounded-2xl liquid-glass glow-left-amber">
+              <span
+                class="text-[10px] text-amber-400/70 uppercase tracking-widest font-bold"
+                >Terjual</span
+              >
+              <span
+                id="detail-page-sold"
+                class="text-xl font-black text-amber-400"
+                >0</span
+              >
             </div>
-            <div class="flex-1 flex flex-col gap-1 p-4 rounded-2xl liquid-glass glow-left-emerald">
-              <span class="text-[10px] text-emerald-400/70 uppercase tracking-widest font-bold">Restock</span>
-              <span id="detail-page-restock" class="text-sm font-black text-emerald-400">-</span>
+            <div
+              class="flex-1 flex flex-col gap-1 p-4 rounded-2xl liquid-glass glow-left-emerald">
+              <span
+                class="text-[10px] text-emerald-400/70 uppercase tracking-widest font-bold"
+                >Restock</span
+              >
+              <span
+                id="detail-page-restock"
+                class="text-sm font-black text-emerald-400"
+                >-</span
+              >
             </div>
           </div>
 
           <!-- Pilih Varian -->
           <div>
             <div class="flex items-center justify-between mb-2.5 px-1">
-              <span class="text-[11px] uppercase tracking-wider font-bold text-indigo-400 flex items-center gap-1.5"><i class="fa-solid fa-layer-group text-[10px]"></i> Pilih Varian</span>
-              <span class="text-[10px] text-gray-400 font-medium">Klik untuk memilih</span>
+              <span
+                class="text-[11px] uppercase tracking-wider font-bold text-indigo-400 flex items-center gap-1.5"
+                ><i class="fa-solid fa-layer-group text-[10px]"></i> Pilih
+                Varian</span
+              >
+              <span class="text-[10px] text-gray-400 font-medium"
+                >Klik untuk memilih</span
+              >
             </div>
-            <div id="detail-page-variants" class="grid grid-cols-2 gap-2.5"></div>
+            <div
+              id="detail-page-variants"
+              class="grid grid-cols-2 gap-2.5"></div>
           </div>
 
           <!-- Harga / Satuan + Stok -->
-          <div class="flex items-center justify-between p-4 px-5 rounded-2xl liquid-glass glow-left-blue">
+          <div
+            class="flex items-center justify-between p-4 px-5 rounded-2xl liquid-glass glow-left-blue">
             <div>
-              <span class="text-[10px] text-gray-400 uppercase tracking-widest block mb-1">Harga / Satuan</span>
+              <span
+                class="text-[10px] text-gray-400 uppercase tracking-widest block mb-1"
+                >Harga / Satuan</span
+              >
               <div class="flex items-center gap-2">
-                <span id="detail-page-price-original" class="hidden text-base text-gray-500 line-through"></span>
-                <p id="detail-page-price" class="font-black text-blue-400 text-2xl">Rp 0</p>
+                <span
+                  id="detail-page-price-original"
+                  class="hidden text-base text-gray-500 line-through"></span>
+                <p
+                  id="detail-page-price"
+                  class="font-black text-blue-400 text-2xl">
+                  Rp 0
+                </p>
               </div>
             </div>
             <div class="text-right pr-1">
-              <span class="text-[10px] text-gray-400 uppercase tracking-widest block mb-1">Stok</span>
-              <p id="detail-page-stock" class="font-black text-emerald-400 text-2xl">0</p>
+              <span
+                class="text-[10px] text-gray-400 uppercase tracking-widest block mb-1"
+                >Stok</span
+              >
+              <p
+                id="detail-page-stock"
+                class="font-black text-emerald-400 text-2xl">
+                0
+              </p>
             </div>
           </div>
 
           <!-- Harga Grosir -->
-          <div id="detail-page-wholesale-box" class="hidden p-4 px-5 rounded-2xl liquid-glass glow-left-emerald">
-            <h4 class="text-xs uppercase font-black text-emerald-400 mb-2 tracking-widest">🏷️ Harga Grosir</h4>
-            <div id="detail-page-wholesale-list" class="flex flex-col gap-2 text-sm"></div>
+          <div
+            id="detail-page-wholesale-box"
+            class="hidden p-4 px-5 rounded-2xl liquid-glass glow-left-emerald">
+            <h4
+              class="text-xs uppercase font-black text-emerald-400 mb-2 tracking-widest flex items-center gap-1.5">
+              <i class="fa-solid fa-tags"></i> Harga Grosir
+            </h4>
+            <div
+              id="detail-page-wholesale-list"
+              class="flex flex-col gap-2 text-sm"></div>
           </div>
 
           <!-- Deskripsi Varian -->
-          <div id="detail-page-variant-desc-box" class="hidden p-4 px-5 rounded-2xl liquid-glass glow-left-indigo">
-            <h4 class="text-[10px] uppercase font-black text-indigo-400 mb-2 tracking-widest">Detail Varian</h4>
-            <p id="detail-page-variant-desc" class="text-xs text-gray-300 leading-relaxed wrap-break-word whitespace-pre-wrap"></p>
+          <div
+            id="detail-page-variant-desc-box"
+            class="hidden p-4 px-5 rounded-2xl liquid-glass glow-left-indigo">
+            <h4
+              class="text-[10px] uppercase font-black text-indigo-400 mb-2 tracking-widest">
+              Detail Varian
+            </h4>
+            <p
+              id="detail-page-variant-desc"
+              class="text-xs text-gray-300 leading-relaxed wrap-break-word whitespace-pre-wrap"></p>
+          </div>
+
+          <!-- Kode Voucher Promo (Rekomendasi 2: Shopify Coupon Tag Pattern) -->
+          <div
+            id="detail-page-voucher-box"
+            class="p-3.5 px-4 rounded-2xl liquid-glass glow-left-amber">
+            <div class="flex items-center justify-between mb-2">
+              <h4
+                class="text-xs uppercase font-black text-amber-400 tracking-widest flex items-center gap-1.5">
+                <svg
+                  class="w-3.5 h-3.5 text-amber-400 shrink-0"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path
+                    d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                  <path d="M13 5v2" />
+                  <path d="M13 17v2" />
+                  <path d="M13 11v2" />
+                </svg>
+                <span>Voucher Promo</span>
+              </h4>
+            </div>
+
+            <!-- Input Container (when no voucher is active) -->
+            <div id="voucher-input-container">
+              <div class="voucher-input-group flex items-center gap-2">
+                <div class="relative flex-1 flex items-center">
+                  <input
+                    type="text"
+                    id="input-voucher-code"
+                    placeholder="Masukkan kode voucher"
+                    class="w-full pl-3.5 pr-8 py-2 rounded-xl text-xs uppercase font-mono tracking-wider voucher-input-liquid"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="characters"
+                    spellcheck="false" />
+                  <button
+                    type="button"
+                    id="btn-clear-voucher-input"
+                    class="absolute right-2.5 text-gray-400 hover:text-white transition-colors cursor-pointer hidden p-1 items-center justify-center"
+                    title="Hapus input"
+                    aria-label="Hapus input">
+                    <svg
+                      class="w-3.5 h-3.5 shrink-0"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="m15 9-6 6" />
+                      <path d="m9 9 6 6" />
+                    </svg>
+                  </button>
+                </div>
+                <button
+                  id="btn-apply-voucher"
+                  type="button"
+                  class="btn-liquid-amber px-3.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer shrink-0 flex items-center justify-center gap-1.5 transition-all">
+                  <span class="btn-text">Pakai</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Applied Voucher View (Shopify Pattern: Coupon Tag Pill + Reassurance Subtext) -->
+            <div id="voucher-applied-info" class="hidden gap-1.5">
+              <div
+                class="flex items-center justify-between p-2 px-3 rounded-xl bg-amber-500/10 border border-amber-500/25">
+                <div class="flex items-center gap-2 min-w-0">
+                  <svg
+                    class="w-3.5 h-3.5 text-amber-400 shrink-0"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path
+                      d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                    <path d="M13 5v2" />
+                    <path d="M13 17v2" />
+                    <path d="M13 11v2" />
+                  </svg>
+                  <span
+                    id="voucher-applied-title"
+                    class="font-bold text-xs text-amber-300 font-mono tracking-wider"></span>
+                  <span
+                    class="text-xs text-emerald-400 font-semibold"
+                    id="voucher-applied-tag-discount"></span>
+                </div>
+                <button
+                  id="btn-remove-voucher"
+                  type="button"
+                  class="text-xs text-gray-400 hover:text-red-400 transition-colors cursor-pointer py-0.5 px-2 rounded hover:bg-white/5 flex items-center gap-1 shrink-0"
+                  title="Hapus voucher"
+                  aria-label="Hapus voucher">
+                  <svg
+                    class="w-3 h-3 shrink-0"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </svg>
+                  <span class="text-[11px] font-medium">Hapus</span>
+                </button>
+              </div>
+              <p
+                id="voucher-applied-desc"
+                class="text-[11px] text-emerald-400/90 font-medium flex items-center gap-1.5 px-0.5">
+                <svg
+                  class="w-3 h-3 text-emerald-400 shrink-0"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span id="voucher-applied-desc-text"
+                  >Diskon otomatis memotong total belanja Anda</span
+                >
+              </p>
+            </div>
+
+            <!-- Feedback Message -->
+            <div
+              id="voucher-feedback-box"
+              class="hidden mt-2 p-2 px-3 rounded-xl text-[11px] font-medium items-center gap-2 transition-all">
+              <span
+                id="voucher-feedback-icon"
+                class="shrink-0 flex items-center justify-center"></span>
+              <span id="voucher-feedback-msg" class="flex-1"></span>
+            </div>
           </div>
           <!-- Spacer agar konten tidak tertutup bottom bar di mobile -->
           <div class="h-8 md:hidden shrink-0"></div>
@@ -510,35 +886,61 @@
           <!-- Checkout inline (tablet/desktop only, hidden on mobile) -->
           <div class="hidden md:block mt-auto pt-4 border-t border-white/5">
             <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-3 rounded-xl p-1.5 liquid-glass">
-                <button id="detail-page-btn-min-desk" class="w-10 h-10 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors active:scale-90">
+              <div
+                class="flex items-center gap-3 rounded-xl p-1.5 liquid-glass">
+                <button
+                  id="detail-page-btn-min-desk"
+                  class="w-10 h-10 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors active:scale-90">
                   <i class="fa-solid fa-minus"></i>
                 </button>
-                <span id="detail-page-qty-desk" class="font-black text-xl w-8 text-center text-white">1</span>
-                <button id="detail-page-btn-plus-desk" class="w-10 h-10 flex items-center justify-center rounded-lg text-blue-400 hover:text-white transition-colors active:scale-90" style="background: rgba(59,130,246,0.2);">
+                <span
+                  id="detail-page-qty-desk"
+                  class="font-black text-xl w-8 text-center text-white"
+                  >1</span
+                >
+                <button
+                  id="detail-page-btn-plus-desk"
+                  class="w-10 h-10 flex items-center justify-center rounded-lg text-blue-400 hover:text-white transition-colors active:scale-90"
+                  style="background: rgba(59, 130, 246, 0.2)">
                   <i class="fa-solid fa-plus"></i>
                 </button>
               </div>
               <div class="text-right pr-2">
-                <span class="text-[10px] text-gray-400 uppercase tracking-widest block">Subtotal</span>
+                <span
+                  class="text-[10px] text-gray-400 uppercase tracking-widest block"
+                  >Subtotal</span
+                >
                 <div class="flex items-center justify-end gap-2">
-                  <span id="detail-page-total-desk-original" class="hidden text-sm text-gray-500 line-through"></span>
-                  <p id="detail-page-total-desk" class="font-black text-white text-2xl">Rp 0</p>
+                  <span
+                    id="detail-page-total-desk-original"
+                    class="hidden text-sm text-gray-500 line-through"></span>
+                  <p
+                    id="detail-page-total-desk"
+                    class="font-black text-white text-2xl">
+                    Rp 0
+                  </p>
                 </div>
+                <div
+                  id="detail-page-discount-desk-tag"
+                  class="hidden text-[10px] text-amber-400 font-bold"></div>
               </div>
             </div>
             <button
               id="btn-detail-checkout-desk"
               class="w-full text-white font-bold py-4 px-6 rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 cursor-pointer"
-              style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); box-shadow: 0 4px 20px rgba(59,130,246,0.4);"
+              style="
+                background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+                box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+              "
               disabled>
               <i class="fa-solid fa-cart-shopping text-base"></i>
               <span id="detail-checkout-text-desk">Pilih Varian Dulu</span>
             </button>
           </div>
-
-        </div><!-- end right -->
-      </div><!-- end body flex -->
+        </div>
+        <!-- end right -->
+      </div>
+      <!-- end body flex -->
     </div>
     <!-- ========== END DETAIL PAGE ========== -->
 
@@ -548,26 +950,48 @@
       class="md:hidden fixed bottom-0 left-0 right-0 z-220 hidden px-5 py-4 shadow-2xl">
       <div class="flex items-center justify-between mb-3.5">
         <div class="detail-qty-pill flex items-center gap-3 rounded-xl p-1.5">
-          <button id="detail-page-btn-min" class="w-10 h-10 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors active:scale-90">
+          <button
+            id="detail-page-btn-min"
+            class="w-10 h-10 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors active:scale-90">
             <i class="fa-solid fa-minus"></i>
           </button>
-          <span id="detail-page-qty" class="font-black text-xl w-6 text-center text-white">1</span>
-          <button id="detail-page-btn-plus" class="w-10 h-10 flex items-center justify-center rounded-lg text-blue-400 hover:text-white transition-colors active:scale-90" style="background: rgba(59,130,246,0.2);">
+          <span
+            id="detail-page-qty"
+            class="font-black text-xl w-6 text-center text-white"
+            >1</span
+          >
+          <button
+            id="detail-page-btn-plus"
+            class="w-10 h-10 flex items-center justify-center rounded-lg text-blue-400 hover:text-white transition-colors active:scale-90"
+            style="background: rgba(59, 130, 246, 0.2)">
             <i class="fa-solid fa-plus"></i>
           </button>
         </div>
         <div class="text-right pr-2">
-          <span class="text-[10px] text-gray-400 uppercase tracking-widest block">Subtotal</span>
+          <span
+            class="text-[10px] text-gray-400 uppercase tracking-widest block"
+            >Subtotal</span
+          >
           <div class="flex items-center justify-end gap-2">
-            <span id="detail-page-total-original" class="hidden text-sm text-gray-500 line-through"></span>
-            <p id="detail-page-total" class="font-black text-white text-xl">Rp 0</p>
+            <span
+              id="detail-page-total-original"
+              class="hidden text-sm text-gray-500 line-through"></span>
+            <p id="detail-page-total" class="font-black text-white text-xl">
+              Rp 0
+            </p>
           </div>
+          <div
+            id="detail-page-discount-tag"
+            class="hidden text-[10px] text-amber-400 font-bold"></div>
         </div>
       </div>
       <button
         id="btn-detail-checkout"
         class="w-full text-white font-bold py-4 px-6 rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 cursor-pointer"
-        style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); box-shadow: 0 4px 20px rgba(59,130,246,0.4);"
+        style="
+          background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+          box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        "
         disabled>
         <i class="fa-solid fa-cart-shopping text-base"></i>
         <span id="detail-checkout-text">Pilih Varian Dulu</span>
@@ -583,22 +1007,30 @@
         <button
           id="btn-close-modal"
           class="absolute top-4 right-4 text-white p-2 flex items-center justify-center rounded-full transition-all border border-white/10 hover:bg-red-500/30"
-          style="background: rgba(255,255,255,0.1);">
+          style="background: rgba(255, 255, 255, 0.1)">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
-        <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-          style="background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 8px 24px rgba(16,185,129,0.4);">
+        <div
+          class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+          style="
+            background: linear-gradient(135deg, #10b981, #34d399);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+          ">
           <i class="fa-solid fa-check text-4xl text-white"></i>
         </div>
         <h3 class="text-2xl font-black text-white mb-3">Pesanan Dibuat!</h3>
         <p class="text-gray-400 text-sm mb-8 leading-relaxed">
-          Sistem telah meneruskan pesanan Anda. Silakan kembali ke Bot Telegram untuk mendapatkan QRIS Pembayaran yang aman.
+          Sistem telah meneruskan pesanan Anda. Silakan kembali ke Bot Telegram
+          untuk mendapatkan QRIS Pembayaran yang aman.
         </p>
         <a
           id="btn-back-to-bot"
           href="#"
           class="w-full font-bold py-4 px-4 rounded-xl transition-all flex items-center justify-center gap-3 hover:-translate-y-0.5"
-          style="background: #2AABEE; box-shadow: 0 4px 16px rgba(42,171,238,0.4);">
+          style="
+            background: #2aabee;
+            box-shadow: 0 4px 16px rgba(42, 171, 238, 0.4);
+          ">
           <i class="fa-brands fa-telegram text-2xl"></i>
           Buka Telegram
         </a>
@@ -609,7 +1041,7 @@
     <nav id="bottom-nav" class="ios-nav-pill">
       <div id="nav-pill-container" class="relative flex items-center p-1">
         <!-- Sliding Liquid Glass Glider Indicator -->
-        <div id="nav-indicator" class="nav-indicator" style="opacity: 0;"></div>
+        <div id="nav-indicator" class="nav-indicator" style="opacity: 0"></div>
 
         <button
           id="nav-btn-home"
@@ -618,15 +1050,11 @@
           <i class="fa-solid fa-house"></i>
           <span>Beranda</span>
         </button>
-        <button
-          id="nav-btn-profile"
-          class="nav-tab-btn"
-          data-tab="profile">
+        <button id="nav-btn-profile" class="nav-tab-btn" data-tab="profile">
           <i class="fa-solid fa-user-astronaut"></i>
           <span>Profile</span>
         </button>
       </div>
     </nav>
-
   </body>
 </html>
