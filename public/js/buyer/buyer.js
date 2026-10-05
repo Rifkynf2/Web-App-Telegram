@@ -1103,6 +1103,14 @@ function updateDetailQtyDisplay() {
   const basePrice = parseInt(activeVariant.price, 10) || 0;
   const unitPrice = resolveTierPrice(activeVariant, currentQty);
   const rawSubtotal = currentQty * unitPrice;
+
+  // Auto-detach voucher if current rawSubtotal drops below min_spend
+  if (appliedVoucher && appliedVoucher.min_spend > 0 && rawSubtotal < appliedVoucher.min_spend) {
+    const minSpend = appliedVoucher.min_spend;
+    resetVoucherState();
+    showVoucherFeedback(`Voucher dilepas: total belanja di bawah minimal transaksi (${formatCurrency(minSpend)})`, 'info');
+  }
+
   let finalSubtotal = rawSubtotal;
   let voucherDiscount = 0;
   const isFreeVoucher = appliedVoucher?.type === 'FREE';
@@ -1113,7 +1121,8 @@ function updateDetailQtyDisplay() {
       voucherDiscount = unitPrice;
       finalSubtotal = 0;
     } else {
-      voucherDiscount = Math.min(rawSubtotal, appliedVoucher.discount || 0);
+      const discountVal = appliedVoucher.discount_value || appliedVoucher.discount || 0;
+      voucherDiscount = Math.min(rawSubtotal, discountVal);
       finalSubtotal = Math.max(0, rawSubtotal - voucherDiscount);
     }
   }
@@ -1123,11 +1132,14 @@ function updateDetailQtyDisplay() {
   const originalTotal = formatCurrency(currentQty * basePrice);
   const canCheckout = currentQty > 0 && currentQty <= stock && !isCheckoutSubmitting;
 
+  const isZeroTotal = finalSubtotal === 0 && currentQty > 0;
   let btnLabel = 'Pilih Varian Dulu';
   if (stock <= 0) {
     btnLabel = 'Stok Habis';
   } else if (isFreeVoucher) {
-    btnLabel = '🎁 Klaim Gratis Sekarang';
+    btnLabel = '🎁 Klaim Gratis (1 Pcs)';
+  } else if (isZeroTotal) {
+    btnLabel = `🎁 Klaim Gratis (${currentQty} Pcs)`;
   } else if (currentQty > 0) {
     btnLabel = 'Beli Sekarang';
   }
@@ -1237,9 +1249,36 @@ async function handleCheckout() {
     return;
   }
 
+  const unitPrice = resolveTierPrice(activeVariant, currentQty);
+  const rawSubtotal = currentQty * unitPrice;
+  let finalSubtotal = rawSubtotal;
+  if (appliedVoucher) {
+    if (appliedVoucher.type === 'FREE') {
+      finalSubtotal = 0;
+    } else {
+      const discountVal = appliedVoucher.discount_value || appliedVoucher.discount || 0;
+      finalSubtotal = Math.max(0, rawSubtotal - Math.min(rawSubtotal, discountVal));
+    }
+  }
+
+  // QRIS Floor Protection (between Rp 1 and Rp 999)
+  if (finalSubtotal > 0 && finalSubtotal < 1000) {
+    const minAlertMsg = `Total pembayaran setelah diskon (${formatCurrency(finalSubtotal)}) berada di bawah batas minimum QRIS (Rp 1.000). Silakan tambah jumlah pesanan.`;
+    try {
+      if (tg?.isVersionAtLeast?.('6.2') && typeof tg?.showAlert === 'function') {
+        tg.showAlert(minAlertMsg);
+      } else {
+        showCheckoutModal('Minimal Transaksi QRIS', minAlertMsg);
+      }
+    } catch (_) {
+      showCheckoutModal('Minimal Transaksi QRIS', minAlertMsg);
+    }
+    return;
+  }
+
   isCheckoutSubmitting = true;
-  const isFreeVoucher = appliedVoucher?.type === 'FREE';
-  const loadingLabel = isFreeVoucher ? 'Mengklaim voucher gratis...' : 'Membuat QRIS di Telegram...';
+  const isFreeClaim = finalSubtotal === 0;
+  const loadingLabel = isFreeClaim ? 'Mengklaim pesanan gratis...' : 'Membuat QRIS di Telegram...';
   if (btnDetailCheckout) {
     btnDetailCheckout.disabled = true;
     btnDetailCheckout.style.opacity = '0.6';
@@ -1252,12 +1291,13 @@ async function handleCheckout() {
   if (detailCheckoutTextDesk) detailCheckoutTextDesk.textContent = loadingLabel;
 
   try {
-    const payload = isFreeVoucher
+    const payload = isFreeClaim
       ? {
           bot_id: currentBotId,
           action: 'claim_free',
           variant_id: activeVariant.id,
           voucher_code: appliedVoucher.code,
+          qty: currentQty,
         }
       : {
           bot_id: currentBotId,
@@ -1285,8 +1325,8 @@ async function handleCheckout() {
     }).catch(() => {});
 
     closeDetailPage();
-    if (isFreeVoucher) {
-      setTimeout(() => showCheckoutModal('Klaim Gratis Berhasil!', 'Pesanan Anda dengan voucher gratis telah berhasil diproses. Produk sedang disiapkan dan dikirimkan ke chat Telegram Anda.'), 350);
+    if (isFreeClaim) {
+      setTimeout(() => showCheckoutModal('Klaim Gratis Berhasil!', `Pesanan ${currentQty} item Anda dengan voucher promo berhasil diproses. Produk sedang disiapkan dan dikirimkan ke chat Telegram Anda.`), 350);
     } else {
       setTimeout(() => showCheckoutModal('QRIS Terkirim ke Telegram', 'Pesanan Anda sudah diteruskan ke bot. Silakan cek chat Telegram untuk melihat QRIS dan menyelesaikan pembayaran.'), 350);
     }
@@ -1395,9 +1435,9 @@ async function applyVoucher() {
     // Support mock preview testing when running without bot_id
     if (!currentBotId) {
       if (code === 'PROMO5K') {
-        appliedVoucher = { code: 'PROMO5K', type: 'NOMINAL', discount: 5000, min_spend: 0 };
+        appliedVoucher = { code: 'PROMO5K', type: 'NOMINAL', discount: 5000, discount_value: 5000, min_spend: 0 };
       } else if (code === 'FREE100') {
-        appliedVoucher = { code: 'FREE100', type: 'FREE', discount: unitPrice, min_spend: 0 };
+        appliedVoucher = { code: 'FREE100', type: 'FREE', discount: unitPrice, discount_value: unitPrice, min_spend: 0 };
       } else {
         showVoucherFeedback('Kode tidak valid di mode preview (coba: PROMO5K atau FREE100)', 'error');
         return;
@@ -1414,6 +1454,7 @@ async function applyVoucher() {
           action: 'validate_voucher',
           voucher_code: code,
           product_id: activeProduct?.id,
+          variant_id: activeVariant?.id || null,
           subtotal,
           qty: currentQty,
         }),
@@ -1424,18 +1465,18 @@ async function applyVoucher() {
         throw new Error(res.error || 'Gagal memvalidasi voucher');
       }
 
-      if (!res.data?.valid) {
-        showVoucherFeedback(res.data?.reason || 'Voucher tidak valid atau tidak memenuhi syarat', 'error');
+      const vData = res.data || res;
+      if (!vData?.valid) {
+        showVoucherFeedback(vData?.reason || 'Voucher tidak valid atau tidak memenuhi syarat', 'error');
         return;
       }
 
-      const vData = res.data;
       appliedVoucher = {
         code: vData.code || code,
         type: vData.voucher?.type || 'NOMINAL',
         discount: vData.discount || 0,
         min_spend: vData.voucher?.min_spend || 0,
-        discount_value: vData.voucher?.discount_value || 0,
+        discount_value: vData.voucher?.discount_value || vData.discount || 0,
       };
     }
 
@@ -1461,8 +1502,9 @@ async function applyVoucher() {
       if (tagDiscountEl) tagDiscountEl.textContent = '(-100% Gratis)';
       if (descTextEl) descTextEl.textContent = 'Voucher gratis 1 pcs berhasil diterapkan pada pesanan ini';
     } else {
-      if (tagDiscountEl) tagDiscountEl.textContent = `(-${formatCurrency(appliedVoucher.discount)})`;
-      if (descTextEl) descTextEl.textContent = `Hemat ${formatCurrency(appliedVoucher.discount)} otomatis memotong total belanja Anda`;
+      const discountVal = appliedVoucher.discount_value || appliedVoucher.discount || 0;
+      if (tagDiscountEl) tagDiscountEl.textContent = `(-${formatCurrency(discountVal)})`;
+      if (descTextEl) descTextEl.textContent = `Hemat ${formatCurrency(discountVal)} otomatis memotong total belanja Anda`;
     }
 
     showVoucherFeedback('');

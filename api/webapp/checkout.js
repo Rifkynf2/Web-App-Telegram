@@ -104,6 +104,29 @@ async function getBuyerProfile(req, res) {
     }
 }
 
+// In-memory rate limiter for voucher validation (anti brute-force)
+const voucherRateLimitMap = new Map();
+const VOUCHER_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const VOUCHER_MAX_ATTEMPTS = 10; // Max 10 attempts per minute per chat_id
+
+function checkVoucherRateLimit(chatId) {
+    const now = Date.now();
+    const userRecord = voucherRateLimitMap.get(chatId);
+
+    if (!userRecord || now > userRecord.resetTime) {
+        voucherRateLimitMap.set(chatId, { count: 1, resetTime: now + VOUCHER_RATE_LIMIT_WINDOW });
+        return { allowed: true };
+    }
+
+    if (userRecord.count >= VOUCHER_MAX_ATTEMPTS) {
+        const retryAfterSec = Math.ceil((userRecord.resetTime - now) / 1000);
+        return { allowed: false, retryAfterSec };
+    }
+
+    userRecord.count += 1;
+    return { allowed: true };
+}
+
 /**
  * POST /api/webapp/checkout
  * Body: { bot_id, variant_id, qty }
@@ -116,6 +139,7 @@ async function createCheckout(req, res) {
     if (action === 'validate_voucher') {
         const voucherCode = req.body?.voucher_code;
         const productId = req.body?.product_id;
+        const variantId = req.body?.variant_id || null;
         const subtotal = parseInt(req.body?.subtotal, 10) || 0;
         const qty = parseInt(req.body?.qty, 10) || 1;
 
@@ -127,6 +151,12 @@ async function createCheckout(req, res) {
             const ctx = await resolveBuyerContext(req);
             if (ctx.error) return sendContextError(res, ctx.error);
 
+            // Rate limit check per chat_id
+            const rateLimit = checkVoucherRateLimit(ctx.chatId);
+            if (!rateLimit.allowed) {
+                return error(res, `Terlalu banyak percobaan validasi voucher. Silakan tunggu ${rateLimit.retryAfterSec} detik.`, 429);
+            }
+
             const relayResponse = await fetch(`${ctx.botApiBaseUrl}/api/internal/voucher/validate`, {
                 method: 'POST',
                 headers: {
@@ -137,6 +167,7 @@ async function createCheckout(req, res) {
                     chat_id: ctx.chatId,
                     code: voucherCode,
                     product_id: productId,
+                    variant_id: variantId,
                     subtotal,
                     qty,
                 }),
@@ -158,6 +189,7 @@ async function createCheckout(req, res) {
     if (action === 'claim_free') {
         const variantId = req.body?.variant_id;
         const voucherCode = req.body?.voucher_code;
+        const qty = Math.max(1, parseInt(req.body?.qty, 10) || 1);
 
         if (!variantId || !voucherCode) {
             return error(res, 'variant_id and voucher_code are required for claim_free');
@@ -190,6 +222,7 @@ async function createCheckout(req, res) {
                     username: ctx.username,
                     variant_id: variantId,
                     voucher_code: voucherCode,
+                    qty,
                 }),
             });
 

@@ -208,6 +208,18 @@
   - Segera setelah checkout berhasil diselesaikan, pemanggilan `clearCatalogCache()` otomatis dieksekusi agar pembeli melihat pengurangan stok terkini secara instan tanpa menunggu kedaluwarsa cache 60 detik.
 - **FR-4.10**: Realtime Connection Isolation (Quota Guard):
   - Client buyer tidak pernah membuka koneksi WebSocket permanen (`subscribeToInventoryChanges`), melindungi batas 200 concurrent connections Supabase Free Tier dari lonjakan buyer massal.
+- **FR-4.11**: Protected Promotional Voucher Engine & Multi-Qty Free Claim:
+  - **In-Memory Anti Brute-Force Rate Limiting**: Validasi voucher via `POST /api/webapp/checkout` (`action: 'validate_voucher'`) dibatasi maksimal 10 request per menit per `chat_id`. Pelanggaran langsung direspons dengan HTTP 429 dan sisa waktu tunggu.
+  - **Variant-Targeted Scope Relay**: Meneruskan parameter `variant_id` dari client ke internal bot API sehingga kupon bertarget varian (`target_scope: 'VARIANT'`) divalidasi dengan tepat.
+  - **Resilient Response Unwrapping**: Client memproses data respon secara aman via `res.data || res`, memastikan kode promo valid tidak tertolak dan pesan kegagalan asli dari server (`vData.reason`) dapat tampil transparan kepada pembeli.
+  - **Aturan Kuantitas Presisi (FREE vs NOMINAL)**:
+    - Voucher tipe `FREE` (Gratis 100%): Kuantitas dikunci ketat 1 pcs per transaksi (`currentQty = 1`, tombol `+` dinonaktifkan).
+    - Voucher tipe `NOMINAL` (Potongan Harga): Mendukung kuantitas dinamis (*multi-qty*). Jika total belanja setelah diskon mencapai Rp 0 (contoh: beli 5 pcs @ Rp 1.000 dengan voucher Rp 5.000), aksi diarahkan ke `claim_free` dengan meneruskan parameter `qty: 5` ke internal bot API sehingga seluruh 5 item direservasi dan dikirim utuh ke pembeli.
+  - **QRIS Floor Protection**: Mencegah pemesanan jika sisa pembayaran setelah diskon bernilai di antara Rp 1 s/d Rp 999, dengan menampilkan peringatan batas minimum transaksi QRIS (Rp 1.000).
+  - **Auto-Detach on Min Spend Violation**: Jika pembeli menurunkan kuantitas pesanan sehingga subtotal belanja berada di bawah ambang `min_spend`, voucher otomatis dilepaskan seketika disertai notifikasi informasi.
+  - **Auto-Reset on Variant Switch**: Memilih atau berpindah varian produk otomatis mereset status voucher aktif guna mencegah kesalahan perhitungan harga atau diskon salah sasaran.
+
+
 
 ### FR-5: Tenant Shop Administration Portal
 - **FR-5.1**: Portal khusus admin toko diakses melalui `/admin?bot_id=...&auth=...`.
@@ -377,7 +389,7 @@
 | `POST` | `/api/webapp/init` | Public / Telegram | `{ initData: string, bot_id: string }` | Inisialisasi sesi Mini App, validasi `initData`, upsert user Telegram, buat sesi, dan kembalikan config toko. |
 | `GET` | `/api/webapp/tenant-config` | Optional `initData` | Query: `?bot_id=...` (Header: `X-Telegram-Init-Data`) | Mengambil kredensial database publik tenant (`anon_key`), nama toko, status, dan URL foto profil resmi Telegram. |
 | `GET` | `/api/webapp/checkout` | `X-Telegram-Init-Data` | Query: `?bot_id=...` | Relay ke server bot untuk mengambil saldo akun buyer dan total riwayat transaksi belanja. |
-| `POST` | `/api/webapp/checkout` | `X-Telegram-Init-Data` | `{ bot_id, items, total_amount, payment_method }` | Relay pemesanan checkout buyer ke bot server untuk pemotongan saldo atau penerbitan pembayaran. |
+| `POST` | `/api/webapp/checkout` | `X-Telegram-Init-Data` | Action Dispatcher:<br>• `validate_voucher`: `{ bot_id, action: 'validate_voucher', voucher_code, product_id, variant_id, subtotal, qty }`<br>• `claim_free`: `{ bot_id, action: 'claim_free', variant_id, voucher_code, qty }`<br>• Reguler: `{ bot_id, variant_id, qty, voucher_code }` | Relay terpadu ke bot internal API:<br>1. Validasi kupon promo + in-memory rate limit 10 req/min.<br>2. Klaim pesanan gratis Rp 0 dengan reservasi kuantitas dinamis `qty`.<br>3. Pembuatan checkout QRIS/saldo dengan pemotongan diskon. |
 | `GET` | `/api/webapp/admin-dashboard` | Query Admin Auth | Query: `?bot_id=...&auth=...` | Relay ke bot server untuk memuat ringkasan statistik produk, varian, dan stok toko tenant. |
 | `GET` | `/api/webapp/admin-products` | `X-Admin-Auth` | Query: `?bot_id=...&auth=...` | Relay pengambilan katalog produk lengkap toko tenant. |
 | `POST` | `/api/webapp/admin-products` | `X-Admin-Auth` | `{ bot_id, auth, name, category_id, image_url, description, variants, wholesale_tiers }` | Relay pembuatan produk baru beserta varian dan tier harga grosir. |
