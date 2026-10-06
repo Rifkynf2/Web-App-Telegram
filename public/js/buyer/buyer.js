@@ -1316,7 +1316,12 @@ async function handleCheckout() {
     });
 
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || 'Checkout gagal diproses');
+    if (!response.ok) {
+      const checkoutErr = new Error(result.message || result.error || 'Checkout gagal diproses');
+      checkoutErr.code = result.error;
+      checkoutErr.channels = result.channels || null;
+      throw checkoutErr;
+    }
 
     clearCatalogCache();
     fetchCatalog(true).then((freshCatalog) => {
@@ -1332,16 +1337,29 @@ async function handleCheckout() {
     }
   } catch (err) {
     console.error('[Buyer] Checkout failed:', err.message);
-    try {
-      if (tg?.isVersionAtLeast?.('6.2') && typeof tg?.showAlert === 'function') {
-        tg.showAlert(err.message || 'Checkout gagal diproses');
-      } else {
-        closeDetailPage();
-        setTimeout(() => showCheckoutModal('Checkout Gagal', err.message || 'Terjadi kesalahan saat membuat QRIS. Silakan coba lagi dari Mini App.'), 350);
-      }
-    } catch (_) {
+    const isCommunityGate = err.code === 'COMMUNITY_ACCESS_REQUIRED' || err.message === 'COMMUNITY_ACCESS_REQUIRED';
+
+    if (isCommunityGate) {
       closeDetailPage();
-      setTimeout(() => showCheckoutModal('Checkout Gagal', err.message || 'Terjadi kesalahan saat membuat QRIS. Silakan coba lagi dari Mini App.'), 350);
+      const channelNames = Array.isArray(err.channels) && err.channels.length > 0
+        ? ` (${err.channels.map((c) => c.name).join(', ')})`
+        : '';
+      const communityDesc = `Untuk melanjutkan pesanan, Anda wajib bergabung ke channel/grup resmi kami${channelNames} terlebih dahulu melalui Bot Telegram.`;
+      setTimeout(() => {
+        showCheckoutModal('Syarat Akses Belum Terpenuhi', communityDesc, { type: 'community' });
+      }, 350);
+    } else {
+      try {
+        if (tg?.isVersionAtLeast?.('6.2') && typeof tg?.showAlert === 'function') {
+          tg.showAlert(err.message || 'Checkout gagal diproses');
+        } else {
+          closeDetailPage();
+          setTimeout(() => showCheckoutModal('Checkout Gagal', err.message || 'Terjadi kesalahan saat membuat QRIS. Silakan coba lagi dari Mini App.', { type: 'error' }), 350);
+        }
+      } catch (_) {
+        closeDetailPage();
+        setTimeout(() => showCheckoutModal('Checkout Gagal', err.message || 'Terjadi kesalahan saat membuat QRIS. Silakan coba lagi dari Mini App.', { type: 'error' }), 350);
+      }
     }
   } finally {
     isCheckoutSubmitting = false;
@@ -1349,9 +1367,38 @@ async function handleCheckout() {
   }
 }
 
-function showCheckoutModal(title, description) {
+function showCheckoutModal(title, description, options = {}) {
+  const type = options.type || 'success';
   if (checkoutModalTitle) checkoutModalTitle.textContent = title;
   if (checkoutModalDesc) checkoutModalDesc.textContent = description;
+
+  const iconBox = document.getElementById('checkout-modal-icon-box');
+  const btnBack = document.getElementById('btn-back-to-bot');
+
+  if (iconBox) {
+    if (type === 'community') {
+      iconBox.style.background = 'linear-gradient(135deg, #0284c7, #38bdf8)';
+      iconBox.style.boxShadow = '0 8px 24px rgba(2, 132, 199, 0.4)';
+      iconBox.innerHTML = '<i class="fa-brands fa-telegram text-4xl text-white"></i>';
+    } else if (type === 'error') {
+      iconBox.style.background = 'linear-gradient(135deg, #ef4444, #f87171)';
+      iconBox.style.boxShadow = '0 8px 24px rgba(239, 68, 68, 0.4)';
+      iconBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-4xl text-white"></i>';
+    } else {
+      iconBox.style.background = 'linear-gradient(135deg, #10b981, #34d399)';
+      iconBox.style.boxShadow = '0 8px 24px rgba(16, 185, 129, 0.4)';
+      iconBox.innerHTML = '<i class="fa-solid fa-check text-4xl text-white"></i>';
+    }
+  }
+
+  if (btnBack) {
+    if (type === 'community') {
+      btnBack.innerHTML = '<i class="fa-brands fa-telegram text-2xl"></i> Buka Bot & Gabung';
+    } else {
+      btnBack.innerHTML = '<i class="fa-brands fa-telegram text-2xl"></i> Buka Telegram';
+    }
+  }
+
   checkoutModal?.classList.replace('hidden', 'flex');
   if (bottomNav) bottomNav.classList.add('hidden');
 }

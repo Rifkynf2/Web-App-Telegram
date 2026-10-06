@@ -6,6 +6,7 @@ A professional, mobile-optimized Telegram Mini App designed for seamless digital
 
 - **Dynamic Catalog**: Real-time product and variant data fetched from Supabase.
 - **Promo Voucher & Free Claim**: Validasi kupon promo interaktif (diskon NOMINAL & klaim GRATIS 100%), dukungan kuantitas dinamis (*multi-qty*) pada total Rp 0, proteksi batas minimum QRIS (Rp 1.000), serta auto-detach jika di bawah syarat belanja.
+- **Syarat Akses Komunitas (Force Sub)**: Integrasi proteksi syarat join channel/grup saat checkout dengan modal interaktif ramah yang otomatis mengarahkan pembeli ke bot.
 - **Admin Dashboard**: Secure interface for managing products and stock directly from the web.
 - **Stock Tracking**: Automated inventory management with bulk insert and duplicate detection.
 - **Telegram Native**: Environment detection ensures the app only runs fully within the Telegram Mini App ecosystem.

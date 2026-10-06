@@ -228,7 +228,12 @@ async function createCheckout(req, res) {
 
             const relayData = await relayResponse.json().catch(() => ({}));
             if (!relayResponse.ok) {
-                return error(res, relayData.error || 'Klaim voucher gratis gagal', relayResponse.status);
+                return res.status(relayResponse.status).json({
+                    success: false,
+                    error: relayData.error || 'Klaim voucher gratis gagal',
+                    message: relayData.message || null,
+                    channels: relayData.channels || null,
+                });
             }
 
             return success(res, {
@@ -281,7 +286,12 @@ async function createCheckout(req, res) {
 
         const relayData = await relayResponse.json().catch(() => ({}));
         if (!relayResponse.ok) {
-            return error(res, relayData.error || 'Checkout relay failed', relayResponse.status);
+            return res.status(relayResponse.status).json({
+                success: false,
+                error: relayData.error || 'Checkout relay failed',
+                message: relayData.message || null,
+                channels: relayData.channels || null,
+            });
         }
 
         return success(res, {

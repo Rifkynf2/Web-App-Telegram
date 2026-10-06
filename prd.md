@@ -218,6 +218,9 @@
   - **QRIS Floor Protection**: Mencegah pemesanan jika sisa pembayaran setelah diskon bernilai di antara Rp 1 s/d Rp 999, dengan menampilkan peringatan batas minimum transaksi QRIS (Rp 1.000).
   - **Auto-Detach on Min Spend Violation**: Jika pembeli menurunkan kuantitas pesanan sehingga subtotal belanja berada di bawah ambang `min_spend`, voucher otomatis dilepaskan seketika disertai notifikasi informasi.
   - **Auto-Reset on Variant Switch**: Memilih atau berpindah varian produk otomatis mereset status voucher aktif guna mencegah kesalahan perhitungan harga atau diskon salah sasaran.
+- **FR-4.12**: Force Subscription & Community Access Integration:
+  - **Relay Error Passthrough**: Endpoint checkout relay (`/api/webapp/checkout`) meneruskan payload error `COMMUNITY_ACCESS_REQUIRED` beserta daftar `channels` dari bot server secara utuh.
+  - **Graceful Modal Prompt**: Jika pembeli belum memenuhi syarat akses komunitas saat checkout atau klaim gratis, modal khusus ("Syarat Akses Belum Terpenuhi") ditampilkan dengan daftar channel resmi dan tombol aksi ("Buka Bot & Gabung") yang otomatis menutup Mini App (`tg.close()`) dan mengarahkan pembeli ke chat bot Telegram.
 
 
 
