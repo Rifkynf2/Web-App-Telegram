@@ -1,6 +1,8 @@
+const { createClient } = require('@supabase/supabase-js');
 const { getMasterSupabase } = require('../_lib/masterSupabase');
 const { validateTelegramInitData } = require('../_lib/telegramAuth');
 const { success, error, forbidden, notFound, serverError, handleCors } = require('../_lib/response');
+const { validateVoucherForTenant } = require('../_lib/voucherValidator');
 
 /**
  * Shared by both handlers below: validate the buyer's Telegram initData and
@@ -157,30 +159,81 @@ async function createCheckout(req, res) {
                 return error(res, `Terlalu banyak percobaan validasi voucher. Silakan tunggu ${rateLimit.retryAfterSec} detik.`, 429);
             }
 
-            const relayResponse = await fetch(`${ctx.botApiBaseUrl}/api/internal/voucher/validate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Internal-Api-Secret': process.env.INTERNAL_API_SECRET,
-                },
-                body: JSON.stringify({
-                    chat_id: ctx.chatId,
-                    code: voucherCode,
-                    product_id: productId,
-                    variant_id: variantId,
-                    subtotal,
-                    qty,
-                }),
-            });
+            let relayData = null;
+            let relayError = null;
 
-            const relayData = await relayResponse.json().catch(() => ({}));
-            if (!relayResponse.ok) {
-                return error(res, relayData.error || 'Gagal memvalidasi voucher', relayResponse.status);
+            // 1. Try bot relay with 2.5s timeout first
+            if (ctx.botApiBaseUrl) {
+                try {
+                    const relayResponse = await fetch(`${ctx.botApiBaseUrl}/api/internal/voucher/validate`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Internal-Api-Secret': process.env.INTERNAL_API_SECRET,
+                        },
+                        body: JSON.stringify({
+                            chat_id: ctx.chatId,
+                            code: voucherCode,
+                            product_id: productId,
+                            variant_id: variantId,
+                            subtotal,
+                            qty,
+                        }),
+                        signal: AbortSignal.timeout(2500),
+                    });
+
+                    if (relayResponse.ok) {
+                        relayData = await relayResponse.json().catch(() => null);
+                    } else {
+                        const errBody = await relayResponse.json().catch(() => ({}));
+                        relayError = { status: relayResponse.status, message: errBody.error || 'Gagal memvalidasi voucher' };
+                    }
+                } catch (relayErr) {
+                    console.warn('[API/webapp/checkout:validate_voucher] Bot relay unreachable, falling back to direct DB validation:', {
+                        message: relayErr.message,
+                        cause: relayErr.cause?.code || relayErr.cause?.message || relayErr.cause,
+                        url: `${ctx.botApiBaseUrl}/api/internal/voucher/validate`
+                    });
+                }
             }
 
-            return success(res, relayData);
+            // 2. If relay returned valid response or authoritative business rejection, return it
+            if (relayData) {
+                return success(res, relayData);
+            }
+            if (relayError) {
+                return error(res, relayError.message, relayError.status);
+            }
+
+            // 3. Fallback: Direct tenant DB validation
+            const masterDb = getMasterSupabase();
+            const { data: tenantCfg } = await masterDb
+                .from('tenant_configs')
+                .select('supabase_url, supabase_anon_key, supabase_service_key')
+                .eq('bot_id', ctx.botId)
+                .maybeSingle();
+
+            const dbKey = tenantCfg?.supabase_service_key || tenantCfg?.supabase_anon_key;
+            if (tenantCfg?.supabase_url && dbKey) {
+                const tenantDb = createClient(tenantCfg.supabase_url, dbKey);
+                const directResult = await validateVoucherForTenant({
+                    tenantDb,
+                    code: voucherCode,
+                    chatId: ctx.chatId,
+                    productId,
+                    variantId,
+                    subtotal,
+                    qty,
+                });
+                return success(res, directResult);
+            }
+
+            return error(res, 'Gagal memvalidasi voucher (Layanan tidak dapat dihubungi)', 502);
         } catch (err) {
-            console.error('[API/webapp/checkout:validate_voucher] Error:', err.message);
+            console.error('[API/webapp/checkout:validate_voucher] Error:', {
+                message: err.message,
+                cause: err.cause?.code || err.cause?.message || err.cause
+            });
             return serverError(res);
         }
     }

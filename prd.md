@@ -209,6 +209,11 @@
 - **FR-4.10**: Realtime Connection Isolation (Quota Guard):
   - Client buyer tidak pernah membuka koneksi WebSocket permanen (`subscribeToInventoryChanges`), melindungi batas 200 concurrent connections Supabase Free Tier dari lonjakan buyer massal.
 - **FR-4.11**: Protected Promotional Voucher Engine & Multi-Qty Free Claim:
+  - **Hybrid Resilient Relay & Direct DB Fallback Engine**:
+    - Validasi kupon promo via POST /api/webapp/checkout (ction: 'validate_voucher') menerapkan proteksi fail-safe berlapis.
+    - Gateway terlebih dahulu me-relay permintaan ke bot server privat tenant dengan AbortSignal.timeout(2500).
+    - Apabila bot server tidak dapat dijangkau (*network drop*, timeout, atau port terblokir), gateway secara otomatis mengeksekusi *fallback* verifikasi mandiri ke database Supabase tenant via pi/_lib/voucherValidator.js.
+    - Menghilangkan *single point of failure* jaringan eksternal dan mencegah error etch failed pada tampilan pembeli.
   - **In-Memory Anti Brute-Force Rate Limiting**: Validasi voucher via `POST /api/webapp/checkout` (`action: 'validate_voucher'`) dibatasi maksimal 10 request per menit per `chat_id`. Pelanggaran langsung direspons dengan HTTP 429 dan sisa waktu tunggu.
   - **Variant-Targeted Scope Relay**: Meneruskan parameter `variant_id` dari client ke internal bot API sehingga kupon bertarget varian (`target_scope: 'VARIANT'`) divalidasi dengan tepat.
   - **Resilient Response Unwrapping**: Client memproses data respon secara aman via `res.data || res`, memastikan kode promo valid tidak tertolak dan pesan kegagalan asli dari server (`vData.reason`) dapat tampil transparan kepada pembeli.

@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
     }
 
     const botId = parseInt(auth.botId);
-    const { username, shop_name, owner_chat_id, db_url, db_anon_key, bot_token, metadata } = req.body;
+    const { username, shop_name, owner_chat_id, db_url, db_anon_key, db_service_key, bot_token, metadata } = req.body;
 
     if (!shop_name || !owner_chat_id) {
         return error(res, 'shop_name and owner_chat_id are required');
@@ -74,13 +74,17 @@ module.exports = async function handler(req, res) {
 
         // 3. Upsert tenant_configs (DB credentials for web app lookup)
         if (db_url && db_anon_key) {
+            const configPayload = {
+                bot_id: botId,
+                supabase_url: db_url,
+                supabase_anon_key: db_anon_key,
+            };
+            if (db_service_key) {
+                configPayload.supabase_service_key = db_service_key;
+            }
             const { error: tcErr } = await masterDb
                 .from('tenant_configs')
-                .upsert({
-                    bot_id: botId,
-                    supabase_url: db_url,
-                    supabase_anon_key: db_anon_key,
-                }, { onConflict: 'bot_id' });
+                .upsert(configPayload, { onConflict: 'bot_id' });
 
             if (tcErr) {
                 console.error('[API/tenant/register] Config upsert failed:', tcErr.message);

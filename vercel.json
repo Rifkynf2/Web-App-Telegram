@@ -1,5 +1,6 @@
 {
   "cleanUrls": true,
+  "regions": ["sin1"],
   "redirects": [
     { "source": "/public/master-dashboard.html", "destination": "/master", "permanent": true },
     { "source": "/master-dashboard.html", "destination": "/master", "permanent": true }
