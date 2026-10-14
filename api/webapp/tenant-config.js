@@ -2,8 +2,17 @@ const { getMasterSupabase } = require('../_lib/masterSupabase');
 const { validateTelegramInitData } = require('../_lib/telegramAuth');
 const { success, error, notFound, forbidden, serverError, handleCors } = require('../_lib/response');
 
+// In-memory cache for bot profile photo URLs (avoid 3 sequential Telegram API hits per request)
+const photoUrlCache = new Map();
+const PHOTO_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 async function getBotProfilePhotoUrl(botToken) {
     if (!botToken) return null;
+
+    const cached = photoUrlCache.get(botToken);
+    if (cached && Date.now() < cached.expiry) {
+        return cached.url;
+    }
 
     try {
         const meRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
@@ -21,7 +30,13 @@ async function getBotProfilePhotoUrl(botToken) {
         const filePath = fileJson?.result?.file_path;
         if (!fileRes.ok || !filePath) return null;
 
-        return `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+        const url = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+        if (photoUrlCache.size >= 500) {
+            const oldestKey = photoUrlCache.keys().next().value;
+            if (oldestKey) photoUrlCache.delete(oldestKey);
+        }
+        photoUrlCache.set(botToken, { url, expiry: Date.now() + PHOTO_CACHE_TTL });
+        return url;
     } catch (err) {
         console.error('[API/webapp/tenant-config] Bot photo lookup error:', err.message);
         return null;

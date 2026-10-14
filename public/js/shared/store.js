@@ -166,11 +166,7 @@ export async function fetchCatalog(forceRefresh = false) {
                     .eq('is_active', true)
                     .order('sort_order', { ascending: true })
                     .limit(2000),
-                supabase
-                    .from('inventory_items')
-                    .select('variant_id, created_at')
-                    .eq('status', 'AVAILABLE')
-                    .limit(10000)
+                supabase.rpc('get_stock_counts_map')
             ]);
 
             if (pRes.error) {
@@ -186,10 +182,12 @@ export async function fetchCatalog(forceRefresh = false) {
             const variantRestockMap = {};
 
             stocks.forEach(s => {
-                variantStockMap[s.variant_id] = (variantStockMap[s.variant_id] || 0) + 1;
-                // Track latest created_at per variant (same as bot logic)
-                if (!variantRestockMap[s.variant_id] || s.created_at > variantRestockMap[s.variant_id]) {
-                    variantRestockMap[s.variant_id] = s.created_at;
+                // Compatible with both RPC shape { variant_id, count, last_restock_at } and raw fallback
+                const cnt = s.count !== undefined ? Number(s.count) : 1;
+                variantStockMap[s.variant_id] = (variantStockMap[s.variant_id] || 0) + cnt;
+                const restockDate = s.last_restock_at || s.created_at;
+                if (restockDate && (!variantRestockMap[s.variant_id] || restockDate > variantRestockMap[s.variant_id])) {
+                    variantRestockMap[s.variant_id] = restockDate;
                 }
             });
 
@@ -290,6 +288,11 @@ export async function fetchUserBalance(chatId) {
 
 export async function checkIsAdmin(chatId) {
     if (!supabase || !chatId) return false;
+    try {
+        const { data: rpcData, error: rpcErr } = await supabase.rpc('is_admin_user', { p_chat_id: Number(chatId) });
+        if (!rpcErr && typeof rpcData === 'boolean') return rpcData;
+    } catch (_) {}
+
     const { data, error } = await supabase
         .from('admins')
         .select('id')

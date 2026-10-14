@@ -250,20 +250,26 @@ export async function initAdminApp() {
       return;
     }
 
-    // 4. Security Gate (Token Verification - now reads from TENANT DB)
-    let dbAuthToken = null;
+    // 4. Security Gate (Token Verification - serverless validation preserves dynamic token & protects RLS)
     console.log('[Security] Validating token for URL:', urlAuthToken ? urlAuthToken.substring(0, 15) + '...' : 'MISSING');
 
-    try {
-      const { data, error } = await supabase.from('settings').select('value').eq('key', 'ADMIN_AUTH_TOKEN').maybeSingle();
-      if (data) dbAuthToken = data.value;
-      console.log('[Security] Database token found:', dbAuthToken ? dbAuthToken.substring(0, 15) + '...' : 'NOT FOUND');
-    } catch (e) {
-      console.error('[Security] Database fetch failed', e);
+    let isTokenValid = false;
+    if (urlAuthToken && currentBotId) {
+      try {
+        const verifyRes = await fetch(`/api/webapp/admin-dashboard?bot_id=${encodeURIComponent(currentBotId)}&auth=${encodeURIComponent(urlAuthToken)}`);
+        if (verifyRes.ok) {
+          isTokenValid = true;
+          console.log('[Security] Server validation successful');
+        } else {
+          console.warn('[Security] Token validation rejected by server:', verifyRes.status);
+        }
+      } catch (e) {
+        console.error('[Security] Server validation failed', e);
+      }
     }
 
     // Validate Token
-    if (!urlAuthToken || urlAuthToken !== dbAuthToken) {
+    if (!urlAuthToken || !isTokenValid) {
       clearTimeout(watchdog);
       console.error('[Security] ❌ TOKEN MISMATCH!');
       hideLoading();

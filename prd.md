@@ -2,10 +2,10 @@
 # RNF SaaS Multi-Tenant Web App & API Gateway System
 ## Unified Multi-Tenant Bot Ecosystem & Finance Super-Dashboard
 
-- **Version**: 2.7.0
+- **Version**: 2.8.0
 - **Status**: Production / Active
 - **System Architecture**: Multi-Tenant Telegram Mini App + Centralized Vercel API Gateway + Triple Supabase (Master, WA, RNF Shop)
-- **Date**: 2026-09-22
+- **Date**: 2026-10-14
 - **Maintainer**: RNF System
 
 ---

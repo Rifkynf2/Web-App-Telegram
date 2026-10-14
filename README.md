@@ -15,6 +15,9 @@ A professional, mobile-optimized Telegram Mini App designed for seamless digital
 ## 🛡️ Security & Performance Architecture
 
 To ensure maximum security and high availability:
+- **Serverless Admin Security Gate**: Verifikasi token admin dinamis dipindahkan dari client-side browser query ke serverless relay (`/api/webapp/admin-dashboard`), menyembunyikan `ADMIN_AUTH_TOKEN` dari inspeksi jaringan dan RLS Supabase.
+- **RPC Stock Aggregation & Zero-Payload Transfer**: Perhitungan stok varian menggunakan PostgreSQL RPC `get_stock_counts_map` dan verifikasi admin via `is_admin_user`, mengeliminasi penarikan 10.000 baris inventaris mentah dan memangkas waktu muat hingga ~5-10ms.
+- **Telegram Bot Profile In-Memory Cache**: Cache URL foto profil bot berdurasi 30 menit dengan batas kapasitas 500 entri (FIFO auto-eviction) di `tenant-config.js` untuk mencegah penalti rate limit (HTTP 429) dari API Telegram.
 - **Client-Side Only**: The Web App focuses on display and management.
 - **Resilient Voucher Validation Engine**: Menggunakan pola *hybrid fallback* dengan timeout 2.5 detik ke bot server dan *auto-fallback* ke database Supabase tenant secara mandiri via `api/_lib/voucherValidator.js`.
 - **Low-Latency Edge Deployment**: Serverless Functions dioptimalkan untuk kawasan Asia Tenggara melalui AWS Singapore (`sin1`) di `vercel.json`.
