@@ -249,10 +249,17 @@ export async function fetchAdminCatalog(authToken) {
 // through a server endpoint that validates Telegram initData first (see
 // api/webapp/checkout.js GET handler). Both accessors share one in-flight
 // fetch/cache since they're always called together on the profile view.
+export let availableGateways = [];
 let buyerProfileCache = null;
 let buyerProfileInFlight = null;
 
-async function fetchBuyerProfile() {
+export function clearBuyerProfileCache() {
+    buyerProfileCache = null;
+    buyerProfileInFlight = null;
+}
+
+export async function fetchBuyerProfile(forceRefresh = false) {
+    if (forceRefresh) clearBuyerProfileCache();
     if (buyerProfileCache) return buyerProfileCache;
     if (buyerProfileInFlight) return buyerProfileInFlight;
 
@@ -264,20 +271,29 @@ async function fetchBuyerProfile() {
             const result = await response.json().catch(() => ({}));
             if (!response.ok || !result.success) throw new Error(result.error || 'Gagal memuat profil');
 
+            const gws = Array.isArray(result.available_gateways) ? result.available_gateways : [];
+            availableGateways = gws;
+
             buyerProfileCache = {
                 balance: result.balance || 0,
                 transactionCount: result.transaction_count || 0,
+                availableGateways: gws,
             };
             return buyerProfileCache;
         } catch (e) {
             console.error('[Store] fetchBuyerProfile error:', e.message);
-            return { balance: 0, transactionCount: 0 };
+            return { balance: 0, transactionCount: 0, availableGateways: [] };
         } finally {
             buyerProfileInFlight = null;
         }
     })();
 
     return buyerProfileInFlight;
+}
+
+export async function getAvailableGateways() {
+    const profile = await fetchBuyerProfile();
+    return profile.availableGateways || [];
 }
 
 export async function fetchUserBalance(chatId) {

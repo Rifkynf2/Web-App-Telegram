@@ -44,12 +44,13 @@ To ensure maximum security and high availability:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/rifkynf1/Web-App-Telegram.git
+   git clone https://github.com/Rifkynf2/Web-App-Telegram.git
    ```
 
-2. **Configure Database**:
-   - Copy `src/js/config.example.js` to `src/js/config.js`.
-   - Update `SUPABASE_URL` and `SUPABASE_ANON_KEY` with your project credentials.
+2. **Configure Environment Variables**:
+   - Copy `.env.example` to `.env`.
+   - Configure the required credentials (Master Supabase, WhatsApp Supabase, RNF Shop Supabase, Xoftware Pay, and internal secrets).
+   - Frontend tenant configuration is loaded dynamically via Serverless API (`/api/webapp/tenant-config`).
 
 3. **Install Dependencies**:
    ```bash
@@ -66,7 +67,7 @@ To ensure maximum security and high availability:
 Recommended hosting via **Vercel**:
 - **Framework Preset**: Other
 - **Build Command**: `npm run build`
-- **Output Directory**: `src`
+- **Output Directory**: `.` (Root directory, with routes and rewrites configured in `vercel.json` serving `/public` and `/api`)
 
 ---
 Developed with ❤️ by **RNF System**

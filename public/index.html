@@ -998,6 +998,48 @@
       </button>
     </div>
 
+    <!-- Interactive Gateway Selection Modal (Multi-Gateway Picker) -->
+    <div
+      id="gateway-selection-modal"
+      class="fixed inset-0 bg-[#020617]/85 backdrop-blur-xl z-250 hidden flex-col items-center justify-center p-4 transition-all duration-300"
+      style="z-index: 250;">
+      <div
+        class="w-full max-w-sm p-6 relative rounded-3xl liquid-glass shadow-2xl border border-white/10"
+        style="box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
+        
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <span class="text-[10px] font-bold text-sky-400 uppercase tracking-widest block mb-1">Metode Pembayaran</span>
+            <h3 class="text-xl font-black text-white">Pilih Channel QRIS</h3>
+            <p id="gateway-modal-subtotal-hint" class="text-xs text-gray-400 mt-1">Total Tagihan: <span id="gateway-modal-amount" class="text-white font-bold">Rp 0</span></p>
+          </div>
+          <button
+            id="btn-close-gateway-modal"
+            type="button"
+            class="text-gray-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-full transition-all border border-white/10 hover:bg-white/10 cursor-pointer shrink-0 ml-2"
+            style="background: rgba(255, 255, 255, 0.05)"
+            title="Tutup">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Warning / Error banner inside modal (e.g. if one gateway maintenance) -->
+        <div id="gateway-modal-alert" class="hidden mb-3.5 p-3 rounded-xl text-xs items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 text-amber-300">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400 shrink-0 text-sm"></i>
+          <span id="gateway-modal-alert-text" class="leading-snug"></span>
+        </div>
+
+        <!-- Dynamic Gateway Options List (dengan jarak gap-3 yang rapi antar kartu) -->
+        <div id="gateway-options-list" class="flex flex-col gap-3 mb-2">
+          <!-- Rendered dynamically via buyer.js -->
+        </div>
+
+        <p class="text-[11px] text-gray-400 text-center mt-3.5 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-bolt text-amber-400 text-xs"></i> Sekali tap, pesanan langsung diproses
+        </p>
+      </div>
+    </div>
+
     <!-- Checkout Success Modal -->
     <div
       id="checkout-modal"

@@ -1,4 +1,4 @@
-import { tg, tgUser, currentBotId, catalogData, fetchCatalog, clearCatalogCache, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant, urlParams, refreshTelegramData } from '../shared/store.js';
+import { tg, tgUser, currentBotId, catalogData, fetchCatalog, clearCatalogCache, fetchShopSettings, fetchUserBalance, fetchUserTransactionCount, subscribeToInventoryChanges, userName, userUsername, userPhoto, shopSettings, getShopName, getBotUsername, initTenant, urlParams, refreshTelegramData, availableGateways, getAvailableGateways } from '../shared/store.js';
 import { formatCurrency, hideLoading, getImageFallback, getLowestVariantPrice, formatRestockDate, resolveTierPrice, escAttr } from '../shared/utils.js';
 
 // ── Mock Catalog (preview mode tanpa API) ──────────────────────────────────────
@@ -171,6 +171,14 @@ const btnCloseModal = document.getElementById('btn-close-modal');
 const btnBackToBot = document.getElementById('btn-back-to-bot');
 const checkoutModalTitle = checkoutModal?.querySelector('h3');
 const checkoutModalDesc = checkoutModal?.querySelector('p');
+
+// Gateway Selection Modal
+const gatewaySelectionModal = document.getElementById('gateway-selection-modal');
+const btnCloseGatewayModal = document.getElementById('btn-close-gateway-modal');
+const gatewayOptionsList = document.getElementById('gateway-options-list');
+const gatewayModalAmount = document.getElementById('gateway-modal-amount');
+const gatewayModalAlert = document.getElementById('gateway-modal-alert');
+const gatewayModalAlertText = document.getElementById('gateway-modal-alert-text');
 
 // Navigation
 const navHome = document.getElementById('nav-btn-home');
@@ -943,6 +951,7 @@ function closeDetailPage() {
     }, 320);
   }
   if (detailBottomBar) detailBottomBar.classList.add('hidden');
+  closeGatewaySelectionModal();
   if (bottomNav) {
     bottomNav.classList.remove('hidden');
     updateNavIndicator(false);
@@ -1231,20 +1240,117 @@ function updateDetailQtyDisplay() {
   }
 }
 
+// ── Gateway Selection Modal Helpers ───────────────────────────────────────────
+function showGatewaySelectionModal(finalSubtotal, gwsList = null) {
+  if (!gatewaySelectionModal || !gatewayOptionsList) return;
+
+  if (gatewayModalAmount) {
+    gatewayModalAmount.textContent = `Rp ${formatCurrency(finalSubtotal)}`;
+  }
+  if (gatewayModalAlert) {
+    gatewayModalAlert.classList.remove('flex');
+    gatewayModalAlert.classList.add('hidden');
+  }
+
+  const list = (Array.isArray(gwsList) && gwsList.length > 0) ? gwsList : (availableGateways || []);
+  // Render gateway cards cleanly with exact official icons from Landing Page docs (no border/background wrapper)
+  gatewayOptionsList.innerHTML = list.map((gw) => {
+    const isShopee = gw.gateway === 'SHOPEE_PARTNER';
+    const isQios = gw.gateway === 'QIOSPAY';
+
+    // Official SVGs from Landing Page docs (borderless & backgroundless)
+    const svgIcon = isShopee
+      ? `<svg class="w-7 h-7 shrink-0" viewBox="0 0 24 24" fill="none">
+           <rect x="2" y="4" width="20" height="18" rx="4" fill="#ee4d2d" />
+           <path d="M8 7V5.5a4 4 0 0 1 8 0V7" stroke="white" stroke-width="2" stroke-linecap="round" />
+           <path d="M14.8 11.8c-.5-.7-1.4-1.1-2.8-1.1-1.5 0-2.5.7-2.5 1.8 0 2.2 5 1.6 5 4.2 0 1.4-1.2 2.1-2.6 2.1-1.6 0-2.7-.7-3.3-1.6" stroke="white" stroke-width="2" stroke-linecap="round" />
+         </svg>`
+      : isQios
+      ? `<svg class="w-7 h-7 shrink-0" viewBox="0 0 24 24" fill="none">
+           <rect x="2" y="2" width="20" height="20" rx="5.5" fill="#0284c7" />
+           <circle cx="11" cy="11" r="4.8" stroke="#ffffff" stroke-width="2.3" />
+           <path d="M14.2 14.2L18 18" stroke="#f97316" stroke-width="2.8" stroke-linecap="round" />
+         </svg>`
+      : `<svg class="w-7 h-7 shrink-0" viewBox="0 0 24 24" fill="none">
+           <defs>
+             <linearGradient id="xfGradModal" x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+               <stop offset="0" stop-color="#22d3ee" />
+               <stop offset="1" stop-color="#ec4899" />
+             </linearGradient>
+           </defs>
+           <rect x="10.5" y="2" width="3" height="20" rx="1.5" fill="url(#xfGradModal)" transform="rotate(45 12 12)" />
+           <rect x="10.5" y="2" width="3" height="20" rx="1.5" fill="url(#xfGradModal)" transform="rotate(-45 12 12)" />
+         </svg>`;
+
+    const borderHover = isShopee
+      ? 'hover:border-orange-500/50 hover:bg-orange-500/10'
+      : isQios
+      ? 'hover:border-sky-500/50 hover:bg-sky-500/10'
+      : 'hover:border-purple-500/50 hover:bg-purple-500/10';
+
+    return `
+      <button
+        type="button"
+        data-gateway-id="${gw.gateway || gw.id}"
+        class="btn-select-gateway w-full p-3.5 rounded-2xl flex items-center justify-between transition-all duration-200 border border-white/10 active:scale-98 cursor-pointer ${borderHover}"
+        style="background: rgba(255, 255, 255, 0.04)">
+        <div class="flex items-center gap-3">
+          ${svgIcon}
+          <div class="text-left">
+            <span class="font-bold text-white text-sm block">${gw.name}</span>
+          </div>
+        </div>
+        <div class="gateway-card-action text-gray-400">
+          <i class="fa-solid fa-chevron-right text-xs"></i>
+        </div>
+      </button>
+    `;
+  }).join('');
+
+  gatewaySelectionModal.classList.replace('hidden', 'flex');
+  if (bottomNav) bottomNav.classList.add('hidden');
+}
+
+function closeGatewaySelectionModal() {
+  if (gatewaySelectionModal) {
+    gatewaySelectionModal.classList.replace('flex', 'hidden');
+  }
+}
+
+function showGatewayModalAlert(message) {
+  if (gatewayModalAlert && gatewayModalAlertText) {
+    gatewayModalAlertText.textContent = message;
+    gatewayModalAlert.classList.remove('hidden');
+    gatewayModalAlert.classList.add('flex');
+  }
+}
+
+function resetGatewayOptionButtons() {
+  if (!gatewayOptionsList) return;
+  const buttons = gatewayOptionsList.querySelectorAll('.btn-select-gateway');
+  buttons.forEach((btn) => {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    const actionEl = btn.querySelector('.gateway-card-action');
+    if (actionEl) actionEl.innerHTML = '<i class="fa-solid fa-chevron-right text-xs"></i>';
+  });
+}
+
 // ── Checkout ───────────────────────────────────────────────────────────────────
 async function handleCheckout() {
   if (!activeVariant || currentQty < 1 || isCheckoutSubmitting) return;
 
   const stock = typeof activeVariant.stock === 'number' ? Math.max(0, activeVariant.stock) : 0;
   if (currentQty > stock) {
+    const stockMsg = `Jumlah pesanan (${currentQty}) melebihi stok yang tersedia (${stock}).`;
     try {
       if (tg?.isVersionAtLeast?.('6.2') && typeof tg?.showAlert === 'function') {
         tg.showAlert(`Stok tidak mencukupi. Tersedia: ${stock}`);
       } else {
-        showCheckoutModal('Stok Tidak Cukup', `Jumlah pesanan (${currentQty}) melebihi stok yang tersedia (${stock}).`);
+        showCheckoutModal('Stok Tidak Cukup', stockMsg, { type: 'error' });
       }
     } catch (_) {
-      showCheckoutModal('Stok Tidak Cukup', `Jumlah pesanan (${currentQty}) melebihi stok yang tersedia (${stock}).`);
+      showCheckoutModal('Stok Tidak Cukup', stockMsg, { type: 'error' });
     }
     return;
   }
@@ -1276,7 +1382,43 @@ async function handleCheckout() {
     return;
   }
 
+  // 100% Free claim: skip QRIS modal and execute immediately
+  if (finalSubtotal === 0) {
+    return executeCheckout(null);
+  }
+
+  // Resolve available gateways dynamically
+  const gws = (availableGateways && availableGateways.length > 0)
+    ? availableGateways
+    : await getAvailableGateways().catch(() => []);
+
+  // Multi-gateway mode: open popup selection modal
+  if (Array.isArray(gws) && gws.length > 1) {
+    showGatewaySelectionModal(finalSubtotal, gws);
+    return;
+  }
+
+  // Single gateway mode: directly execute
+  const singleGatewayId = (gws && gws.length === 1) ? (gws[0].gateway || gws[0].id) : null;
+  return executeCheckout(singleGatewayId);
+}
+
+async function executeCheckout(targetGateway = null) {
+  if (isCheckoutSubmitting) return;
   isCheckoutSubmitting = true;
+
+  const unitPrice = resolveTierPrice(activeVariant, currentQty);
+  const rawSubtotal = currentQty * unitPrice;
+  let finalSubtotal = rawSubtotal;
+  if (appliedVoucher) {
+    if (appliedVoucher.type === 'FREE') {
+      finalSubtotal = 0;
+    } else {
+      const discountVal = appliedVoucher.discount_value || appliedVoucher.discount || 0;
+      finalSubtotal = Math.max(0, rawSubtotal - Math.min(rawSubtotal, discountVal));
+    }
+  }
+
   const isFreeClaim = finalSubtotal === 0;
   const loadingLabel = isFreeClaim ? 'Mengklaim pesanan gratis...' : 'Membuat QRIS di Telegram...';
   if (btnDetailCheckout) {
@@ -1304,6 +1446,7 @@ async function handleCheckout() {
           variant_id: activeVariant.id,
           qty: currentQty,
           voucher_code: appliedVoucher?.code || null,
+          gateway: targetGateway || null,
         };
 
     const response = await fetch('/api/webapp/checkout', {
@@ -1318,10 +1461,12 @@ async function handleCheckout() {
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
       const checkoutErr = new Error(result.message || result.error || 'Checkout gagal diproses');
-      checkoutErr.code = result.error;
+      checkoutErr.code = result.code || result.error;
       checkoutErr.channels = result.channels || null;
       throw checkoutErr;
     }
+
+    closeGatewaySelectionModal();
 
     clearCatalogCache();
     fetchCatalog(true).then((freshCatalog) => {
@@ -1333,13 +1478,16 @@ async function handleCheckout() {
     if (isFreeClaim) {
       setTimeout(() => showCheckoutModal('Klaim Gratis Berhasil!', `Pesanan ${currentQty} item Anda dengan voucher promo berhasil diproses. Produk sedang disiapkan dan dikirimkan ke chat Telegram Anda.`), 350);
     } else {
-      setTimeout(() => showCheckoutModal('QRIS Terkirim ke Telegram', 'Pesanan Anda sudah diteruskan ke bot. Silakan cek chat Telegram untuk melihat QRIS dan menyelesaikan pembayaran.'), 350);
+      const finalPriceStr = result.total_amount ? ` sebesar Rp ${formatCurrency(result.total_amount)}` : '';
+      setTimeout(() => showCheckoutModal('QRIS Terkirim ke Telegram', `Pesanan Anda${finalPriceStr} sudah diteruskan ke bot. Silakan cek chat Telegram untuk melihat QRIS dan menyelesaikan pembayaran.`), 350);
     }
   } catch (err) {
     console.error('[Buyer] Checkout failed:', err.message);
     const isCommunityGate = err.code === 'COMMUNITY_ACCESS_REQUIRED' || err.message === 'COMMUNITY_ACCESS_REQUIRED';
+    const isMaintenance = err.code === 'QRIS_MAINTENANCE' || err.code === 'QIOSPAY_MAINTENANCE' || err.code === 'QIOSPAY_INVALID_AMOUNT';
 
     if (isCommunityGate) {
+      closeGatewaySelectionModal();
       closeDetailPage();
       const channelNames = Array.isArray(err.channels) && err.channels.length > 0
         ? ` (${err.channels.map((c) => c.name).join(', ')})`
@@ -1348,7 +1496,12 @@ async function handleCheckout() {
       setTimeout(() => {
         showCheckoutModal('Syarat Akses Belum Terpenuhi', communityDesc, { type: 'community' });
       }, 350);
+    } else if (isMaintenance && gatewaySelectionModal && !gatewaySelectionModal.classList.contains('hidden')) {
+      // Keep modal open, show warning alert and restore card buttons so buyer can tap another gateway
+      showGatewayModalAlert(err.message || 'Layanan QRIS ini sedang pemeliharaan. Silakan gunakan channel QRIS lainnya.');
+      resetGatewayOptionButtons();
     } else {
+      closeGatewaySelectionModal();
       try {
         if (tg?.isVersionAtLeast?.('6.2') && typeof tg?.showAlert === 'function') {
           tg.showAlert(err.message || 'Checkout gagal diproses');
@@ -1631,6 +1784,64 @@ function bindCheckoutModalEvents() {
         bottomNav.classList.remove('hidden');
         updateNavIndicator(false);
       }
+    });
+  }
+
+  if (btnCloseGatewayModal) {
+    btnCloseGatewayModal.addEventListener('click', () => {
+      closeGatewaySelectionModal();
+      if (bottomNav) {
+        bottomNav.classList.remove('hidden');
+        updateNavIndicator(false);
+      }
+    });
+  }
+
+  // Gateway modal backdrop click to dismiss
+  if (gatewaySelectionModal) {
+    gatewaySelectionModal.addEventListener('click', (e) => {
+      if (e.target === gatewaySelectionModal) {
+        closeGatewaySelectionModal();
+        if (bottomNav) {
+          bottomNav.classList.remove('hidden');
+          updateNavIndicator(false);
+        }
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !gatewaySelectionModal.classList.contains('hidden')) {
+        closeGatewaySelectionModal();
+        if (bottomNav) {
+          bottomNav.classList.remove('hidden');
+          updateNavIndicator(false);
+        }
+      }
+    });
+  }
+
+  // Gateway option card click (event delegation)
+  if (gatewayOptionsList) {
+    gatewayOptionsList.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-select-gateway');
+      if (!btn || isCheckoutSubmitting) return;
+
+      const gatewayId = btn.getAttribute('data-gateway-id');
+      triggerHaptic('light');
+
+      // Visual loading state on the clicked card
+      const allButtons = gatewayOptionsList.querySelectorAll('.btn-select-gateway');
+      allButtons.forEach((b) => {
+        b.disabled = true;
+        if (b !== btn) b.style.opacity = '0.5';
+      });
+
+      const actionEl = btn.querySelector('.gateway-card-action');
+      if (actionEl) {
+        actionEl.innerHTML = '<svg class="animate-spin w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+      }
+
+      executeCheckout(gatewayId);
     });
   }
 }

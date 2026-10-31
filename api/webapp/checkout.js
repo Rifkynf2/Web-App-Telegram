@@ -99,6 +99,7 @@ async function getBuyerProfile(req, res) {
         return success(res, {
             balance: relayData.balance || 0,
             transaction_count: relayData.transaction_count || 0,
+            available_gateways: Array.isArray(relayData.available_gateways) ? relayData.available_gateways : [],
         });
     } catch (err) {
         console.error('[API/webapp/checkout:GET] Error:', err.message);
@@ -322,6 +323,8 @@ async function createCheckout(req, res) {
             return forbidden(res, 'Masa sewa toko telah habis. Hubungi pemilik toko.');
         }
 
+        const targetGateway = req.body?.gateway || req.body?.target_gateway || null;
+
         const relayResponse = await fetch(`${ctx.botApiBaseUrl}/api/internal/checkout`, {
             method: 'POST',
             headers: {
@@ -334,6 +337,7 @@ async function createCheckout(req, res) {
                 variant_id: variantId,
                 qty,
                 voucher_code: req.body?.voucher_code || null,
+                gateway: targetGateway,
             }),
         });
 
@@ -341,6 +345,7 @@ async function createCheckout(req, res) {
         if (!relayResponse.ok) {
             return res.status(relayResponse.status).json({
                 success: false,
+                code: relayData.code || null,
                 error: relayData.error || 'Checkout relay failed',
                 message: relayData.message || null,
                 channels: relayData.channels || null,

@@ -226,6 +226,16 @@
 - **FR-4.12**: Force Subscription & Community Access Integration:
   - **Relay Error Passthrough**: Endpoint checkout relay (`/api/webapp/checkout`) meneruskan payload error `COMMUNITY_ACCESS_REQUIRED` beserta daftar `channels` dari bot server secara utuh.
   - **Graceful Modal Prompt**: Jika pembeli belum memenuhi syarat akses komunitas saat checkout atau klaim gratis, modal khusus ("Syarat Akses Belum Terpenuhi") ditampilkan dengan daftar channel resmi dan tombol aksi ("Buka Bot & Gabung") yang otomatis menutup Mini App (`tg.close()`) dan mengarahkan pembeli ke chat bot Telegram.
+- **FR-4.13**: Multi-Gateway Dynamic QRIS Synergy & Interactive Selector Modal:
+  - **Dynamic Gateway Discovery**: Endpoint `GET /api/webapp/checkout?bot_id=...` me-relay permintaan ke server bot privat tenant (`/api/internal/buyer/profile`) dan mengembalikan array `available_gateways` yang berisi daftar channel QRIS aktif (`id`, `name`, `gateway`) tanpa membocorkan kredensial atau melanggar RLS database Supabase (`settings` table).
+  - **Interactive Liquid Glass Modal (`#gateway-selection-modal`)**:
+    - Jika toko mengaktifkan lebih dari 1 gateway (mode `MULTI` atau `DUAL`), penekanan tombol "Beli Sekarang / Buat QRIS" memicu modal popup estetik dengan kartu channel resmi (`QRIS 1 - Shopee`, `QRIS 2 - QiosPay`, `QRIS 3 - Xoftware Pay`).
+    - Satu tap pada kartu langsung memicu checkout dengan meneruskan parameter `gateway` ke `POST /api/webapp/checkout`.
+    - Jika hanya ada 1 gateway aktif (default `XOFTWARE_ONLY`), modal otomatis di-bypass dan order langsung dieksekusi 1-klik.
+    - Klaim voucher gratis 100% (Rp 0) langsung mengeksekusi `claim_free` tanpa memicu popup gateway.
+  - **Graceful Gateway Maintenance Handling**:
+    - Apabila channel QRIS yang dipilih sedang pemeliharaan (kode error HTTP 503 `QRIS_MAINTENANCE` atau `QIOSPAY_MAINTENANCE`), modal seleksi tetap terbuka dan menampilkan banner peringatan informatif, serta mengembalikan tombol kartu ke kondisi aktif sehingga pembeli dapat langsung beralih ke channel QRIS lainnya tanpa mengulang dari katalog.
+  - **Nominal Transparency**: Modal konfirmasi sukses checkout (`showCheckoutModal`) menampilkan `total_amount` final yang dikembalikan oleh backend bot (merefleksikan penambahan kode unik Rp 1 - 250 pada Shopee Partner direct QRIS atau fee transaksi aggregator).
 
 
 
@@ -396,8 +406,8 @@
 |---|---|---|---|---|
 | `POST` | `/api/webapp/init` | Public / Telegram | `{ initData: string, bot_id: string }` | Inisialisasi sesi Mini App, validasi `initData`, upsert user Telegram, buat sesi, dan kembalikan config toko. |
 | `GET` | `/api/webapp/tenant-config` | Optional `initData` | Query: `?bot_id=...` (Header: `X-Telegram-Init-Data`) | Mengambil kredensial database publik tenant (`anon_key`), nama toko, status, dan URL foto profil resmi Telegram. |
-| `GET` | `/api/webapp/checkout` | `X-Telegram-Init-Data` | Query: `?bot_id=...` | Relay ke server bot untuk mengambil saldo akun buyer dan total riwayat transaksi belanja. |
-| `POST` | `/api/webapp/checkout` | `X-Telegram-Init-Data` | Action Dispatcher:<br>• `validate_voucher`: `{ bot_id, action: 'validate_voucher', voucher_code, product_id, variant_id, subtotal, qty }`<br>• `claim_free`: `{ bot_id, action: 'claim_free', variant_id, voucher_code, qty }`<br>• Reguler: `{ bot_id, variant_id, qty, voucher_code }` | Relay terpadu ke bot internal API:<br>1. Validasi kupon promo + in-memory rate limit 10 req/min.<br>2. Klaim pesanan gratis Rp 0 dengan reservasi kuantitas dinamis `qty`.<br>3. Pembuatan checkout QRIS/saldo dengan pemotongan diskon. |
+| `GET` | `/api/webapp/checkout` | `X-Telegram-Init-Data` | Query: `?bot_id=...` | Relay ke server bot untuk mengambil saldo akun buyer, riwayat belanja, dan gateway aktif (`available_gateways`). |
+| `POST` | `/api/webapp/checkout` | `X-Telegram-Init-Data` | Action Dispatcher:<br>• `validate_voucher`: `{ bot_id, action: 'validate_voucher', voucher_code, product_id, variant_id, subtotal, qty }`<br>• `claim_free`: `{ bot_id, action: 'claim_free', variant_id, voucher_code, qty }`<br>• Reguler: `{ bot_id, variant_id, qty, voucher_code, gateway? }` | Relay terpadu ke bot internal API:<br>1. Validasi kupon promo + in-memory rate limit 10 req/min.<br>2. Klaim pesanan gratis Rp 0 dengan reservasi kuantitas dinamis `qty`.<br>3. Pembuatan checkout QRIS dengan pilihan gateway dinamis (`gateway`) atau default checkout dengan error relay 503/400. |
 | `GET` | `/api/webapp/admin-dashboard` | Query Admin Auth | Query: `?bot_id=...&auth=...` | Relay ke bot server untuk memuat ringkasan statistik produk, varian, dan stok toko tenant. |
 | `GET` | `/api/webapp/admin-products` | `X-Admin-Auth` | Query: `?bot_id=...&auth=...` | Relay pengambilan katalog produk lengkap toko tenant. |
 | `POST` | `/api/webapp/admin-products` | `X-Admin-Auth` | `{ bot_id, auth, name, category_id, image_url, description, variants, wholesale_tiers }` | Relay pembuatan produk baru beserta varian dan tier harga grosir. |
