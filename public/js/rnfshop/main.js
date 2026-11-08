@@ -6,7 +6,7 @@ import { fetchApps, renderAppsView, saveApp, bindAppSearchFilter } from './apps.
 import { batchSyncToGoogleSheets } from './sheets.js';
 import { rnfFetch } from './apiClient.js';
 import { MOCK_TRANSACTIONS, isRnfPreviewMode } from './mockData.js';
-import { showAlert, showConfirm, formatRupiah, formatDateID } from './utils.js';
+import { showAlert, showConfirm, formatRupiah, formatDateID, escAttr } from './utils.js';
 import { RNFSHOP_CONFIG } from './config.js';
 
 let isInitialized = false;
@@ -103,8 +103,9 @@ function bindImportEvents() {
                             <th>Date</th>
                             <th>Customer ID</th>
                             <th>App</th>
+                            <th>Metode</th>
                             <th>Net</th>
-                            <th>Fee QRIS</th>
+                            <th>Fee / Unik</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -112,10 +113,21 @@ function bindImportEvents() {
                         ${rows.map(r => `
                             <tr>
                                 <td class="tabular">${formatDateID(r.trx_date)}</td>
-                                <td class="font-mono text-xs">${r.customer_name || '-'}</td>
-                                <td>${r.app_name}</td>
+                                <td class="font-mono text-xs">${escAttr(r.customer_name || '-')}</td>
+                                <td>${escAttr(r.app_name)}</td>
+                                <td>
+                                    <span class="text-xs px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700/80 text-slate-300 font-medium">
+                                        ${escAttr(r.payment_method || '-')}
+                                    </span>
+                                </td>
                                 <td class="tabular text-emerald-400 font-semibold">${formatRupiah(r.amount)}</td>
-                                <td class="tabular text-rose-400 text-xs">${formatRupiah(r.fee)}</td>
+                                <td class="tabular text-xs">
+                                    ${r.uniqueCode > 0 
+                                        ? `<span class="text-amber-400 font-mono" title="Kode Unik: +${r.uniqueCode}">Unik: +${r.uniqueCode}</span>` 
+                                        : (r.fee > 0 
+                                            ? `<span class="text-rose-400">${formatRupiah(r.fee)}</span>` 
+                                            : `<span class="text-slate-400">Rp 0</span>`)}
+                                </td>
                                 <td>
                                     <span class="badge-liquid ${r.isReady ? 'badge-incoming' : 'badge-outgoing'}">
                                         ${r.isReady ? '<i class="fa-solid fa-check mr-1"></i>Ready' : (r.status || r.statusKey)}

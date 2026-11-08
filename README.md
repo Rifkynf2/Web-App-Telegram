@@ -5,6 +5,11 @@ A professional, mobile-optimized Telegram Mini App designed for seamless digital
 ## 🌟 Key Features
 
 - **Dynamic Catalog**: Real-time product and variant data fetched from Supabase.
+- **Multi-Method Finance Receipt Parser**: Parser struk pintar pada mode keuangan RNF Shop yang memisahkan transaksi berdasarkan metode pembayaran tanpa risiko tabrakan (*anti-collision*):
+  - **Saldo**: 100% penerimaan bersih (*gross = net*, 0 fee).
+  - **QRIS Shopee Partner (Kode Unik)**: Deteksi otomatis kode unik dinamis (1–499) menggunakan formula harga pokok kelipatan `PRICE_STEP` (500), mengeliminasi bug reverse math (contoh: nominal Rp 5.012 & Rp 10.047 tetap dicatat Rp 5.000 & Rp 10.000).
+  - **QRIS Xoftware**: Pemotongan fee eksplit otomatis atau *reverse-math calculation* khusus gateway Xoftware.
+  - **ReDoS Defense & Sanitasi Karakter**: Pemisah blok struk bebas catastrophic backtracking yang toleran terhadap forward header Telegram dan pembersihan ornamen box-drawing (`┊`, `│`).
 - **Promo Voucher & Free Claim**: Validasi kupon promo interaktif (diskon NOMINAL & klaim GRATIS 100%), dukungan kuantitas dinamis (*multi-qty*) pada total Rp 0, proteksi batas minimum QRIS (Rp 1.000), serta auto-detach jika di bawah syarat belanja. Dilengkapi arsitektur *hybrid fallback* ke database tenant untuk menjamin ketersediaan validasi 100% tanpa error jaringan.
 - **Syarat Akses Komunitas (Force Sub)**: Integrasi proteksi syarat join channel/grup saat checkout dengan modal interaktif ramah yang otomatis mengarahkan pembeli ke bot.
 - **Admin Dashboard**: Secure interface for managing products and stock directly from the web.

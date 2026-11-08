@@ -80,43 +80,66 @@ export function resolveNetAndFee(totalPayment, feeText, paymentMethod) {
     const rawFee = feeText ? parseGrossAmount(feeText) : 0;
     const method = normalizeKey(paymentMethod);
 
-    // Case 1: Explicit fee is present in the receipt
+    // Case 1: Payment method explicitly says Saldo (no fee, 100% net)
+    if (method.includes("SALDO")) {
+        return {
+            amount: gross,
+            fee: 0,
+            uniqueCode: 0,
+            grossAmount: gross,
+            source: "saldo_no_fee",
+            resolvedMethod: "Saldo"
+        };
+    }
+
+    // Case 2: Shopee Partner uses unique code (kode unik), not a customer fee
+    // Check SHOPEE before generic QRIS because paymentMethod is often "QRIS (Shopee Partner)"
+    if (method.includes("SHOPEE")) {
+        const basePrice = Math.floor(gross / PRICE_STEP) * PRICE_STEP;
+        const uniqueCode = Math.max(0, gross - basePrice);
+        return {
+            amount: basePrice,
+            fee: 0,
+            uniqueCode,
+            grossAmount: gross,
+            source: "shopee_partner_unique_code",
+            resolvedMethod: "QRIS (Shopee Partner)"
+        };
+    }
+
+    // Case 3: Explicit fee is present in the receipt (Xoftware / standard QRIS)
     if (rawFee > 0 && gross >= rawFee) {
         return {
             amount: gross - rawFee,
             fee: rawFee,
+            uniqueCode: 0,
             grossAmount: gross,
-            source: "explicit_fee"
+            source: "explicit_fee",
+            resolvedMethod: "QRIS (Xoftware)"
         };
     }
 
-    // Case 2: Payment method explicitly says Saldo (no fee)
-    if (method === "SALDO") {
-        return {
-            amount: gross,
-            fee: 0,
-            grossAmount: gross,
-            source: "saldo_no_fee"
-        };
-    }
-
-    // Case 3: Legacy QRIS receipt without explicit Fee line (fallback)
-    if (method === "QRIS" || (gross > 0 && gross % PRICE_STEP !== 0)) {
+    // Case 4: Legacy QRIS receipt without explicit Fee line (fallback reverse math)
+    if (method.includes("QRIS") || method.includes("XOFTWARE")) {
         const net = reverseFeeToNet(gross);
         return {
             amount: net,
             fee: Math.max(0, gross - net),
+            uniqueCode: 0,
             grossAmount: gross,
-            source: "legacy_reverse_math"
+            source: "legacy_reverse_math",
+            resolvedMethod: "QRIS (Xoftware)"
         };
     }
 
-    // Case 4: Default fallback
+    // Case 5: Default fallback
     return {
         amount: gross,
         fee: 0,
+        uniqueCode: 0,
         grossAmount: gross,
-        source: "default"
+        source: "default",
+        resolvedMethod: paymentMethod || "Unknown"
     };
 }
 
@@ -125,8 +148,10 @@ function splitBlocks(rawText) {
     if (!text) return [];
 
     if (/TRANSAKSI SUKSES/i.test(text)) {
-        const matches = text.match(/(?:[✅✔✓]?\s*)?TRANSAKSI SUKSES[\s\S]*?(?=(?:[✅✔✓]?\s*)?TRANSAKSI SUKSES|$)/gi);
-        return (matches || []).map((block) => block.trim()).filter(Boolean);
+        // Matches from optional Telegram header through receipt body up to the next receipt boundary
+        const receiptPattern = /(?:\[\d{1,2}\/\d{1,2}\/\d{2,4}[^\]\r\n]*\][^\n:]*:\s*)?[✅✔✓]?\s*TRANSAKSI SUKSES[\s\S]*?(?=(?:\[\d{1,2}\/\d{1,2}\/\d{2,4}[^\]\r\n]*\][^\n:]*:\s*)?[✅✔✓]?\s*TRANSAKSI SUKSES|$)/gi;
+        const matches = text.match(receiptPattern);
+        return (matches || []).map((b) => b.trim()).filter(Boolean);
     }
 
     return text
@@ -141,7 +166,10 @@ function extractLineValue(block, label) {
         "gim"
     );
     const match = pattern.exec(block);
-    return normalizeSpaces(match?.[1] || "");
+    const raw = match?.[1] || "";
+    // Clean any leading box-drawing artifacts or delimiters from multiline values
+    const cleaned = raw.replace(/^[\s\u2502\u250a\u256d\u256e\u2570\u256f\-]+/, "");
+    return normalizeSpaces(cleaned);
 }
 
 function resolveApp(productName, apps) {
@@ -163,7 +191,7 @@ function resolveApp(productName, apps) {
 }
 
 function parseBlock(block, index, apps) {
-    const customerId = extractLineValue(block, "ID");
+    const customerId = extractLineValue(block, "(?:ID|ID Pelanggan|User ID)");
     const productName = extractLineValue(block, "Produk");
     const variation = extractLineValue(block, "Variasi");
     const qtyRaw = extractLineValue(block, "(?:Jumlah(?:\\s+Pesanan)?|Qty)");
@@ -171,9 +199,10 @@ function parseBlock(block, index, apps) {
     const feeText = extractLineValue(block, "Fee(?:\\s+QRIS)?");
     const paymentMethod = extractLineValue(block, "Metode Pembayaran");
     const paidAt = extractLineValue(block, "Dibayar");
+    const transactionId = extractLineValue(block, "ID Transaksi");
 
     const trxDate = parsePaidDate(paidAt);
-    const { amount, fee, grossAmount, source } = resolveNetAndFee(totalPayment, feeText, paymentMethod);
+    const { amount, fee, grossAmount, source, uniqueCode, resolvedMethod } = resolveNetAndFee(totalPayment, feeText, paymentMethod);
     const app = resolveApp(productName, apps);
 
     const qtyDigits = String(qtyRaw || "").replace(/\D/g, "");
@@ -203,8 +232,10 @@ function parseBlock(block, index, apps) {
         trx_type: "incoming",
         amount,
         fee,
+        uniqueCode: uniqueCode || 0,
         gross_amount: grossAmount,
-        payment_method: paymentMethod || "",
+        payment_method: resolvedMethod || paymentMethod || "",
+        transaction_id: transactionId || "",
         customer_name: customerId,
         app_id: app?.id || "",
         app_name: app?.name || productName || "-",

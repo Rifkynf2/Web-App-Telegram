@@ -302,12 +302,15 @@
   - Pagination dinamis (25, 50, 100 baris per halaman).
   - Tambah Transaksi: Tanggal, Tipe, Aplikasi, Nama Pelanggan, Nominal Kotor (*Gross*), Biaya QRIS (*Fee QRIS*), Nominal Bersih (*Net*), Metode Pembayaran (QRIS, Transfer, Saldo), Catatan transaksi, dan status sinkronisasi.
   - Edit & Hapus Transaksi dengan konfirmasi SweetAlert2.
-- **FR-7.4**: Batch Receipt & Mutation Parser (`import.js`):
-  - Fitur parser cerdas untuk mengekstrak mutasi bank/struk secara massal dari format teks bebas (BCA, QRIS, mutasi perbankan).
-  - Regex Engine: Otomatis mendeteksi tanggal, nominal, nama pembeli, dan catatan.
-  - Normalisasi Alias: Memetakan variasi penulisan nama produk/aplikasi (contoh: "YT", "YOUTUBE", "YTP" -> "YOUTUBE PREMIUM").
-  - Penghitungan Otomatis Fee & Net: Mengkalkulasi potongan fee QRIS secara otomatis.
-  - Tampilan Pratinjau (*Validation Preview Table*) sebelum melakukan batch insert ke database.
+- **FR-7.4**: Batch Receipt & Multi-Method Payment Parser (`import.js`):
+  - Fitur parser cerdas untuk mengekstrak mutasi struk transaksi bot Telegram (`TRANSAKSI SUKSES`) secara massal.
+  - Regex Engine Presisi & Anti-ReDoS: Otomatis mendeteksi tanggal transaksi, ID pelanggan (`ID: ...`), produk, variasi, jumlah pesanan, total pembayaran, metode pembayaran, dan ID transaksi (`ID Transaksi: ...`) dengan sanitasi ornamen box-drawing (`┊`, `│`, dll.) serta pemisah multi-struk bebas catastrophic backtracking yang toleran terhadap header forward Telegram (`[DD/MM/YYYY HH:MM] Name:`).
+  - Multi-Method Payment Strategy & Anti-Collision:
+    1. **Saldo**: Pembayaran tanpa fee (`amount = gross`, `fee = 0`).
+    2. **QRIS Shopee Partner (Kode Unik)**: Deteksi otomatis kata kunci `SHOPEE`, penentuan harga pokok bersih menggunakan kelipatan `PRICE_STEP` (`Math.floor(gross / 500) * 500`), serta isolasi kode unik (`gross - basePrice`) tanpa pemotongan fee (`fee = 0`), mengeliminasi bug salah deteksi harga 5.000 menjadi 4.500.
+    3. **QRIS Xoftware**: Pengurangan fee eksplit (`amount = gross - rawFee`) jika baris `Fee QRIS` tersedia, dengan fallback reverse math (`reverseFeeToNet`) yang diisolasi khusus transaksi QRIS non-Shopee.
+  - Normalisasi Alias: Memetakan variasi penulisan nama produk/aplikasi (contoh: "CHATGPT PLUS" -> "CHATGPT").
+  - Tampilan Pratinjau Interaktif (*Validation Preview Table*): Menampilkan tanggal, Customer ID, nama aplikasi master, badge metode pembayaran (`QRIS (Shopee Partner)`, `QRIS (Xoftware)`, `Saldo`), nominal bersih (*Net*), badge kode unik / fee QRIS (`Unik: +12` / `Rp 367`), dan proteksi injeksi teks (`escAttr`) sebelum melakukan batch insert ke database.
 - **FR-7.5**: Manajemen Master Aplikasi Digital (`rnf-apps`):
   - Pengelolaan katalog aplikasi toko digital (`apps` table).
   - Tambah aplikasi baru, edit nama aplikasi, atur ikon aplikasi, dan toggle status aktif/non-aktif.
