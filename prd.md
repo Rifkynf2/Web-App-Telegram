@@ -1,5 +1,7 @@
 # Product Requirements Document (PRD)
+
 # RNF SaaS Multi-Tenant Web App & API Gateway System
+
 ## Unified Multi-Tenant Bot Ecosystem & Finance Super-Dashboard
 
 - **Version**: 2.8.0
@@ -13,14 +15,17 @@
 ## 1. Executive Summary
 
 ### 1.1 Product Vision
+
 **RNF SaaS Multi-Tenant Web App** adalah platform terpadu untuk ekosistem e-commerce bot digital dan operasional finansial multi-layanan. Platform ini mengintegrasikan:
+
 1. **Storefront Telegram Mini App (Buyer)**: Katalog belanja interaktif, responsif, dan instan untuk pelanggan toko digital bot tenant dengan rendering GPU 60 FPS dan in-memory catalog caching.
-2. **Tenant Admin Portal (Seller)**: Antarmuka pengelolaan produk multi-varian, aturan harga grosir (*wholesale pricing tiers*), dan manajemen stok massal (*bulk restock*) dengan pencarian ter-debounce dan invalidasi cache seketika.
+2. **Tenant Admin Portal (Seller)**: Antarmuka pengelolaan produk multi-varian, aturan harga grosir (_wholesale pricing tiers_), dan manajemen stok massal (_bulk restock_) dengan pencarian ter-debounce dan invalidasi cache seketika.
 3. **Master SaaS Super Dashboard (Superadmin)**: Pusat kendali terpadu yang memiliki **Dual-Mode Switcher**:
-   - **Mode Rental SaaS**: Pengelolaan lisensi masa aktif bot Telegram tenant, manajemen sewa grup bot WhatsApp (*managed groups*), penyesuaian durasi sewa, generator pengingat tagihan multi-platform (WhatsApp direct `wa.me` deep-link & clean Telegram plain text), serta sinkronisasi kedaluwarsa otomatis.
-   - **Mode Shop Finance (RNF Shop)**: Pencatatan keuangan toko (*income* & *expense*), visualisasi metrik laba bersih, manajemen katalog aplikasi/produk digital master, integrasi Google Sheets, serta modul *Batch Receipt Parser* cerdas untuk ekstraksi transaksi mutasi bank & QRIS.
+   - **Mode Rental SaaS**: Pengelolaan lisensi masa aktif bot Telegram tenant, manajemen sewa grup bot WhatsApp (_managed groups_), penyesuaian durasi sewa, generator pengingat tagihan multi-platform (WhatsApp direct `wa.me` deep-link & clean Telegram plain text), serta sinkronisasi kedaluwarsa otomatis.
+   - **Mode Shop Finance (RNF Shop)**: Pencatatan keuangan toko (_income_ & _expense_), visualisasi metrik laba bersih, manajemen katalog aplikasi/produk digital master, integrasi Google Sheets, serta modul _Batch Receipt Parser_ cerdas untuk ekstraksi transaksi mutasi bank & QRIS.
 
 ### 1.2 Core Value Propositions
+
 1. **Keamanan Transaksi Terisolasi & Anti-Eksploitasi**:
    - Seluruh mutasi saldo buyer, pemotongan stok aktual, dan eksekusi checkout di-relay langsung ke server bot privat tenant melalui komunikasi terenkripsi backend-to-backend (`INTERNAL_API_SECRET`), sehingga aman dari manipulasi di sisi browser.
 2. **Tri-Database Isolation Architecture**:
@@ -30,15 +35,17 @@
      - **RNF Shop Database**: Pencatatan pembukuan keuangan toko dan master aplikasi digital.
    - Master `service_role` key hanya beroperasi di runtime Node.js Vercel dan **tidak pernah diekspos** ke client; frontend hanya menerima `anon_key` tenant secara dinamis.
 3. **Atomic Payment Finalization & Race-Condition Defense**:
-   - Pembayaran perpanjangan sewa via QRIS Xoftware Pay diproses secara *atomic* di level PostgreSQL (`process_renewal_payment`) dengan mekanisme *row-level locking* (`FOR UPDATE`). Mendukung pemulihan status dari `PENDING` maupun `EXPIRED` untuk mencegah dana tersangkut akibat *timeout race condition*.
+   - Pembayaran perpanjangan sewa via QRIS (Shopee Partner Direct 0% Fee sebagai jalur utama & Xoftware Pay sebagai fallback) diproses secara _atomic_ di level PostgreSQL (`process_renewal_payment`) dengan mekanisme _row-level locking_ (`FOR UPDATE`).
+   - Dilengkapi 2 indeks unik pada tabel `rental_invoices`: `uq_rental_invoices_shopee_pending_amount` (isolasi nominal unik pending Shopee) dan `uq_rental_invoices_gateway_event_id` (anti-replay nomor referensi mutasi).
+   - Mendukung pemulihan status dari `PENDING` maupun `EXPIRED` untuk mencegah dana tersangkut akibat _timeout race condition_.
 4. **Sinkronisasi Kalender WIB (Asia/Jakarta) Berorientasi Midnight (00:00:00)**:
    - Seluruh durasi langganan diselaraskan ke tengah malam 00:00:00 WIB. Perpanjangan di tengah hari kalender secara otomatis memperoleh bonus sisa jam hari berjalan ditambah durasi penuh paket sewa (31 hari untuk paket standar).
 5. **HMAC Signature dengan Bot-ID Binding & Anti-Replay**:
-   - Komunikasi internal antara Bot Tenant dan API Gateway dilindungi oleh HMAC-SHA256 dengan payload terikat `timestamp.botId.body` dan toleransi waktu maksimal 5 menit untuk menolak *replay attack* dan impersonasi tenant.
+   - Komunikasi internal antara Bot Tenant dan API Gateway dilindungi oleh HMAC-SHA256 dengan payload terikat `timestamp.botId.body` dan toleransi waktu maksimal 5 menit untuk menolak _replay attack_ dan impersonasi tenant.
 6. **Vercel Hobby Optimization (Consolidated Dynamic Routing)**:
    - Mengonsolidasikan handler admin (`api/admin/[resource].js`), langganan (`api/tenant/subscription/[action].js`), dan checkout (`api/webapp/checkout.js`) agar seluruh backend serverless tetap berada di bawah limit kuota Vercel Hobby (< 12 Serverless Functions).
 7. **High-Performance In-Memory Catalog Caching & Anti-Stampede**:
-   - Frontend mengimplementasikan cache in-memory 60 detik (`_catalogCache`) dengan *in-flight promise deduplication* (`_inFlightCatalogPromise`) dan *parallel fetching* via `Promise.all` (produk aktif, varian, dan stok tersedia). Mengeliminasi query N+1, memangkas latensi buka katalog hingga 90%, dan menjaga konsumsi row Supabase Free Tier tetap aman.
+   - Frontend mengimplementasikan cache in-memory 60 detik (`_catalogCache`) dengan _in-flight promise deduplication_ (`_inFlightCatalogPromise`) dan _parallel fetching_ via `Promise.all` (produk aktif, varian, dan stok tersedia). Mengeliminasi query N+1, memangkas latensi buka katalog hingga 90%, dan menjaga konsumsi row Supabase Free Tier tetap aman.
 8. **Realtime WebSocket Quota Shielding (Free Tier Defense)**:
    - Koneksi WebSocket Supabase Realtime (`subscribeToInventoryChanges`) diisolasi secara ketat dan hanya diaktifkan untuk sesi seller admin (`role === 'admin'`). Sesi buyer Telegram Mini App tidak membuka WebSocket permanen, mencegah habisnya kuota batas 200 concurrent connection pool Supabase.
 9. **Hardware-Accelerated Mobile GPU Rendering (60 FPS WebView)**:
@@ -50,11 +57,11 @@
 
 ## 2. User Roles & Persona Matrix
 
-| Role | Lokasi Akses | Akses & Otentikasi | Tanggung Jawab Utama |
-|---|---|---|---|
-| **SaaS Superadmin** | `/master` (`public/master-dashboard.html`) | Header `X-Admin-Secret` (`ADMIN_DASHBOARD_SECRET`) | - Monitoring analitik SaaS (Tenant, WA Group, Finansial RNF Shop).<br>- Pengelolaan tenant: Tambah durasi (+30/custom hari), Suspend, Activate, Ban, Delete, Force Invalidate Cache.<br>- Pengelolaan rental grup WhatsApp: Tambah grup, perpanjang sewa, toggle status aktif, ubah PIC renter.<br>- Finansial RNF Shop: Input transaksi manual, edit, hapus, import struk/mutasi batch, manajemen katalog apps.<br>- Generator pesan pengingat tagihan multi-platform: Direct WhatsApp launcher (`wa.me`) dengan resolusi nomor otomatis & format pesan plain-text Telegram bersih.<br>- Avatar modern SVG (`boy.svg`) & 100% Core Web Vitals Accessibility Score.<br>- Sinkronisasi manual tenant expired. |
-| **Tenant Admin (Toko)** | `/admin` (`public/admin.html`) | Query Param `?bot_id=...&auth=...` / HMAC Bot Admin | - Manajemen produk responsif: Tambah/edit produk, varian multi-harga, aturan diskon grosir, dan pencarian produk ter-debounce 150ms.<br>- Manajemen stok massal: Upload batch file `.txt` atau input teks, deteksi baris duplikat otomatis, hapus stok per item/varian.<br>- Proactive cache invalidation (`clearCatalogCache()`) saat simpan/hapus produk & perubahan stok.<br>- Dropdown kustom ultra-ringan dengan *document event delegation* tunggal.<br>- Realtime WebSocket aktif eksklusif untuk admin inventaris toko. |
-| **Buyer (Pelanggan)** | `/` (`public/index.html`) | Header / Body `X-Telegram-Init-Data` (`Telegram.WebApp.initData`) | - Menjelajah katalog toko bot secara instan berkat in-memory caching 60s & in-flight deduplication.<br>- Tombol refresh katalog manual interaktif dengan animasi putar 360°.<br>- Panel detail produk dengan animasi slide GPU hardware-accelerated 60 FPS tanpa jank.<br>- Pencarian produk instan dengan efek animasi placeholder mesin tik dinamis.<br>- Melihat detail produk, variasi, dan tabel harga bertingkat grosir.<br>- Pengecekan saldo akun & checkout pesanan via relay bot, dengan pembersihan cache lokal seketika pasca checkout. |
+| Role                    | Lokasi Akses                               | Akses & Otentikasi                                                | Tanggung Jawab Utama                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------- | ------------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **SaaS Superadmin**     | `/master` (`public/master-dashboard.html`) | Header `X-Admin-Secret` (`ADMIN_DASHBOARD_SECRET`)                | - Monitoring analitik SaaS (Tenant, WA Group, Finansial RNF Shop).<br>- Pengelolaan tenant: Tambah durasi (+30/custom hari), Suspend, Activate, Ban, Delete, Force Invalidate Cache.<br>- Pengelolaan rental grup WhatsApp: Tambah grup, perpanjang sewa, toggle status aktif, ubah PIC renter.<br>- Finansial RNF Shop: Input transaksi manual, edit, hapus, import struk/mutasi batch, manajemen katalog apps.<br>- Generator pesan pengingat tagihan multi-platform: Direct WhatsApp launcher (`wa.me`) dengan resolusi nomor otomatis & format pesan plain-text Telegram bersih.<br>- Avatar modern SVG (`boy.svg`) & 100% Core Web Vitals Accessibility Score.<br>- Sinkronisasi manual tenant expired. |
+| **Tenant Admin (Toko)** | `/admin` (`public/admin.html`)             | Query Param `?bot_id=...&auth=...` / HMAC Bot Admin               | - Manajemen produk responsif: Tambah/edit produk, varian multi-harga, aturan diskon grosir, dan pencarian produk ter-debounce 150ms.<br>- Manajemen stok massal: Upload batch file `.txt` atau input teks, deteksi baris duplikat otomatis, hapus stok per item/varian.<br>- Proactive cache invalidation (`clearCatalogCache()`) saat simpan/hapus produk & perubahan stok.<br>- Dropdown kustom ultra-ringan dengan _document event delegation_ tunggal.<br>- Realtime WebSocket aktif eksklusif untuk admin inventaris toko.                                                                                                                                                                              |
+| **Buyer (Pelanggan)**   | `/` (`public/index.html`)                  | Header / Body `X-Telegram-Init-Data` (`Telegram.WebApp.initData`) | - Menjelajah katalog toko bot secara instan berkat in-memory caching 60s & in-flight deduplication.<br>- Tombol refresh katalog manual interaktif dengan animasi putar 360°.<br>- Panel detail produk dengan animasi slide GPU hardware-accelerated 60 FPS tanpa jank.<br>- Pencarian produk instan dengan efek animasi placeholder mesin tik dinamis.<br>- Melihat detail produk, variasi, dan tabel harga bertingkat grosir.<br>- Pengecekan saldo akun & checkout pesanan via relay bot, dengan pembersihan cache lokal seketika pasca checkout.                                                                                                                                                          |
 
 ---
 
@@ -115,11 +122,12 @@
 ```
 
 ### 3.1 Technology Stack
+
 - **Frontend Layer**:
   - HTML5 Semantik, Vanilla JavaScript (Modular ES Modules & Class Controllers).
   - Styling:
     - **Tailwind CSS v4** (`@tailwindcss/cli` build & minify → `public/style/style.css`): Sistem utility class utama untuk seluruh halaman.
-    - **`rnfshop-liquid.css`** (Liquid Glass Design System): Stylesheet custom untuk Master Super-Dashboard. Mengimplementasikan efek *True Liquid Glass* (`backdrop-filter: blur`, gradient border, aurora mesh ambient glow, dot-grid background pattern), komponen login overlay split-canvas, form input Admin Secret Key bergaya neon, serta animasi micro-interaction premium. Tidak bergantung pada Tailwind.
+    - **`rnfshop-liquid.css`** (Liquid Glass Design System): Stylesheet custom untuk Master Super-Dashboard. Mengimplementasikan efek _True Liquid Glass_ (`backdrop-filter: blur`, gradient border, aurora mesh ambient glow, dot-grid background pattern), komponen login overlay split-canvas, form input Admin Secret Key bergaya neon, serta animasi micro-interaction premium. Tidak bergantung pada Tailwind.
     - **`master-dashboard.min.css`**: Output minified CSS khusus komponen Master Dashboard yang di-compile terpisah dari `style.css` untuk cache-busting optimal.
     - **`fontawesome.min.css`** + **`/webfonts/`**: Font Awesome 6 self-hosted lokal (woff2) sebagai fallback/pengganti CDN untuk reliabilitas ikonografi di lingkungan tanpa koneksi eksternal.
   - Komponen UI & Ikonografi: Font Awesome 6 (self-hosted via `/style/fontawesome.min.css` + `/webfonts/`), SweetAlert2 (dialog konfirmasi/alert), Google Material Symbols Outlined (ikon referensi), Canvas Confetti.
@@ -141,6 +149,7 @@
 ## 4. Detailed Functional Requirements (FR)
 
 ### FR-1: Tenant Onboarding, Identity & Session Initialization
+
 - **FR-1.1**: Registrasi tenant baru dilakukan via `POST /api/tenant/register` dengan otentikasi HMAC SHA-256. Menyimpan `bot_id`, `shop_name`, `owner_chat_id`, `bot_token`, dan kredensial database tenant di `tenant_configs`.
 - **FR-1.2**: Inisialisasi sesi Mini App pelanggan melalui `POST /api/webapp/init`:
   - Menerima dan memvalidasi `initData` Telegram beserta `bot_id`.
@@ -152,6 +161,7 @@
 - **FR-1.4**: Pengambilan konfigurasi toko secara publik via `GET /api/webapp/tenant-config?bot_id=...` secara dinamis mengambil foto profil bot resmi dari Telegram Bot API (`getMe` -> `getUserProfilePhotos` -> `getFile`).
 
 ### FR-2: Tenant Subscription Lifecycle & Timezone Precision (WIB)
+
 - **FR-2.1**: Matriks status tenant:
   - `ACTIVE`: Bot dan Mini App beroperasi penuh.
   - `SUSPENDED`: Dinonaktifkan sementara oleh Superadmin (Mini App terkunci dengan pesan suspensi).
@@ -165,30 +175,37 @@
 - **FR-2.5**: Notifikasi Invalidasi Cache Bot Otomatis:
   - Setiap perubahan status tenant (baik via cron otomatis, webhook perpanjangan sewa, maupun aksi manual admin di master dashboard) mengirimkan callback HTTP `POST /api/internal/renewal-callback` dengan payload `{ action: 'invalidate_cache', bot_id }` ke URL bot server tenant (`metadata.bot_api_base_url`).
 
-### FR-3: Centralized Payment & Webhook Processing (Xoftware Pay)
-- **FR-3.1**: Callback pembayaran dari Xoftware Pay diterima di `POST /api/webhook/xoftware-renewal?token=SAAS_WEBHOOK_SECRET`.
-- **FR-3.2**: Verifikasi Signature Webhook Fail-Closed:
-  - Vercel dinonaktifkan body-parser bawaannya (`bodyParser: false`) agar signature HMAC-SHA256 (`SAAS_XOFTWARE_WEBHOOK_SECRET`) dihitung langsung dari raw buffer bytes request.
-  - Verifikasi menggunakan `crypto.timingSafeEqual` untuk mitigasi *timing attack*.
-- **FR-3.3**: Reverse Status Verification:
-  - Gateway melakukan panggilan balik (*reverse lookup*) ke endpoint resmi Xoftware `/v1/api/transactions/status` menggunakan HMAC request signing (`signRequest`) untuk memvalidasi bahwa transaksi benar-benar berstatus `SUCCESS` di payment gateway sebelum mengubah data DB.
+### FR-3: Centralized Payment Subsystem (Shopee Partner Primary & Xoftware Fallback)
+
+- **FR-3.1**: Jalur Utama — Shopee Partner Direct Dynamic QRIS (0% Fee):
+  - Inisiasi tagihan melalui `POST /api/tenant/subscription` yang menerima `gateway: 'SHOPEE_PARTNER'`, `raw_amount`, dan `unique_code`.
+  - Menerapkan pembersihan otomatis (*global sweep*) terhadap invoice pending berumur > 15 menit agar slot kode unik segera terbebas pada partial index database.
+  - Konfirmasi pembayaran dilakukan via `POST /api/tenant/subscription/[action]?action=confirm-payment` yang membawa `gateway_event_id` (nomor referensi Shopee) dan divalidasi terhadap nominal invoice.
+- **FR-3.2**: Isolasi & Proteksi Indeks Database Master:
+  - `uq_rental_invoices_shopee_pending_amount`: Memastikan tidak ada 2 bot yang memiliki tagihan pending dengan nominal Shopee yang persis sama.
+  - `uq_rental_invoices_gateway_event_id`: Indeks anti-replay yang memastikan 1 transaksi/mutasi Shopee hanya bisa digunakan tepat 1 kali di seluruh sistem.
+- **FR-3.3**: Jalur Fallback — Xoftware Pay Aggregator:
+  - Callback pembayaran dari Xoftware Pay diterima di `POST /api/webhook/xoftware-renewal?token=SAAS_WEBHOOK_SECRET`.
+  - Verifikasi Signature Webhook Fail-Closed: Vercel dinonaktifkan body-parser bawaannya (`bodyParser: false`) agar signature HMAC-SHA256 (`SAAS_XOFTWARE_WEBHOOK_SECRET`) dihitung langsung dari raw buffer bytes request dengan `crypto.timingSafeEqual`.
+  - Reverse Status Verification: Gateway melakukan panggilan balik (*reverse lookup*) ke endpoint resmi Xoftware `/v1/api/transactions/status` menggunakan HMAC request signing (`signRequest`).
 - **FR-3.4**: Atomic Transaction RPC (`process_renewal_payment`):
   - Mengunci baris `rental_invoices` dengan `FOR UPDATE`.
-  - Menerima klaim dari invoice berstatus `PENDING` ataupun `EXPIRED` (mencegah kegagalan bila invoice kedaluwarsa tepat saat uang masuk).
-  - Memperpanjang masa aktif tenant di `subscriptions`, mengaktifkan tenant di `tenants`, mencatat waktu bayar, dan mengembalikan status atomik.
-  - Idempoten: Jika invoice sudah berstatus `PAID`, RPC mengembalikan data lengkap tenant agar webhook dapat mencoba ulang pengiriman notifikasi/penghapusan QRIS tanpa memperpanjang durasi ganda.
+  - Menerima parameter `p_invoice_id UUID`, `p_amount INT`, `p_gateway_event_id TEXT`, dan `p_gateway TEXT`.
+  - Memverifikasi status invoice (`PENDING` atau `EXPIRED`), memperpanjang masa aktif tenant di `subscriptions`, mengaktifkan tenant di `tenants`, mencatat waktu bayar, serta menyimpan gateway & gateway event id secara atomik.
+  - Idempoten: Jika invoice sudah berstatus `PAID`, RPC mengembalikan data lengkap tenant agar webhook/poller dapat mencoba ulang pengiriman notifikasi/penghapusan QRIS tanpa memperpanjang durasi ganda (`already_processed`).
 - **FR-3.5**: Pelacakan Notifikasi & Penghapusan Pesan QRIS:
   - Invoice menyimpan `qris_chat_id` dan `qris_message_id`.
   - Setelah pembayaran terkonfirmasi, bot tenant dipicu untuk menghapus pesan QRIS lama dan mengirim notifikasi sukses kepada pemilik bot.
   - Status pengiriman dilacak melalui flag `notification_sent` dan `qris_deleted` di `rental_invoices`.
 
 ### FR-4: Buyer Storefront Telegram Mini App
+
 - **FR-4.1**: Inisialisasi antarmuka Telegram WebApp, membaca avatar toko, tema warna (Dark/Light mode via `theme.js`), dan profil pembeli.
 - **FR-4.2**: Katalog produk dengan filter kategori, pencarian real-time dengan animasi placeholder dinamis berganti frasa secara berkala.
 - **FR-4.3**: Modal detail produk:
   - Deskripsi produk lengkap.
-  - Pilihan varian interaktif dengan visualisasi stok sisa dan status habis (*out of stock*).
-  - Tabel harga bertingkat grosir (*wholesale tier pricing*): Menampilkan diskon otomatis berdasarkan batas minimum pembelian (contoh: Beli 5+ @Rp9.500, Beli 10+ @Rp9.000).
+  - Pilihan varian interaktif dengan visualisasi stok sisa dan status habis (_out of stock_).
+  - Tabel harga bertingkat grosir (_wholesale tier pricing_): Menampilkan diskon otomatis berdasarkan batas minimum pembelian (contoh: Beli 5+ @Rp9.500, Beli 10+ @Rp9.000).
 - **FR-4.4**: Profil & Saldo Terisolasi:
   - Pemanggilan `GET /api/webapp/checkout?bot_id=...` me-relay permintaan ke bot server tenant untuk mengambil saldo akun buyer dan total transaksi belanja, menghindari pembacaan langsung yang tidak aman dari browser.
 - **FR-4.5**: Checkout Pesanan Terproteksi:
@@ -196,7 +213,7 @@
   - Gateway memverifikasi integritas buyer via `telegramAuth.js`, lalu me-relay order ke bot tenant untuk pemotongan saldo aman atau penerbitan pembayaran QRIS bot tenant.
 - **FR-4.6**: High-Efficiency In-Memory Catalog Caching (60s TTL) & Anti-Stampede:
   - Frontend menyimpan data katalog lengkap (produk aktif, variasi, dan ketersediaan stok aktual) dalam memori browser selama 60 detik (`_catalogCache`).
-  - Mekanisme *in-flight promise deduplication* (`_inFlightCatalogPromise`) memastikan bahwa pemanggilan `fetchCatalog()` yang terjadi secara bersamaan hanya memicu 1 permintaan jaringan Supabase tunggal.
+  - Mekanisme _in-flight promise deduplication_ (`_inFlightCatalogPromise`) memastikan bahwa pemanggilan `fetchCatalog()` yang terjadi secara bersamaan hanya memicu 1 permintaan jaringan Supabase tunggal.
   - Pengambilan data mengeksekusi query paralel `Promise.all` (`products`, `variants`, dan `stock counts`), mengurangi waktu pemuatan hingga 90% dan meminimalkan konsumsi row Supabase Free Tier.
 - **FR-4.7**: Manual Catalog Refresh Button (`btn-refresh-catalog`):
   - Disediakan tombol refresh manual pada header katalog buyer dengan visual ikon putar.
@@ -212,14 +229,14 @@
   - **Hybrid Resilient Relay & Direct DB Fallback Engine**:
     - Validasi kupon promo via POST /api/webapp/checkout (ction: 'validate_voucher') menerapkan proteksi fail-safe berlapis.
     - Gateway terlebih dahulu me-relay permintaan ke bot server privat tenant dengan AbortSignal.timeout(2500).
-    - Apabila bot server tidak dapat dijangkau (*network drop*, timeout, atau port terblokir), gateway secara otomatis mengeksekusi *fallback* verifikasi mandiri ke database Supabase tenant via pi/_lib/voucherValidator.js.
-    - Menghilangkan *single point of failure* jaringan eksternal dan mencegah error etch failed pada tampilan pembeli.
+    - Apabila bot server tidak dapat dijangkau (_network drop_, timeout, atau port terblokir), gateway secara otomatis mengeksekusi _fallback_ verifikasi mandiri ke database Supabase tenant via pi/\_lib/voucherValidator.js.
+    - Menghilangkan _single point of failure_ jaringan eksternal dan mencegah error etch failed pada tampilan pembeli.
   - **In-Memory Anti Brute-Force Rate Limiting**: Validasi voucher via `POST /api/webapp/checkout` (`action: 'validate_voucher'`) dibatasi maksimal 10 request per menit per `chat_id`. Pelanggaran langsung direspons dengan HTTP 429 dan sisa waktu tunggu.
   - **Variant-Targeted Scope Relay**: Meneruskan parameter `variant_id` dari client ke internal bot API sehingga kupon bertarget varian (`target_scope: 'VARIANT'`) divalidasi dengan tepat.
   - **Resilient Response Unwrapping**: Client memproses data respon secara aman via `res.data || res`, memastikan kode promo valid tidak tertolak dan pesan kegagalan asli dari server (`vData.reason`) dapat tampil transparan kepada pembeli.
   - **Aturan Kuantitas Presisi (FREE vs NOMINAL)**:
     - Voucher tipe `FREE` (Gratis 100%): Kuantitas dikunci ketat 1 pcs per transaksi (`currentQty = 1`, tombol `+` dinonaktifkan).
-    - Voucher tipe `NOMINAL` (Potongan Harga): Mendukung kuantitas dinamis (*multi-qty*). Jika total belanja setelah diskon mencapai Rp 0 (contoh: beli 5 pcs @ Rp 1.000 dengan voucher Rp 5.000), aksi diarahkan ke `claim_free` dengan meneruskan parameter `qty: 5` ke internal bot API sehingga seluruh 5 item direservasi dan dikirim utuh ke pembeli.
+    - Voucher tipe `NOMINAL` (Potongan Harga): Mendukung kuantitas dinamis (_multi-qty_). Jika total belanja setelah diskon mencapai Rp 0 (contoh: beli 5 pcs @ Rp 1.000 dengan voucher Rp 5.000), aksi diarahkan ke `claim_free` dengan meneruskan parameter `qty: 5` ke internal bot API sehingga seluruh 5 item direservasi dan dikirim utuh ke pembeli.
   - **QRIS Floor Protection**: Mencegah pemesanan jika sisa pembayaran setelah diskon bernilai di antara Rp 1 s/d Rp 999, dengan menampilkan peringatan batas minimum transaksi QRIS (Rp 1.000).
   - **Auto-Detach on Min Spend Violation**: Jika pembeli menurunkan kuantitas pesanan sehingga subtotal belanja berada di bawah ambang `min_spend`, voucher otomatis dilepaskan seketika disertai notifikasi informasi.
   - **Auto-Reset on Variant Switch**: Memilih atau berpindah varian produk otomatis mereset status voucher aktif guna mencegah kesalahan perhitungan harga atau diskon salah sasaran.
@@ -237,9 +254,8 @@
     - Apabila channel QRIS yang dipilih sedang pemeliharaan (kode error HTTP 503 `QRIS_MAINTENANCE` atau `QIOSPAY_MAINTENANCE`), modal seleksi tetap terbuka dan menampilkan banner peringatan informatif, serta mengembalikan tombol kartu ke kondisi aktif sehingga pembeli dapat langsung beralih ke channel QRIS lainnya tanpa mengulang dari katalog.
   - **Nominal Transparency**: Modal konfirmasi sukses checkout (`showCheckoutModal`) menampilkan `total_amount` final yang dikembalikan oleh backend bot (merefleksikan penambahan kode unik Rp 1 - 250 pada Shopee Partner direct QRIS atau fee transaksi aggregator).
 
-
-
 ### FR-5: Tenant Shop Administration Portal
+
 - **FR-5.1**: Portal khusus admin toko diakses melalui `/admin?bot_id=...&auth=...`.
 - **FR-5.2**: Ringkasan Metrik Toko via `GET /api/webapp/admin-dashboard`:
   - Menampilkan total produk, varian, total stok tersedia, dan statistik pesanan toko dari bot server.
@@ -252,9 +268,9 @@
   - `GET`: Menampilkan daftar item stok aktif untuk varian yang dipilih.
   - `POST`: Upload stok massal baik melalui input teks multi-baris maupun file `.txt`.
   - **Deduplikasi Cerdas**: Sistem membersihkan spasi, mendeteksi dan mengeliminasi item duplikat sebelum dikirim ke database.
-  - `DELETE`: Menghapus satu item stok tertentu berdasarkan ID atau menghapus seluruh stok (*clear all*) untuk varian terkait.
+  - `DELETE`: Menghapus satu item stok tertentu berdasarkan ID atau menghapus seluruh stok (_clear all_) untuk varian terkait.
 - **FR-5.5**: Product Search Debounce (150ms):
-  - Pencarian pada daftar produk admin dilengkapi filter *debounce* 150ms untuk mencegah re-render DOM yang membebani browser saat admin mengetik cepat.
+  - Pencarian pada daftar produk admin dilengkapi filter _debounce_ 150ms untuk mencegah re-render DOM yang membebani browser saat admin mengetik cepat.
 - **FR-5.6**: Proactive Cache Invalidation on Mutations:
   - Setiap aksi simpan produk, hapus produk, upload stok batch, hapus item stok satuan, maupun clear all stok langsung mengeksekusi `clearCatalogCache()`. Perubahan inventaris langsung sinkron di seluruh komponen tanpa lag.
 - **FR-5.7**: Optimized Dropdown Event Delegation:
@@ -263,8 +279,9 @@
   - Pendaftaran listener Supabase Realtime WebSocket inventaris (`subscribeToInventoryChanges`) hanya dijalankan untuk sesi terautentikasi admin (`role === 'admin'`).
 
 ### FR-6: Master SaaS Administrative Dashboard (Rental Mode)
+
 - **FR-6.1**: Akses terpusat di `/master` dengan proteksi `X-Admin-Secret`.
-  - **Login Overlay Liquid Glass**: Halaman dilindungi oleh overlay login split-canvas (`#loginOverlay`) dengan desain *True Liquid Glass*. Sisi kiri berisi form input Admin Secret Key (JetBrains Mono, neon lock icon, animasi focus glow), sisi kanan menampilkan visual showcase kartu produk cloud server dengan efek float animation. Background menggunakan dot-grid pattern dan aurora ambient mesh (identik dengan tampilan dashboard utama). Transisi antara form dan showcase menggunakan `linear-gradient` seamless tanpa border keras.
+  - **Login Overlay Liquid Glass**: Halaman dilindungi oleh overlay login split-canvas (`#loginOverlay`) dengan desain _True Liquid Glass_. Sisi kiri berisi form input Admin Secret Key (JetBrains Mono, neon lock icon, animasi focus glow), sisi kanan menampilkan visual showcase kartu produk cloud server dengan efek float animation. Background menggunakan dot-grid pattern dan aurora ambient mesh (identik dengan tampilan dashboard utama). Transisi antara form dan showcase menggunakan `linear-gradient` seamless tanpa border keras.
 - **FR-6.2**: Monitoring Metrik SaaS Master:
   - Ringkasan kartu real-time: Total Tenant, Tenant Aktif (termasuk verifikasi aktif kalender), Tenant Expired, Segera Expired (<= 3 hari), Total Pendapatan Sewa (PAID invoices), Sesi Aktif Mini App, dan Total Pengguna Telegram.
 - **FR-6.3**: Manajemen Tenant Telegram:
@@ -278,7 +295,7 @@
 - **FR-6.5**: Manajemen Rental Grup WhatsApp (`wa-groups`):
   - Tab khusus WhatsApp Bot Rental (`managed_groups`).
   - Metrik: Total Grup, Grup Aktif, Segera Expired, Total Pembayaran Disetujui.
-  - Tabel grup: Nama grup, JID grup, nama penyewa (*renter*), status aktif/non-aktif, tanggal sewa (`paid_until`), dan sisa hari.
+  - Tabel grup: Nama grup, JID grup, nama penyewa (_renter_), status aktif/non-aktif, tanggal sewa (`paid_until`), dan sisa hari.
   - Aksi: Tambah grup sewa, perpanjang masa aktif sewa grup, edit rincian data grup, toggle status aktif/non-aktif, dan hapus grup.
 - **FR-6.6**: Direct WhatsApp Launcher (`wa.me` Deep-Link):
   - Modal pengingat sewa WhatsApp menyertakan tombol aksi langsung "Buka WhatsApp" yang membuka tautan resmi `https://wa.me/<phone>?text=...` di tab baru.
@@ -291,16 +308,17 @@
   - Penggunaan atribut semantik ARIA (`aria-label`, `aria-hidden`, `role`), perbaikan rasio kontras warna teks, focus ring navigasi keyboard, dan optimasi font loading untuk mencapai skor 100 Accessibility pada audit performa web.
 
 ### FR-7: RNF Shop Finance & Operations Dashboard (Shop Mode)
+
 - **FR-7.1**: Mode Khusus "Shop Finance" pada Master Super-Dashboard:
   - Dikelola melalui switcher mode di sidebar dashboard (`switchMode('shop')`).
   - Terkoneksi secara terisolasi ke database RNF Shop Supabase via `/api/admin/rnfshop` (`rnfshop-handler.js`).
 - **FR-7.2**: Financial Overview (`rnf-overview`):
-  - Kartu Metrik: Total Pemasukan (*Incoming*), Total Pengeluaran (*Outgoing*), Laba Bersih (*Net Profit*), dan Total Frekuensi Transaksi.
+  - Kartu Metrik: Total Pemasukan (_Incoming_), Total Pengeluaran (_Outgoing_), Laba Bersih (_Net Profit_), dan Total Frekuensi Transaksi.
   - Distribusi Finansial: Distribusi pendapatan per aplikasi digital, volume penjualan per aplikasi, tren harian pemasukan vs pengeluaran, dan daftar mutasi terbaru.
 - **FR-7.3**: Manajemen Transaksi Lengkap (`rnf-transactions`):
-  - Filter interaktif: Tipe transaksi (`all`, `incoming`, `outgoing`), Filter per aplikasi master, Rentang tanggal (*Start Date* s/d *End Date*), dan kata kunci pencarian nama pelanggan atau catatan.
+  - Filter interaktif: Tipe transaksi (`all`, `incoming`, `outgoing`), Filter per aplikasi master, Rentang tanggal (_Start Date_ s/d _End Date_), dan kata kunci pencarian nama pelanggan atau catatan.
   - Pagination dinamis (25, 50, 100 baris per halaman).
-  - Tambah Transaksi: Tanggal, Tipe, Aplikasi, Nama Pelanggan, Nominal Kotor (*Gross*), Biaya QRIS (*Fee QRIS*), Nominal Bersih (*Net*), Metode Pembayaran (QRIS, Transfer, Saldo), Catatan transaksi, dan status sinkronisasi.
+  - Tambah Transaksi: Tanggal, Tipe, Aplikasi, Nama Pelanggan, Nominal Kotor (_Gross_), Biaya QRIS (_Fee QRIS_), Nominal Bersih (_Net_), Metode Pembayaran (QRIS, Transfer, Saldo), Catatan transaksi, dan status sinkronisasi.
   - Edit & Hapus Transaksi dengan konfirmasi SweetAlert2.
 - **FR-7.4**: Batch Receipt & Multi-Method Payment Parser (`import.js`):
   - Fitur parser cerdas untuk mengekstrak mutasi struk transaksi bot Telegram (`TRANSAKSI SUKSES`) secara massal.
@@ -310,12 +328,13 @@
     2. **QRIS Shopee Partner (Kode Unik)**: Deteksi otomatis kata kunci `SHOPEE`, penentuan harga pokok bersih menggunakan kelipatan `PRICE_STEP` (`Math.floor(gross / 500) * 500`), serta isolasi kode unik (`gross - basePrice`) tanpa pemotongan fee (`fee = 0`), mengeliminasi bug salah deteksi harga 5.000 menjadi 4.500.
     3. **QRIS Xoftware**: Pengurangan fee eksplit (`amount = gross - rawFee`) jika baris `Fee QRIS` tersedia, dengan fallback reverse math (`reverseFeeToNet`) yang diisolasi khusus transaksi QRIS non-Shopee.
   - Normalisasi Alias: Memetakan variasi penulisan nama produk/aplikasi (contoh: "CHATGPT PLUS" -> "CHATGPT").
-  - Tampilan Pratinjau Interaktif (*Validation Preview Table*): Menampilkan tanggal, Customer ID, nama aplikasi master, badge metode pembayaran (`QRIS (Shopee Partner)`, `QRIS (Xoftware)`, `Saldo`), nominal bersih (*Net*), badge kode unik / fee QRIS (`Unik: +12` / `Rp 367`), dan proteksi injeksi teks (`escAttr`) sebelum melakukan batch insert ke database.
+  - Tampilan Pratinjau Interaktif (_Validation Preview Table_): Menampilkan tanggal, Customer ID, nama aplikasi master, badge metode pembayaran (`QRIS (Shopee Partner)`, `QRIS (Xoftware)`, `Saldo`), nominal bersih (_Net_), badge kode unik / fee QRIS (`Unik: +12` / `Rp 367`), dan proteksi injeksi teks (`escAttr`) sebelum melakukan batch insert ke database.
 - **FR-7.5**: Manajemen Master Aplikasi Digital (`rnf-apps`):
   - Pengelolaan katalog aplikasi toko digital (`apps` table).
   - Tambah aplikasi baru, edit nama aplikasi, atur ikon aplikasi, dan toggle status aktif/non-aktif.
 
 ### FR-8: Client Security & Address Bar Sanitization
+
 - **FR-8.1**: Address Bar Token Scrubbing (`history.replaceState`):
   - Ketika Mini App atau Admin Portal memasuki status unauthorized/fallback screen karena ketiadaan parameter otentikasi yang valid, aplikasi secara otomatis mengeksekusi pembersihan bilah alamat:
     `window.history.replaceState({}, document.title, window.location.pathname)`
@@ -347,17 +366,19 @@
 ```
 
 ### 5.1 Telegram WebApp Cryptographic Validation (`telegramAuth.js`)
+
 - Validasi sesuai spesifikasi resmi Telegram:
   - Ekstraksi `hash` dari `initData`.
   - Penyusunan `data-check-string` dengan mengurutkan seluruh key secara alfabetis dan memisahkan dengan baris baru (`\n`).
   - Penurunan kunci rahasia: `HMAC-SHA256('WebAppData', botToken)`.
   - Perhitungan hash: `HMAC-SHA256(secretKey, dataCheckString)`.
-  - Komparasi menggunakan `crypto.timingSafeEqual` untuk mencegah kebocoran *side-channel timing*.
-  - Token bot diperoleh secara dinamis berdasarkan `bot_id` tenant dari tabel `tenants` dengan *in-memory cache* selama 30 menit (`TOKEN_CACHE_TTL`).
-  - Validasi *freshness*: Menolak `auth_date` yang berumur lebih dari 24 jam (86.400 detik).
+  - Komparasi menggunakan `crypto.timingSafeEqual` untuk mencegah kebocoran _side-channel timing_.
+  - Token bot diperoleh secara dinamis berdasarkan `bot_id` tenant dari tabel `tenants` dengan _in-memory cache_ selama 30 menit (`TOKEN_CACHE_TTL`).
+  - Validasi _freshness_: Menolak `auth_date` yang berumur lebih dari 24 jam (86.400 detik).
 
 ### 5.2 Bot Tenant HMAC Protocol with BotId Binding (`hmacAuth.js`)
-- Mencegah *request spoofing*, *tenant impersonation*, dan *replay attacks*:
+
+- Mencegah _request spoofing_, _tenant impersonation_, dan _replay attacks_:
   - **Payload yang ditandatangani**: `timestamp + "." + botId + "." + body`.
   - Penyertaan `botId` di dalam digest mencegah bot tenant yang memiliki `INTERNAL_API_SECRET` sama merekayasa header `X-Bot-Id` milik tenant lain.
   - **Jendela Toleransi Waktu (Window)**: Permintaan ditolak bila selisih `|now - timestamp| > 5 menit` (300.000 ms).
@@ -365,11 +386,13 @@
   - Tetap mendukung fallback legacy payload (`timestamp.body`) selama masa transisi deployment multi-bot.
 
 ### 5.3 Webhook Fail-Closed Security & Raw Buffering (`xoftware-renewal.js`)
+
 - Webhook Xoftware Pay mematikan parser body default (`bodyParser: false`).
 - Menghitung HMAC langsung dari buffer biner mentah (`readRawBody`) agar tidak terpengaruh oleh perbedaan format serialisasi JSON (whitespace, key ordering).
 - Dilengkapi verifikasi sekunder aktif: Gateway menghubungi balik endpoint `/v1/api/transactions/status` payment gateway dengan request bertanda tangan sebelum memperpanjang sewa.
 
 ### 5.4 Database Row-Level Security (RLS) & Isolation
+
 - **Master Supabase**:
   - `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` diaktifkan pada semua 8 tabel (`tenants`, `tenant_configs`, `tenant_api_keys`, `plans`, `subscriptions`, `telegram_users`, `miniapp_sessions`, `rental_invoices`).
   - Seluruh tabel menerapkan policy `deny_all` untuk role `anon` dan `authenticated`, kecuali `plans` yang memiliki policy `plans_public_read` (`is_active = true`) untuk pembacaan paket publik.
@@ -378,73 +401,79 @@
   - Seluruh operasi checkout, pemotongan saldo, katalog toko admin, dan mutasi stok dialirkan via HTTP relay ke bot server tenant dengan autentikasi header `X-Internal-Api-Secret` dan `X-Admin-Auth`.
 
 ### 5.5 Address Bar URL Sanitization & Token Scrubbing
-- Untuk memitigasi risiko *credential leaking* via browser history atau screenshot:
+
+- Untuk memitigasi risiko _credential leaking_ via browser history atau screenshot:
   - Frontend membersihkan query parameter otentikasi secara dinamis menggunakan API HTML5 `history.replaceState`.
   - Eksekusi dilakukan saat mendeteksi ketiadaan kredensial yang valid atau saat menampilkan fallback error screen.
 
 ### 5.6 Supabase Realtime Quota Defense & Access Segregation
+
 - Batas maksimal concurrent WebSocket connection pool pada Supabase Free Tier adalah 200 koneksi aktif.
 - **Proteksi Tingkat Client**:
   - Pendaftaran Realtime listener via `subscribeToInventoryChanges` dibatasi secara ketat berdasarkan role (`role === 'admin'`).
   - Pelanggan Mini App pembeli (`buyer`) tidak diizinkan membuka koneksi WebSocket permanen dan mengandalkan in-memory cache dengan TTL 60 detik serta tombol refresh manual on-demand.
-  - Mencegah penolakan koneksi (*connection starvation*) pada admin toko saat terjadi lonjakan traffic pembeli.
+  - Mencegah penolakan koneksi (_connection starvation_) pada admin toko saat terjadi lonjakan traffic pembeli.
 
 ---
 
 ## 6. API Gateway Endpoints Contract
 
 ### 6.1 Tenant Lifecycle & Subscription Management
-| Method | Endpoint | Auth | Parameter / Payload | Deskripsi |
-|---|---|---|---|---|
-| `POST` | `/api/tenant/register` | HMAC Signature | `{ bot_id, shop_name, owner_chat_id, bot_token, config: { supabase_url, supabase_anon_key, supabase_service_key }, metadata }` | Mendaftarkan bot tenant baru dan menyimpan konfigurasi koneksi database. |
-| `POST` | `/api/tenant/validate` | HMAC Signature | `{}` (Header: `X-Bot-Id`, `X-Timestamp`, `X-Signature`) | Memvalidasi status keaktifan tenant dan sisa masa aktif langganan. |
-| `GET` | `/api/tenant/subscription` | HMAC Signature | Header: `X-Bot-Id`, `X-Timestamp`, `X-Signature` | Mengambil rincian langganan aktif, paket sewa, data toko, dan riwayat invoice sewa. |
-| `POST` | `/api/tenant/subscription` | HMAC Signature | `{ plan_id, duration_days }` | Membuat invoice perpanjangan sewa baru dengan pembuatan QRIS dinamis Xoftware Pay. |
-| `POST` | `/api/tenant/subscription/confirm-payment` | HMAC Signature | `{ invoice_id, amount }` | Safety-net poller dari bot untuk memicu finalisasi pembayaran via RPC `process_renewal_payment`. |
-| `POST` | `/api/tenant/subscription/mark-notified` | HMAC Signature | `{ invoice_id, qris_deleted }` | Menandai flag `notification_sent` dan `qris_deleted` pada invoice setelah bot mengirimkan notifikasi. |
-| `POST` | `/api/tenant/subscription/update-qris-info` | HMAC Signature | `{ invoice_id, qris_chat_id, qris_message_id }` | Menyimpan ID pesan Telegram QRIS agar dapat dihapus otomatis saat pembayaran lunas. |
+
+| Method | Endpoint                                    | Auth           | Parameter / Payload                                                                                                            | Deskripsi                                                                                             |
+| ------ | ------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `POST` | `/api/tenant/register`                      | HMAC Signature | `{ bot_id, shop_name, owner_chat_id, bot_token, config: { supabase_url, supabase_anon_key, supabase_service_key }, metadata }` | Mendaftarkan bot tenant baru dan menyimpan konfigurasi koneksi database.                              |
+| `POST` | `/api/tenant/validate`                      | HMAC Signature | `{}` (Header: `X-Bot-Id`, `X-Timestamp`, `X-Signature`)                                                                        | Memvalidasi status keaktifan tenant dan sisa masa aktif langganan.                                    |
+| `GET`  | `/api/tenant/subscription`                  | HMAC Signature | Header: `X-Bot-Id`, `X-Timestamp`, `X-Signature`                                                                               | Mengambil rincian langganan aktif, paket sewa, data toko, dan riwayat invoice sewa.                   |
+| `POST` | `/api/tenant/subscription`                  | HMAC Signature | `{ plan_id, duration_days }`                                                                                                   | Membuat invoice perpanjangan sewa baru dengan pembuatan QRIS dinamis Xoftware Pay.                    |
+| `POST` | `/api/tenant/subscription/confirm-payment`  | HMAC Signature | `{ invoice_id, amount }`                                                                                                       | Safety-net poller dari bot untuk memicu finalisasi pembayaran via RPC `process_renewal_payment`.      |
+| `POST` | `/api/tenant/subscription/mark-notified`    | HMAC Signature | `{ invoice_id, qris_deleted }`                                                                                                 | Menandai flag `notification_sent` dan `qris_deleted` pada invoice setelah bot mengirimkan notifikasi. |
+| `POST` | `/api/tenant/subscription/update-qris-info` | HMAC Signature | `{ invoice_id, qris_chat_id, qris_message_id }`                                                                                | Menyimpan ID pesan Telegram QRIS agar dapat dihapus otomatis saat pembayaran lunas.                   |
 
 ### 6.2 WebApp Storefront & Tenant Admin APIs
-| Method | Endpoint | Auth | Parameter / Payload | Deskripsi |
-|---|---|---|---|---|
-| `POST` | `/api/webapp/init` | Public / Telegram | `{ initData: string, bot_id: string }` | Inisialisasi sesi Mini App, validasi `initData`, upsert user Telegram, buat sesi, dan kembalikan config toko. |
-| `GET` | `/api/webapp/tenant-config` | Optional `initData` | Query: `?bot_id=...` (Header: `X-Telegram-Init-Data`) | Mengambil kredensial database publik tenant (`anon_key`), nama toko, status, dan URL foto profil resmi Telegram. |
-| `GET` | `/api/webapp/checkout` | `X-Telegram-Init-Data` | Query: `?bot_id=...` | Relay ke server bot untuk mengambil saldo akun buyer, riwayat belanja, dan gateway aktif (`available_gateways`). |
-| `POST` | `/api/webapp/checkout` | `X-Telegram-Init-Data` | Action Dispatcher:<br>• `validate_voucher`: `{ bot_id, action: 'validate_voucher', voucher_code, product_id, variant_id, subtotal, qty }`<br>• `claim_free`: `{ bot_id, action: 'claim_free', variant_id, voucher_code, qty }`<br>• Reguler: `{ bot_id, variant_id, qty, voucher_code, gateway? }` | Relay terpadu ke bot internal API:<br>1. Validasi kupon promo + in-memory rate limit 10 req/min.<br>2. Klaim pesanan gratis Rp 0 dengan reservasi kuantitas dinamis `qty`.<br>3. Pembuatan checkout QRIS dengan pilihan gateway dinamis (`gateway`) atau default checkout dengan error relay 503/400. |
-| `GET` | `/api/webapp/admin-dashboard` | Query Admin Auth | Query: `?bot_id=...&auth=...` | Relay ke bot server untuk memuat ringkasan statistik produk, varian, dan stok toko tenant. |
-| `GET` | `/api/webapp/admin-products` | `X-Admin-Auth` | Query: `?bot_id=...&auth=...` | Relay pengambilan katalog produk lengkap toko tenant. |
-| `POST` | `/api/webapp/admin-products` | `X-Admin-Auth` | `{ bot_id, auth, name, category_id, image_url, description, variants, wholesale_tiers }` | Relay pembuatan produk baru beserta varian dan tier harga grosir. |
-| `PUT` | `/api/webapp/admin-products` | `X-Admin-Auth` | `{ bot_id, auth, id, ...productData }` | Relay pembaruan data produk toko tenant. |
-| `DELETE`| `/api/webapp/admin-products` | `X-Admin-Auth` | Query: `?bot_id=...&auth=...&id=...` | Relay penghapusan produk dari toko tenant. |
-| `GET` | `/api/webapp/admin-stock` | `X-Admin-Auth` | Query: `?bot_id=...&auth=...&variant_id=...` | Relay pengambilan daftar stok aktif varian tertentu. |
-| `POST` | `/api/webapp/admin-stock` | `X-Admin-Auth` | `{ bot_id, auth, variant_id, items: string[] }` | Relay upload stok massal dengan eliminasi baris duplikat. |
-| `DELETE`| `/api/webapp/admin-stock` | `X-Admin-Auth` | Query: `?bot_id=...&auth=...&id=...` atau `&variant_id=...` | Relay penghapusan satu baris stok atau penghapusan seluruh stok varian (*clear all*). |
+
+| Method   | Endpoint                      | Auth                   | Parameter / Payload                                                                                                                                                                                                                                                                                | Deskripsi                                                                                                                                                                                                                                                                                             |
+| -------- | ----------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST`   | `/api/webapp/init`            | Public / Telegram      | `{ initData: string, bot_id: string }`                                                                                                                                                                                                                                                             | Inisialisasi sesi Mini App, validasi `initData`, upsert user Telegram, buat sesi, dan kembalikan config toko.                                                                                                                                                                                         |
+| `GET`    | `/api/webapp/tenant-config`   | Optional `initData`    | Query: `?bot_id=...` (Header: `X-Telegram-Init-Data`)                                                                                                                                                                                                                                              | Mengambil kredensial database publik tenant (`anon_key`), nama toko, status, dan URL foto profil resmi Telegram.                                                                                                                                                                                      |
+| `GET`    | `/api/webapp/checkout`        | `X-Telegram-Init-Data` | Query: `?bot_id=...`                                                                                                                                                                                                                                                                               | Relay ke server bot untuk mengambil saldo akun buyer, riwayat belanja, dan gateway aktif (`available_gateways`).                                                                                                                                                                                      |
+| `POST`   | `/api/webapp/checkout`        | `X-Telegram-Init-Data` | Action Dispatcher:<br>• `validate_voucher`: `{ bot_id, action: 'validate_voucher', voucher_code, product_id, variant_id, subtotal, qty }`<br>• `claim_free`: `{ bot_id, action: 'claim_free', variant_id, voucher_code, qty }`<br>• Reguler: `{ bot_id, variant_id, qty, voucher_code, gateway? }` | Relay terpadu ke bot internal API:<br>1. Validasi kupon promo + in-memory rate limit 10 req/min.<br>2. Klaim pesanan gratis Rp 0 dengan reservasi kuantitas dinamis `qty`.<br>3. Pembuatan checkout QRIS dengan pilihan gateway dinamis (`gateway`) atau default checkout dengan error relay 503/400. |
+| `GET`    | `/api/webapp/admin-dashboard` | Query Admin Auth       | Query: `?bot_id=...&auth=...`                                                                                                                                                                                                                                                                      | Relay ke bot server untuk memuat ringkasan statistik produk, varian, dan stok toko tenant.                                                                                                                                                                                                            |
+| `GET`    | `/api/webapp/admin-products`  | `X-Admin-Auth`         | Query: `?bot_id=...&auth=...`                                                                                                                                                                                                                                                                      | Relay pengambilan katalog produk lengkap toko tenant.                                                                                                                                                                                                                                                 |
+| `POST`   | `/api/webapp/admin-products`  | `X-Admin-Auth`         | `{ bot_id, auth, name, category_id, image_url, description, variants, wholesale_tiers }`                                                                                                                                                                                                           | Relay pembuatan produk baru beserta varian dan tier harga grosir.                                                                                                                                                                                                                                     |
+| `PUT`    | `/api/webapp/admin-products`  | `X-Admin-Auth`         | `{ bot_id, auth, id, ...productData }`                                                                                                                                                                                                                                                             | Relay pembaruan data produk toko tenant.                                                                                                                                                                                                                                                              |
+| `DELETE` | `/api/webapp/admin-products`  | `X-Admin-Auth`         | Query: `?bot_id=...&auth=...&id=...`                                                                                                                                                                                                                                                               | Relay penghapusan produk dari toko tenant.                                                                                                                                                                                                                                                            |
+| `GET`    | `/api/webapp/admin-stock`     | `X-Admin-Auth`         | Query: `?bot_id=...&auth=...&variant_id=...`                                                                                                                                                                                                                                                       | Relay pengambilan daftar stok aktif varian tertentu.                                                                                                                                                                                                                                                  |
+| `POST`   | `/api/webapp/admin-stock`     | `X-Admin-Auth`         | `{ bot_id, auth, variant_id, items: string[] }`                                                                                                                                                                                                                                                    | Relay upload stok massal dengan eliminasi baris duplikat.                                                                                                                                                                                                                                             |
+| `DELETE` | `/api/webapp/admin-stock`     | `X-Admin-Auth`         | Query: `?bot_id=...&auth=...&id=...` atau `&variant_id=...`                                                                                                                                                                                                                                        | Relay penghapusan satu baris stok atau penghapusan seluruh stok varian (_clear all_).                                                                                                                                                                                                                 |
 
 ### 6.3 Master Super-Dashboard & System Crons (`/api/admin/[resource]`)
-| Method | Endpoint | Auth | Parameter / Payload | Deskripsi |
-|---|---|---|---|---|
-| `GET` | `/api/admin/stats` | `X-Admin-Secret` | - | Mengambil ringkasan metrik analitik SaaS master (eksekusi RPC `get_master_stats`). |
-| `GET` | `/api/admin/tenants` | `X-Admin-Secret` | Query: `?search=...&status=...&sort=...` | Mengambil daftar seluruh tenant bot beserta masa aktif, subscription, dan metadata. |
-| `PUT` | `/api/admin/tenants` | `X-Admin-Secret` | `{ action: 'extend'\|'status'\|'invalidate_cache', bot_id, days, status }` | Menambah masa sewa tenant (+30 atau custom hari), ubah status (ACTIVE, SUSPENDED, BANNED), atau paksa invalidate cache. |
-| `DELETE`| `/api/admin/tenants` | `X-Admin-Secret` | Query: `?bot_id=...` | Menghapus tenant dan seluruh dependensi konfigurasinya dari sistem master. |
-| `GET` | `/api/admin/subscriptions` | `X-Admin-Secret` | - | Mengambil riwayat daftar seluruh langganan tenant dan paketnya. |
-| `POST` | `/api/admin/sync-expired` | `X-Admin-Secret` | - | Sinkronisasi manual tenant expired (memanggil RPC `sync_expired_tenants` dan mengirim invalidate callback ke bot). |
-| `GET` | `/api/admin/wa-groups` | `X-Admin-Secret` | Query: `?action=stats` atau default list | Mengambil daftar grup WhatsApp sewaan (`managed_groups`) atau statistik rental WA. |
-| `POST` | `/api/admin/wa-groups` | `X-Admin-Secret` | `{ group_name, store_group_id, target_group_id, renter_name, user_jid, paid_until }` | Mendaftarkan grup sewa bot WhatsApp baru. |
-| `PUT` | `/api/admin/wa-groups` | `X-Admin-Secret` | `{ id, action: 'extend'\|'toggle', days, ...groupData }` | Memperpanjang sewa grup WA, toggle status aktif/non-aktif, atau update profil penyewa. |
-| `DELETE`| `/api/admin/wa-groups` | `X-Admin-Secret` | Query: `?id=...` | Menghapus data grup sewa WhatsApp. |
-| `GET` | `/api/admin/rnfshop` | `X-Admin-Secret` | Query: `?action=overview` \| `transactions` \| `apps` | Mengambil data ringkasan finansial, data transaksi terpaginasi, atau data master katalog aplikasi RNF Shop. |
-| `POST` | `/api/admin/rnfshop` | `X-Admin-Secret` | `{ action: 'add_transaction'\|'save_app'\|'import_batch', ...payload }` | Menambahkan transaksi individual, menyimpan aplikasi baru/edit, atau impor batch hasil parsing struk mutasi bank/QRIS. |
-| `PUT` | `/api/admin/rnfshop` | `X-Admin-Secret` | `{ id, ...transactionUpdateData }` | Memperbarui rincian transaksi finansial RNF Shop. |
-| `DELETE`| `/api/admin/rnfshop` | `X-Admin-Secret` | Query: `?id=...` | Menghapus catatan transaksi finansial dari database RNF Shop. |
-| `GET` | `/api/admin/cron-expire` | `Bearer CRON_SECRET` | Header: `Authorization: Bearer CRON_SECRET` | Endpoint terjadwal Vercel Cron harian untuk eksekusi otomatis `sync_expired_tenants`. |
-| `POST` | `/api/webhook/xoftware-renewal` | Webhook Secret | Header HMAC / Query `?token=SAAS_WEBHOOK_SECRET` | Menerima notifikasi pelunasan QRIS perpanjangan sewa dari Xoftware Pay. |
+
+| Method   | Endpoint                        | Auth                 | Parameter / Payload                                                                  | Deskripsi                                                                                                               |
+| -------- | ------------------------------- | -------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/admin/stats`              | `X-Admin-Secret`     | -                                                                                    | Mengambil ringkasan metrik analitik SaaS master (eksekusi RPC `get_master_stats`).                                      |
+| `GET`    | `/api/admin/tenants`            | `X-Admin-Secret`     | Query: `?search=...&status=...&sort=...`                                             | Mengambil daftar seluruh tenant bot beserta masa aktif, subscription, dan metadata.                                     |
+| `PUT`    | `/api/admin/tenants`            | `X-Admin-Secret`     | `{ action: 'extend'\|'status'\|'invalidate_cache', bot_id, days, status }`           | Menambah masa sewa tenant (+30 atau custom hari), ubah status (ACTIVE, SUSPENDED, BANNED), atau paksa invalidate cache. |
+| `DELETE` | `/api/admin/tenants`            | `X-Admin-Secret`     | Query: `?bot_id=...`                                                                 | Menghapus tenant dan seluruh dependensi konfigurasinya dari sistem master.                                              |
+| `GET`    | `/api/admin/subscriptions`      | `X-Admin-Secret`     | -                                                                                    | Mengambil riwayat daftar seluruh langganan tenant dan paketnya.                                                         |
+| `POST`   | `/api/admin/sync-expired`       | `X-Admin-Secret`     | -                                                                                    | Sinkronisasi manual tenant expired (memanggil RPC `sync_expired_tenants` dan mengirim invalidate callback ke bot).      |
+| `GET`    | `/api/admin/wa-groups`          | `X-Admin-Secret`     | Query: `?action=stats` atau default list                                             | Mengambil daftar grup WhatsApp sewaan (`managed_groups`) atau statistik rental WA.                                      |
+| `POST`   | `/api/admin/wa-groups`          | `X-Admin-Secret`     | `{ group_name, store_group_id, target_group_id, renter_name, user_jid, paid_until }` | Mendaftarkan grup sewa bot WhatsApp baru.                                                                               |
+| `PUT`    | `/api/admin/wa-groups`          | `X-Admin-Secret`     | `{ id, action: 'extend'\|'toggle', days, ...groupData }`                             | Memperpanjang sewa grup WA, toggle status aktif/non-aktif, atau update profil penyewa.                                  |
+| `DELETE` | `/api/admin/wa-groups`          | `X-Admin-Secret`     | Query: `?id=...`                                                                     | Menghapus data grup sewa WhatsApp.                                                                                      |
+| `GET`    | `/api/admin/rnfshop`            | `X-Admin-Secret`     | Query: `?action=overview` \| `transactions` \| `apps`                                | Mengambil data ringkasan finansial, data transaksi terpaginasi, atau data master katalog aplikasi RNF Shop.             |
+| `POST`   | `/api/admin/rnfshop`            | `X-Admin-Secret`     | `{ action: 'add_transaction'\|'save_app'\|'import_batch', ...payload }`              | Menambahkan transaksi individual, menyimpan aplikasi baru/edit, atau impor batch hasil parsing struk mutasi bank/QRIS.  |
+| `PUT`    | `/api/admin/rnfshop`            | `X-Admin-Secret`     | `{ id, ...transactionUpdateData }`                                                   | Memperbarui rincian transaksi finansial RNF Shop.                                                                       |
+| `DELETE` | `/api/admin/rnfshop`            | `X-Admin-Secret`     | Query: `?id=...`                                                                     | Menghapus catatan transaksi finansial dari database RNF Shop.                                                           |
+| `GET`    | `/api/admin/cron-expire`        | `Bearer CRON_SECRET` | Header: `Authorization: Bearer CRON_SECRET`                                          | Endpoint terjadwal Vercel Cron harian untuk eksekusi otomatis `sync_expired_tenants`.                                   |
+| `POST`   | `/api/webhook/xoftware-renewal` | Webhook Secret       | Header HMAC / Query `?token=SAAS_WEBHOOK_SECRET`                                     | Menerima notifikasi pelunasan QRIS perpanjangan sewa dari Xoftware Pay.                                                 |
 
 ---
 
 ## 7. Multi-Database Entity-Relationship & Schema Architecture
 
 ### 7.1 Master Supabase Database (`master_supabase_schema.sql`)
+
 1. **`plans`**:
    - `id` (UUID PK), `name` (TEXT UNIQUE - `Trial`, `Premium`, `Enterprise`), `price` (INTEGER), `duration_days` (INTEGER), `features` (JSONB), `is_active` (BOOLEAN), `sort_order` (INTEGER).
 2. **`tenants`**:
@@ -463,12 +492,14 @@
    - `id` (UUID PK), `bot_id` (BIGINT FK `tenants.bot_id`), `plan_id` (UUID FK `plans.id`), `amount` (INTEGER), `status` (invoice_status: `PENDING`, `PAID`, `EXPIRED`, `CANCELLED`), `qris_chat_id` (BIGINT), `qris_message_id` (BIGINT), `notification_sent` (BOOLEAN DEFAULT FALSE), `qris_deleted` (BOOLEAN DEFAULT FALSE), `paid_at` (TIMESTAMPTZ), `created_at`, `updated_at`.
 
 ### 7.2 WhatsApp Rental Supabase Database
+
 1. **`managed_groups`**:
    - `id` (BIGINT / UUID PK), `store_group_id` (TEXT), `target_group_id` (TEXT), `group_name` (TEXT), `renter_name` (TEXT), `user_jid` (TEXT), `is_active` (BOOLEAN DEFAULT TRUE), `paid_until` (DATE / TIMESTAMPTZ), `joined_at`, `updated_at`.
 2. **`payments`**:
    - `id` (UUID PK), `target_group_id` (TEXT), `amount` (NUMERIC), `status` (TEXT - `approved`, `pending`, `rejected`), `created_at`.
 
 ### 7.3 RNF Shop Finance Supabase Database (`rnfshop_supabase_schema.sql`)
+
 1. **`apps`** (Katalog Aplikasi / Produk Digital Master):
    - `id` (UUID PK DEFAULT `gen_random_uuid()`), `name` (TEXT NOT NULL UNIQUE), `icon_url` (TEXT NULL), `is_active` (BOOLEAN DEFAULT TRUE), `created_by` (UUID NULL), `updated_by` (UUID NULL), `created_at`, `updated_at`.
 2. **`transactions`** (Buku Besar Mutasi & Transaksi Keuangan Toko):
@@ -479,6 +510,7 @@
    - `email` (TEXT PK), `role` (TEXT), `is_active` (BOOLEAN), `created_at`.
 
 ### 7.4 Stored Procedures & Database RPC Functions
+
 - **`process_renewal_payment(p_invoice_id UUID, p_amount INT) -> JSONB`**:
   - Mengunci row invoice dengan `FOR UPDATE`.
   - Menerima perpanjangan dari invoice berstatus `PENDING` atau `EXPIRED`.
@@ -499,20 +531,21 @@
 ## 8. Frontend Interface & Module Breakdown
 
 ### 8.1 Buyer Mini App (`public/index.html` & `public/js/buyer/`)
+
 - **`buyer.js` / `buyer-main.js`**:
   - Inisialisasi lifecycle Mini App Telegram (`Telegram.WebApp.ready()`, `expand()`).
   - Search placeholder dinamis dengan efek ketik mesin tik berganti frasa secara berkala (`getPlaceholderPhrases`, `stepRunningPlaceholder`).
   - Rendering kartu produk responsif dengan status stok aktual dan animasi skeleton shimmer.
   - Tombol refresh katalog manual interaktif (`#btn-refresh-catalog`) dengan animasi putar 360° yang memicu `fetchCatalog(supabase, true)`.
   - Detail modal produk geser (`.detail-page-slide`) dengan akselerasi GPU perangkat keras (`transform: translate3d(...)`, `will-change: transform, visibility`, `-webkit-overflow-scrolling: touch`) dan eliminasi filter berat pada panel opaque demi scroll mulus 60 FPS di mobile WebView.
-  - Pemilih varian interaktif, sisa stok dinamis per varian, dan tabel kalkulator diskon grosir bertingkat (*wholesale tier pricing*).
+  - Pemilih varian interaktif, sisa stok dinamis per varian, dan tabel kalkulator diskon grosir bertingkat (_wholesale tier pricing_).
   - Pengecekan profil buyer via relay backend dan checkout pesanan terenkripsi.
   - Invalidasi cache katalog lokal otomatis (`clearCatalogCache()`) seketika pasca checkout berhasil.
   - Pembersihan bilah alamat URL otomatis (`history.replaceState`) saat memasuki status fallback/unauthorized.
 - **`public/js/shared/`**:
   - `store.js`: Manajer state inventaris dan katalog terpusat:
     - **In-Memory Cache Layer**: Cache `_catalogCache` dengan TTL 60.000 ms.
-    - **In-Flight Promise Deduplication**: Variabel `_inFlightCatalogPromise` mencegah *request stampede* saat beberapa komponen memanggil `fetchCatalog()` bersamaan.
+    - **In-Flight Promise Deduplication**: Variabel `_inFlightCatalogPromise` mencegah _request stampede_ saat beberapa komponen memanggil `fetchCatalog()` bersamaan.
     - **Parallel Fetching**: Pengambilan paralel via `Promise.all` (`products`, `product_variants`, dan agregasi `stock counts`).
     - **Proactive Invalidation**: Fungsi `clearCatalogCache()` untuk pengosongan cache seketika pasca mutasi.
     - **Realtime Quota Defense**: Fungsi `subscribeToInventoryChanges(supabase, onUpdate, role)` memvalidasi `role === 'admin'`. Koneksi WebSocket Supabase Realtime diabaikan untuk sesi pembeli guna melindungi pool 200 koneksi Supabase Free Tier.
@@ -520,6 +553,7 @@
   - `utils.js`: Helper format mata uang Rupiah (`formatRupiah`), sanitasi HTML (`escapeHtml`), dan visual toast notifications.
 
 ### 8.2 Tenant Admin Portal (`public/admin.html` & `public/js/tenant-admin/`)
+
 - **`adminProducts.js`**:
   - CRUD katalog produk toko tenant.
   - Filter pencarian produk ter-debounce 150ms untuk eliminasi lag render DOM saat mengetik.
@@ -529,12 +563,13 @@
 - **`adminStock.js`**:
   - Manajemen stok barang per varian.
   - Upload stok massal via file `.txt` atau paste multi-baris dengan normalisasi whitespace dan deteksi item duplikat otomatis.
-  - Event listener kustom dropdown `.smooth-select-btn` didelegasikan ke level `document` tunggal, mencegah duplikasi event handler dan *memory leaks*.
+  - Event listener kustom dropdown `.smooth-select-btn` didelegasikan ke level `document` tunggal, mencegah duplikasi event handler dan _memory leaks_.
   - Deduplikasi query snapshot stok pada saat memanggil `renderStockItems()`.
-  - Hapus stok satuan atau bersihkan seluruh stok varian (*clear all*) dengan pembersihan cache instan (`clearCatalogCache()`).
+  - Hapus stok satuan atau bersihkan seluruh stok varian (_clear all_) dengan pembersihan cache instan (`clearCatalogCache()`).
   - Mengaktifkan listener WebSocket Supabase Realtime inventaris secara eksklusif untuk sesi admin.
 
 ### 8.3 Master Super-Dashboard (`public/master-dashboard.html`, `public/js/master/`, & `public/js/rnfshop/`)
+
 - **`masterDashboard.js`**:
   - Pengendali utama Super Dashboard dengan mode switcher (`Rental SaaS Mode` & `Shop Finance Mode`).
   - Modul Rental Telegram:
@@ -560,6 +595,7 @@
 ## 9. Deployment, Hosting & Environment Configuration
 
 ### 9.1 Environment Variables Required (Vercel)
+
 ```env
 # =========================================================
 # Vercel Environment Variables (Web App + API Gateway)
@@ -592,6 +628,7 @@ CRON_SECRET=your_vercel_cron_bearer_secret
 ```
 
 ### 9.2 Vercel Configuration (`vercel.json`)
+
 - **Production Branch**: `master` (satu-satunya branch aktif; branch `main` dihapus).
 - **Clean URLs**: `true`.
 - **Redirects**: `/public/master-dashboard.html` dan `/master-dashboard.html` diarahkan secara permanen (301) ke `/master`.
@@ -711,11 +748,11 @@ Web App/
    - Jalankan `code-review-graph status` dan `code-review-graph update` untuk memastikan seluruh relasi simbol kode dan eksekusi flow terindeks dengan benar.
    - Jalankan `graphify update .` untuk memperbarui topologi graf kode setiap kali ada penambahan file arsitektural baru.
 2. **Pengujian Kriptografis HMAC & Signature**:
-   - Uji verifikasi endpoint `/api/tenant/*` dengan timestamp kadaluwarsa (> 5 menit) untuk memastikan *replay attack prevention* berfungsi dengan tepat.
-   - Uji payload dengan ketidakcocokan `botId` di signature untuk memvalidasi *bot-id binding*.
+   - Uji verifikasi endpoint `/api/tenant/*` dengan timestamp kadaluwarsa (> 5 menit) untuk memastikan _replay attack prevention_ berfungsi dengan tepat.
+   - Uji payload dengan ketidakcocokan `botId` di signature untuk memvalidasi _bot-id binding_.
 3. **Pengujian Atomisitas Pembayaran (Stres Webhook)**:
    - Validasi bahwa pemanggilan ganda pada webhook `/api/webhook/xoftware-renewal` dengan order ID yang sama mengembalikan status `already_processed` tanpa menambah hari sewa ganda.
-   - Uji pembayaran pada invoice berstatus `EXPIRED` untuk memverifikasi pemulihan masa sewa otomatis (*recovered from expired*).
+   - Uji pembayaran pada invoice berstatus `EXPIRED` untuk memverifikasi pemulihan masa sewa otomatis (_recovered from expired_).
 4. **Verifikasi Konsistensi Kalender WIB**:
    - Pastikan tanggal kadaluwarsa hasil kalkulasi `calcRenewalExpiryWIB` dan RPC `process_renewal_payment` selalu mengarah ke jam `17:00:00Z` UTC (tepat pukul 00:00:00 WIB).
 5. **Verifikasi Kompatibilitas Browser & Telegram WebApp**:

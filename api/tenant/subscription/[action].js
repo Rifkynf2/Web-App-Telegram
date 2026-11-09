@@ -37,21 +37,40 @@ async function handleConfirmPayment(req, res) {
     if (!auth.valid) return unauthorized(res, auth.error);
 
     const botId = parseInt(auth.botId);
-    const { invoice_id, amount } = req.body;
+    const { invoice_id, amount, gateway_event_id, gateway } = req.body;
     if (!invoice_id) return error(res, 'invoice_id is required');
 
     try {
         const masterDb = getMasterSupabase();
 
-        // Ownership check before touching the RPC — process_renewal_payment is
+        // Ownership & amount check before touching the RPC — process_renewal_payment is
         // scoped only by invoice id, it doesn't know which tenant is asking.
         const { data: inv, error: invError } = await masterDb
-            .from('rental_invoices').select('id, bot_id').eq('id', invoice_id).single();
+            .from('rental_invoices').select('id, bot_id, amount').eq('id', invoice_id).single();
         if (invError || !inv) return notFound(res, 'Invoice not found');
         if (inv.bot_id !== botId) return error(res, 'Invoice does not belong to this bot', 403);
+        if (amount && inv.amount && Number(amount) !== Number(inv.amount)) {
+            return error(res, `Amount mismatch: expected ${inv.amount}, got ${amount}`, 400);
+        }
 
-        const { data: rpcResult, error: rpcErr } = await masterDb
-            .rpc('process_renewal_payment', { p_invoice_id: invoice_id, p_amount: amount });
+        const rpcPayload = { 
+            p_invoice_id: invoice_id, 
+            p_amount: amount 
+        };
+        if (gateway_event_id) rpcPayload.p_gateway_event_id = gateway_event_id;
+        if (gateway) rpcPayload.p_gateway = gateway;
+
+        let { data: rpcResult, error: rpcErr } = await masterDb
+            .rpc('process_renewal_payment', rpcPayload);
+
+        // Fallback for backward compatibility if RPC in database hasn't been updated with 4 parameters
+        if (rpcErr && (rpcErr.code === 'PGRST202' || rpcErr.message.includes('Could not find the function') || rpcErr.message.includes('schema cache'))) {
+            console.warn('[API/confirm-payment] Falling back to 2-param RPC call:', rpcErr.message);
+            const fallbackRes = await masterDb
+                .rpc('process_renewal_payment', { p_invoice_id: invoice_id, p_amount: amount });
+            rpcResult = fallbackRes.data;
+            rpcErr = fallbackRes.error;
+        }
 
         if (rpcErr) {
             console.error('[API/confirm-payment] RPC error:', rpcErr.message);

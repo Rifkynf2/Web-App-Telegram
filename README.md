@@ -12,6 +12,7 @@ A professional, mobile-optimized Telegram Mini App designed for seamless digital
   - **ReDoS Defense & Sanitasi Karakter**: Pemisah blok struk bebas catastrophic backtracking yang toleran terhadap forward header Telegram dan pembersihan ornamen box-drawing (`┊`, `│`).
 - **Promo Voucher & Free Claim**: Validasi kupon promo interaktif (diskon NOMINAL & klaim GRATIS 100%), dukungan kuantitas dinamis (*multi-qty*) pada total Rp 0, proteksi batas minimum QRIS (Rp 1.000), serta auto-detach jika di bawah syarat belanja. Dilengkapi arsitektur *hybrid fallback* ke database tenant untuk menjamin ketersediaan validasi 100% tanpa error jaringan.
 - **Syarat Akses Komunitas (Force Sub)**: Integrasi proteksi syarat join channel/grup saat checkout dengan modal interaktif ramah yang otomatis mengarahkan pembeli ke bot.
+- **Dual-Gateway SaaS Renewal Subsystem**: Dukungan perpanjangan sewa bot multi-tenant terpusat via API Gateway: Shopee Partner (jalur utama 0% fee dengan kode unik dinamis & auto-sweep invoice kedaluwarsa) serta Xoftware Pay (fallback). Diverifikasi atomik via RPC PostgreSQL `process_renewal_payment` (`FOR UPDATE`) dengan indeks unik anti-tabrakan dan anti-replay mutasi.
 - **Admin Dashboard**: Secure interface for managing products and stock directly from the web.
 - **Stock Tracking**: Automated inventory management with bulk insert and duplicate detection.
 - **Telegram Native**: Environment detection ensures the app only runs fully within the Telegram Mini App ecosystem.

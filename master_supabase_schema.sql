@@ -259,6 +259,31 @@ DO $$ BEGIN
   ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS qris_deleted BOOLEAN NOT NULL DEFAULT FALSE;
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
+-- v5: Shopee Partner Direct Gateway Security (Tiered Unique Code, Anti-Collision, Anti-Replay)
+DO $$ BEGIN
+  ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS gateway TEXT NOT NULL DEFAULT 'XOFTWARE';
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS raw_amount INTEGER NULL CHECK (raw_amount >= 0);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS unique_code INTEGER NULL DEFAULT 0;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.rental_invoices ADD COLUMN IF NOT EXISTS gateway_event_id TEXT NULL;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_rental_invoices_shopee_pending_amount 
+ON public.rental_invoices (amount) 
+WHERE status = 'PENDING' AND gateway = 'SHOPEE_PARTNER';
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_rental_invoices_gateway_event_id 
+ON public.rental_invoices (gateway_event_id) 
+WHERE gateway_event_id IS NOT NULL;
+
 DROP TRIGGER IF EXISTS rental_invoices_set_updated_at ON public.rental_invoices;
 CREATE TRIGGER rental_invoices_set_updated_at BEFORE UPDATE ON public.rental_invoices
 FOR EACH ROW EXECUTE FUNCTION public.tg_set_updated_at();
@@ -443,7 +468,9 @@ GRANT EXECUTE ON FUNCTION public.sync_expired_tenants() TO service_role;
 -- (`.in('status', ['pending','expired'])` in supabase/payments.js).
 CREATE OR REPLACE FUNCTION public.process_renewal_payment(
     p_invoice_id UUID,
-    p_amount INT
+    p_amount INT,
+    p_gateway_event_id TEXT DEFAULT NULL,
+    p_gateway TEXT DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -476,7 +503,10 @@ BEGIN
         v_recovered_from_expired := (v_existing_status = 'EXPIRED');
 
         UPDATE rental_invoices
-        SET status = 'PAID', paid_at = v_now
+        SET status = 'PAID', 
+            paid_at = v_now,
+            gateway_event_id = COALESCE(p_gateway_event_id, gateway_event_id),
+            gateway = COALESCE(p_gateway, gateway)
         WHERE id = p_invoice_id
         RETURNING * INTO v_inv;
     ELSIF v_existing_status = 'PAID' THEN
@@ -591,6 +621,7 @@ GRANT SELECT ON public.plans TO anon;
 -- (tg_set_updated_at tidak di-GRANT karena trigger function, dipanggil internal oleh trigger)
 GRANT EXECUTE ON FUNCTION public.cleanup_expired_sessions() TO service_role;
 GRANT EXECUTE ON FUNCTION public.get_master_stats() TO service_role;
+GRANT EXECUTE ON FUNCTION public.process_renewal_payment(UUID, INTEGER, TEXT, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.process_renewal_payment(UUID, INTEGER) TO service_role;
 
 -- ALTER DEFAULT PRIVILEGES: tabel/function BARU otomatis dapat GRANT

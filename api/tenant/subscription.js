@@ -140,7 +140,10 @@ async function createRenewalInvoice(req, res) {
             .eq('is_active', true)
             .single();
 
-        const amount = req.body.amount || plan?.price || 10000;
+        const reqGateway = req.body.gateway || 'SHOPEE_PARTNER';
+        const rawAmount = req.body.raw_amount ? parseInt(req.body.raw_amount, 10) : (plan?.price || 15000);
+        const uniqueCode = req.body.unique_code !== undefined ? parseInt(req.body.unique_code, 10) : 0;
+        const amount = req.body.amount ? parseInt(req.body.amount, 10) : (rawAmount + uniqueCode);
 
         // 2. Check tenant exists
         const { data: tenant } = await masterDb
@@ -153,10 +156,23 @@ async function createRenewalInvoice(req, res) {
             return notFound(res, 'Tenant not found. Register first.');
         }
 
+        // Auto-expire stale pending Shopee invoices across all bots (>15 mins) to free up unique codes
+        try {
+            const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+            await masterDb
+                .from('rental_invoices')
+                .update({ status: 'EXPIRED' })
+                .eq('status', 'PENDING')
+                .eq('gateway', 'SHOPEE_PARTNER')
+                .lt('created_at', fifteenMinsAgo);
+        } catch (sweepErr) {
+            console.warn('[API/subscription] Global stale invoice sweep warning:', sweepErr.message);
+        }
+
         // 3. Check for existing pending invoice (prevent duplicates)
         const { data: pendingInvoice } = await masterDb
             .from('rental_invoices')
-            .select('id, amount, created_at')
+            .select('id, amount, gateway, raw_amount, unique_code, created_at')
             .eq('bot_id', botId)
             .eq('status', 'PENDING')
             .order('created_at', { ascending: false })
@@ -164,38 +180,63 @@ async function createRenewalInvoice(req, res) {
             .maybeSingle();
 
         if (pendingInvoice) {
-            // Check if pending invoice is less than 10 minutes old
             const age = Date.now() - new Date(pendingInvoice.created_at).getTime();
-            if (age < 10 * 60 * 1000) {
+            const sameGateway = !pendingInvoice.gateway || pendingInvoice.gateway === reqGateway;
+            const sameAmount = Number(pendingInvoice.amount) === amount;
+
+            if (age < 10 * 60 * 1000 && sameGateway && sameAmount) {
                 return success(res, {
                     invoice: pendingInvoice,
                     message: 'Existing pending invoice found',
                     isExisting: true
                 });
             }
-            // Expire old pending invoice
+            // Expire old pending invoice if stale or if gateway/amount changed
             await masterDb.from('rental_invoices')
                 .update({ status: 'EXPIRED' })
                 .eq('id', pendingInvoice.id);
         }
 
-        // 4. Create new invoice
-        const { data: invoice, error: invErr } = await masterDb
+        // 4. Create new invoice (with graceful fallback if columns not yet migrated)
+        const insertPayload = {
+            bot_id: botId,
+            plan_id: plan?.id || null,
+            amount,
+            gateway: reqGateway,
+            raw_amount: rawAmount,
+            unique_code: uniqueCode,
+            status: 'PENDING'
+        };
+
+        let invoice = null;
+        let { data: newInv, error: invErr } = await masterDb
             .from('rental_invoices')
-            .insert({
-                bot_id: botId,
-                plan_id: plan?.id || null,
-                amount,
-                status: 'PENDING'
-            })
+            .insert(insertPayload)
             .select()
             .single();
 
-        if (invErr) {
-            console.error('[API/subscription] Invoice creation failed:', invErr.message);
+        if (invErr && invErr.message && (invErr.message.includes('column') || invErr.message.includes('gateway'))) {
+            console.warn('[API/subscription] Extended columns not yet migrated, falling back to basic insert:', invErr.message);
+            const fallbackRes = await masterDb
+                .from('rental_invoices')
+                .insert({
+                    bot_id: botId,
+                    plan_id: plan?.id || null,
+                    amount,
+                    status: 'PENDING'
+                })
+                .select()
+                .single();
+            newInv = fallbackRes.data;
+            invErr = fallbackRes.error;
+        }
+
+        if (invErr || !newInv) {
+            console.error('[API/subscription] Invoice creation failed:', invErr?.message);
             return serverError(res, 'Failed to create invoice');
         }
 
+        invoice = newInv;
 
         return success(res, {
             invoice,
